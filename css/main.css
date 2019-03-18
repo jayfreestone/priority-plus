@@ -311,6 +311,7 @@ textarea {
   padding: 1em 2em;
   color: #fff;
   min-width: 6em;
+  text-align: center;
 }
 
 .p-plus__primary > li:not(:first-child) {
@@ -323,10 +324,5 @@ textarea {
 }
 
 .p-plus__toggle {
-  /* position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0; */
   padding: 0.5em 1em;
-  /* width: var(--p-plus-toggle-width); */
 }

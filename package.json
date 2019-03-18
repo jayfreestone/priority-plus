@@ -2,7 +2,9 @@
   "name": "priority-plus",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/pplus.cjs.js",
+  "module": "dist/pplus.esm.js",
+  "browser": "dist/pplus.umd.js",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
