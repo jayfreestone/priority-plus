@@ -18,20 +18,28 @@
 
 <body>
 
-  <nav class="p-plus">
-    <div class="p-plus__primary-wrapper">
-      <ul class="p-plus__primary">
-        <li data-item="home">Home</li>
-        <li data-item="about">About</li>
-        <li data-item="work">Work</li>
-        <li data-item="services">Services longer nav title</li>
-        <li data-item="contact">Contact</li>
-      </ul>
-      <!-- <span class="p-plus__canary"></span> -->
-    </div>
-    <ul class="p-plus__overflow"></ul>
-    <button class="p-plus__toggle">More</button>
-  </nav>
+<!--<nav class="p-plus">-->
+  <!--<div class="p-plus__primary-wrapper">-->
+    <!--<ul class="p-plus__primary">-->
+      <!--<li data-item="home">Home</li>-->
+      <!--<li data-item="about">About</li>-->
+      <!--<li data-item="work">Work</li>-->
+      <!--<li data-item="services">Services longer nav title</li>-->
+      <!--<li data-item="contact">Contact</li>-->
+    <!--</ul>-->
+    <!--&lt;!&ndash; <span class="p-plus__canary"></span> &ndash;&gt;-->
+  <!--</div>-->
+  <!--<ul class="p-plus__overflow"></ul>-->
+  <!--<button class="p-plus__toggle">More</button>-->
+<!--</nav>-->
+
+  <ul class="js-p-target">
+    <li data-item="home"><a href="/">Home</a></li>
+    <li data-item="about"><a href="/">About</a></li>
+    <li data-item="work"><a href="/">Work</a></li>
+    <li data-item="services"><a href="/">Services longer nav title</a></li>
+    <li data-item="contact"><a href="/">Contact</a></li>
+  </ul>
 
   <!--[if lte IE 9]>
     <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
@@ -44,7 +52,10 @@
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
   <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.3.1.min.js"><\/script>')</script>
   <script src="dist/pplus.umd.js"></script>
-  <script>pplus();</script>
+  <script>
+    const inst = pplus(document.querySelector('.js-p-target'));
+    console.log(inst);
+  </script>
 
   <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
   <script>
