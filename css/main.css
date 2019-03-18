@@ -286,6 +286,13 @@ textarea {
     }
 }
 
+.container {
+  resize: both;
+  overflow: auto;
+  max-width: 80em;
+  margin: 0 auto;
+}
+
 .p-plus {
   display: flex;
 }
