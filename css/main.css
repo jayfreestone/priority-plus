@@ -309,9 +309,12 @@ textarea {
 .p-plus__primary > li {
   flex: 1 0 auto;
   padding: 1em 2em;
-  color: #fff;
   min-width: 6em;
   text-align: center;
+}
+
+.p-plus a {
+  color: #fff;
 }
 
 .p-plus__primary > li:not(:first-child) {

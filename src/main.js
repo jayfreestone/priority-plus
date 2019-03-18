@@ -2,13 +2,11 @@ function pplus(targetElem, options) {
   const el = {
     wrapper: undefined,
     clonedWrapper: undefined,
-    // wrapper: undefined,
-    // primaryNavWrapper: undefined,
-    // primaryNav: undefined,
-    // overflowNav: undefined,
-    // navItems: undefined,
-    // clonedTarget: undefined,
-    // clonedNavItems: undefined,
+    primaryNav: undefined,
+    overflowNav: undefined,
+    toggleBtn: undefined,
+    clonedToggleBtn: undefined,
+    clonedNavItems: undefined,
   };
 
   const classNames = {
@@ -16,6 +14,7 @@ function pplus(targetElem, options) {
     primaryNavWrapper: ['p-plus__primary-wrapper'],
     primaryNav: ['p-plus__primary'],
     overflowNav: ['p-plus__overflow'],
+    toggleBtn: ['p-plus__toggle-btn'],
   };
 
   function createMarkup() {
@@ -34,11 +33,15 @@ function pplus(targetElem, options) {
             )).join('')}
           </${targetElem.tagName}>
         </div>
-          <${targetElem.tagName} 
-            data-overflow-nav
-            class="${classNames.overflowNav.join(' ')}"
-          >
-          </${targetElem.tagName}>
+        <${targetElem.tagName} 
+          data-overflow-nav
+          class="${classNames.overflowNav.join(' ')}"
+        >
+        </${targetElem.tagName}>
+        <button
+          data-toggle-btn
+          class="${classNames.toggleBtn.join(' ')}"
+        >More</button>
       <div>
     `;
   }
@@ -53,8 +56,10 @@ function pplus(targetElem, options) {
     el.wrapper = original.querySelector('[data-wrapper]');
     el.primaryNav = original.querySelector('[data-primary-nav]');
     el.overflowNav = original.querySelector('[data-overflow-nav]');
+    el.toggleBtn = original.querySelector('[data-toggle-btn]');
     el.clonedWrapper = cloned.querySelector('[data-wrapper]');
     el.clonedNavItems = cloned.querySelectorAll('[data-nav-item]');
+    el.clonedToggleBtn = cloned.querySelector('[data-toggle-btn]');
 
     container.appendChild(original);
     container.appendChild(cloned);
@@ -62,45 +67,11 @@ function pplus(targetElem, options) {
     targetElem.parentNode.replaceChild(container, targetElem);
   }
 
-  // function setupEl() {
-  //   el.wrapper = document.createElement('div');
-  //   el.wrapper.className = classNames.wrapper.join(' ');
-  //
-  //   el.primaryNav = document.createElement(targetElem.tagName);
-  //   el.primaryNav.className = classNames.primaryNav.join(' ');
-  //   el.overflowNav = document.createElement(targetElem.tagName);
-  //   el.overflowNav.className = classNames.overflowNav.join(' ');
-  //
-  //   el.primaryNavWrapper = document.createElement('div');
-  //   el.primaryNavWrapper.className = classNames.primaryNavWrapper.join(' ');
-  //
-  //   el.toggleBtn = document.createElement('button');
-  //   el.toggleBtn.innerHTML = 'More';
-  //
-  //   el.primaryNavWrapper.appendChild(el.primaryNav);
-  //   el.wrapper.appendChild(el.primaryNavWrapper);
-  //   el.wrapper.appendChild(el.overflowNav);
-  //   el.wrapper.appendChild(el.toggleBtn);
-  //
-  //   el.navItems = [].map.call(targetElem.children, elem => {
-  //     elem.setAttribute('data-item', elem.innerText);
-  //     return elem;
-  //   });
-  //
-  //   el.navItems.forEach(elem => el.primaryNav.appendChild(elem));
-  //
-  //   el.clonedWrapper = el.wrapper.cloneNode(true);
-  //
-  //   const container = document.createDocumentFragment();
-  //   container.appendChild(el.clonedWrapper);
-  //   container.appendChild(el.wrapper);
-  //
-  //   targetElem.parentNode.replaceChild(container, targetElem);
-  // }
 
   function onIntersect(e) {
     e.forEach((item) => {
-      console.log(item, item.target);
+      const overflowChildrenLen = el.overflowNav.children.length;
+      console.log(item);
 
       if (item.intersectionRatio < 1) {
         const id = item.target.getAttribute('data-item');
@@ -111,28 +82,35 @@ function pplus(targetElem, options) {
         const clone = target.cloneNode(true);
         target.remove();
         el.overflowNav.appendChild(clone);
-      } else if (el.overflowNav.children.length) {
+      } else if (overflowChildrenLen) {
         const clone = el.overflowNav.lastElementChild.cloneNode(true);
         el.overflowNav.lastElementChild.remove();
         el.primaryNav.appendChild(clone);
       }
+
+      updateBtnDisplay();
     });
+  }
+
+  function updateBtnDisplay() {
+    [el.toggleBtn, el.clonedToggleBtn].forEach((btn) => {
+      btn.style.display = el.overflowNav.children.length > 0 ? 'block' : 'none';
+    })
   }
 
   function bindListeners() {
     const observer = new IntersectionObserver(onIntersect, {
-      root: el.wrapper,
+      root: el.clonedWrapper,
       rootMargin: '0px 0px 0px 0px',
-      threshold: [.25, .50, .75, 1],
+      threshold: [0, 1],
     });
 
-    // el.clonedNavItems.forEach(elem => {
-    //   observer.observe(elem);
-    // });
+    el.clonedNavItems.forEach(elem => observer.observe(elem));
   }
 
   (function init() {
     setupEl();
+    // updateBtnDisplay();
     bindListeners();
   }());
 
