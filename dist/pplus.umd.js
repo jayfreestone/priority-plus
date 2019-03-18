@@ -15,6 +15,10 @@
       clonedNavItems: undefined,
     };
 
+    const navItemMaps = {
+      primary: undefined,
+    };
+
     const classNames = {
       wrapper: ['p-plus'],
       primaryNavWrapper: ['p-plus__primary-wrapper'],
@@ -32,10 +36,7 @@
             class="${classNames.primaryNav.join(' ')}"
           >
             ${[].map.call(targetElem.children, elem => (
-              `<li 
-                data-nav-item
-                data-item="${elem.innerText}"
-               >${elem.innerHTML}</li>`
+              `<li data-nav-item>${elem.innerHTML}</li>`
             )).join('')}
           </${targetElem.tagName}>
         </div>
@@ -63,9 +64,18 @@
       el.primaryNav = original.querySelector('[data-primary-nav]');
       el.overflowNav = original.querySelector('[data-overflow-nav]');
       el.toggleBtn = original.querySelector('[data-toggle-btn]');
+      el.toggleBtn.style.display = 'none';
       el.clonedWrapper = cloned.querySelector('[data-wrapper]');
+      el.primaryNavItems = original.querySelectorAll('[data-nav-item]');
       el.clonedNavItems = cloned.querySelectorAll('[data-nav-item]');
       el.clonedToggleBtn = cloned.querySelector('[data-toggle-btn]');
+
+      const mergedByIndex = Array.from(el.clonedNavItems)
+        .reduce((acc, item, i) => (
+          acc.concat([[item, el.primaryNavItems[i]]])
+        ), []);
+
+      navItemMaps.byClone = new Map(mergedByIndex);
 
       container.appendChild(original);
       container.appendChild(cloned);
@@ -73,29 +83,16 @@
       targetElem.parentNode.replaceChild(container, targetElem);
     }
 
+    function onIntersect({ target, intersectionRatio }) {
+      const targetElem = navItemMaps.byClone.get(target);
+      const navToPopulate = intersectionRatio < 1 ? 'overflowNav' : 'primaryNav';
 
-    function onIntersect(e) {
-      e.forEach((item) => {
-        const overflowChildrenLen = el.overflowNav.children.length;
-        console.log(item);
+      if (!targetElem) return;
 
-        if (item.intersectionRatio < 1) {
-          const id = item.target.getAttribute('data-item');
-          const target = el.primaryNav.querySelector(`li[data-item="${id}"]`);
+      targetElem.remove();
+      el[navToPopulate].appendChild(targetElem);
 
-          if (!target) return;
-
-          const clone = target.cloneNode(true);
-          target.remove();
-          el.overflowNav.appendChild(clone);
-        } else if (overflowChildrenLen) {
-          const clone = el.overflowNav.lastElementChild.cloneNode(true);
-          el.overflowNav.lastElementChild.remove();
-          el.primaryNav.appendChild(clone);
-        }
-
-        updateBtnDisplay();
-      });
+      updateBtnDisplay();
     }
 
     function updateBtnDisplay() {
@@ -105,7 +102,7 @@
     }
 
     function bindListeners() {
-      const observer = new IntersectionObserver(onIntersect, {
+      const observer = new IntersectionObserver(e => e.forEach(onIntersect), {
         root: el.clonedWrapper,
         rootMargin: '0px 0px 0px 0px',
         threshold: [0, 1],
@@ -116,7 +113,6 @@
 
     (function init() {
       setupEl();
-      // updateBtnDisplay();
       bindListeners();
     }());
 
