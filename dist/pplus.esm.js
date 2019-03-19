@@ -8,8 +8,16 @@ var El;
     El["NavItem"] = "nav-item";
     El["NavItems"] = "nav-items";
 })(El || (El = {}));
+function eventTarget() {
+    var port1 = new MessageChannel().port1;
+    return {
+        dispatchEvent: port1.dispatchEvent.bind(port1),
+        addEventListener: port1.addEventListener.bind(port1)
+    };
+}
 function pplus(targetElem, options) {
     var _a, _b, _c;
+    var eventChannel = eventTarget();
     var el = {
         primary: (_a = {},
             _a[El.Wrapper] = undefined,
@@ -82,19 +90,29 @@ function pplus(targetElem, options) {
             btn.style.display = el.primary[El.OverflowNav].children.length > 0 ? 'block' : 'none';
         });
     }
+    function intersectionCallback(e) {
+        e.forEach(onIntersect);
+        eventChannel.dispatchEvent(new CustomEvent('intersect'));
+    }
     function bindListeners() {
-        var observer = new IntersectionObserver(function (e) { return e.forEach(onIntersect); }, {
+        var observer = new IntersectionObserver(intersectionCallback, {
             root: el.clone[El.Wrapper],
             rootMargin: '0px 0px 0px 0px',
             threshold: [0, 1]
         });
         el.clone[El.NavItems].forEach(function (elem) { return observer.observe(elem); });
     }
+    function on(eventType, cb) {
+        return eventChannel.addEventListener(eventType, cb);
+    }
     (function init() {
         setupEl();
         bindListeners();
+        eventChannel.dispatchEvent(new CustomEvent('init'));
     }());
-    return {};
+    return {
+        on: on
+    };
 }
 
 export default pplus;

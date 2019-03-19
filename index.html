@@ -56,7 +56,16 @@
   <script src="dist/pplus.umd.js"></script>
   <script>
     const inst = pplus(document.querySelector('.js-p-target'));
-    console.log(inst);
+
+    inst.on('init', () => {
+      console.log('We init-ed!');
+    });
+
+    inst.on('intersect', ({ detail }) => {
+      console.log('We intersected', detail);
+    });
+
+    // console.log(inst);
   </script>
 
   <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->

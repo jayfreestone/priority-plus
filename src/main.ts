@@ -8,7 +8,17 @@ enum El {
   NavItems = 'nav-items',
 }
 
+function eventTarget() {
+  const { port1 } = new MessageChannel();
+  return {
+    dispatchEvent: port1.dispatchEvent.bind(port1),
+    addEventListener: port1.addEventListener.bind(port1),
+  };
+}
+
 function pplus(targetElem, options) {
+  const eventChannel = eventTarget();
+
   const el = {
     primary: {
       [El.Wrapper]: undefined,
@@ -125,8 +135,13 @@ function pplus(targetElem, options) {
     })
   }
 
+  function intersectionCallback(e) {
+    e.forEach(onIntersect);
+    eventChannel.dispatchEvent(new CustomEvent('intersect'));
+  }
+
   function bindListeners() {
-    const observer = new IntersectionObserver(e => e.forEach(onIntersect), {
+    const observer = new IntersectionObserver(intersectionCallback, {
       root: el.clone[El.Wrapper],
       rootMargin: '0px 0px 0px 0px',
       threshold: [0, 1],
@@ -135,12 +150,19 @@ function pplus(targetElem, options) {
     el.clone[El.NavItems].forEach(elem => observer.observe(elem));
   }
 
+  function on(eventType, cb) {
+    return eventChannel.addEventListener(eventType, cb);
+  }
+
   (function init() {
     setupEl();
     bindListeners();
+    eventChannel.dispatchEvent(new CustomEvent('init'));
   }());
 
-  return {};
+  return {
+    on,
+  };
 }
 
 export default pplus;
