@@ -13,18 +13,15 @@ function pplus(targetElem, options) {
     primary: {
       [El.Wrapper]: undefined,
       [El.PrimaryNav]: undefined,
+      [El.NavItems]: undefined,
       [El.OverflowNav]: undefined,
       [El.ToggleBtn]: undefined,
     },
     clone: {
       [El.Wrapper]: undefined,
-      [El.ToggleBtn]: undefined,
       [El.NavItems]: undefined,
+      [El.ToggleBtn]: undefined,
     },
-  };
-
-  const navItemMaps = {
-    byClone: undefined,
   };
 
   const classNames = {
@@ -34,6 +31,23 @@ function pplus(targetElem, options) {
     [El.OverflowNav]: ['p-plus__overflow'],
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
   };
+
+  const getElemMirror = (() => {
+    const cache = new Map();
+
+    return function getMirror(keyArr, valueArr) {
+      if (!cache.get(keyArr)) {
+        cache.set(
+          keyArr,
+          new Map(Array.from(keyArr).reduce((acc, item, i) => (
+            acc.concat([[item, valueArr[i]]])
+          ), []))
+        );
+      }
+
+      return cache.get(keyArr);
+    };
+  })();
 
   function cn(key: El) {
     return classNames[key].join(' ');
@@ -52,8 +66,8 @@ function pplus(targetElem, options) {
             class="${cn(El.PrimaryNav)}"
           >
             ${Array.from(targetElem.children).map((elem: HTMLElement) => (
-      `<li ${dv(El.NavItem)}>${elem.innerHTML}</li>`
-    )).join('')}
+              `<li ${dv(El.NavItem)}>${elem.innerHTML}</li>`
+            )).join('')}
           </${targetElem.tagName}>
         </div>
         <${targetElem.tagName} 
@@ -84,15 +98,8 @@ function pplus(targetElem, options) {
     el.primary[El.ToggleBtn].style.display = 'none';
 
     el.clone[El.Wrapper] = cloned.querySelector(`[${dv(El.Wrapper)}]`);
-    el.clone[El.NavItems] = cloned.querySelectorAll(`[${dv(El.NavItem)}]`);
+    el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItem)}]`));
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
-
-    const mergedByIndex = Array.from(el.clone[El.NavItems])
-      .reduce((acc, item, i) => (
-        acc.concat([[item, el.primary[El.NavItems][i]]])
-      ), []);
-
-    navItemMaps.byClone = new Map(mergedByIndex);
 
     container.appendChild(original);
     container.appendChild(cloned);
@@ -101,7 +108,7 @@ function pplus(targetElem, options) {
   }
 
   function onIntersect({ target, intersectionRatio }) {
-    const targetElem = navItemMaps.byClone.get(target);
+    const targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
     const navToPopulate = intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav;
 
     if (!targetElem) return;
@@ -133,9 +140,7 @@ function pplus(targetElem, options) {
     bindListeners();
   }());
 
-  return {
-    el,
-  };
+  return {};
 }
 
 export default pplus;

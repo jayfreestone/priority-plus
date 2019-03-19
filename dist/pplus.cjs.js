@@ -16,17 +16,15 @@ function pplus(targetElem, options) {
         primary: (_a = {},
             _a[El.Wrapper] = undefined,
             _a[El.PrimaryNav] = undefined,
+            _a[El.NavItems] = undefined,
             _a[El.OverflowNav] = undefined,
             _a[El.ToggleBtn] = undefined,
             _a),
         clone: (_b = {},
             _b[El.Wrapper] = undefined,
-            _b[El.ToggleBtn] = undefined,
             _b[El.NavItems] = undefined,
+            _b[El.ToggleBtn] = undefined,
             _b)
-    };
-    var navItemMaps = {
-        byClone: undefined
     };
     var classNames = (_c = {},
         _c[El.Wrapper] = ['p-plus'],
@@ -35,6 +33,15 @@ function pplus(targetElem, options) {
         _c[El.OverflowNav] = ['p-plus__overflow'],
         _c[El.ToggleBtn] = ['p-plus__toggle-btn'],
         _c);
+    var getElemMirror = (function () {
+        var cache = new Map();
+        return function getMirror(keyArr, valueArr) {
+            if (!cache.get(keyArr)) {
+                cache.set(keyArr, new Map(Array.from(keyArr).reduce(function (acc, item, i) { return (acc.concat([[item, valueArr[i]]])); }, [])));
+            }
+            return cache.get(keyArr);
+        };
+    })();
     function cn(key) {
         return classNames[key].join(' ');
     }
@@ -56,18 +63,15 @@ function pplus(targetElem, options) {
         el.primary[El.ToggleBtn] = original.querySelector("[" + dv(El.ToggleBtn) + "]");
         el.primary[El.ToggleBtn].style.display = 'none';
         el.clone[El.Wrapper] = cloned.querySelector("[" + dv(El.Wrapper) + "]");
-        el.clone[El.NavItems] = cloned.querySelectorAll("[" + dv(El.NavItem) + "]");
+        el.clone[El.NavItems] = Array.from(cloned.querySelectorAll("[" + dv(El.NavItem) + "]"));
         el.clone[El.ToggleBtn] = cloned.querySelector("[" + dv(El.ToggleBtn) + "]");
-        var mergedByIndex = Array.from(el.clone[El.NavItems])
-            .reduce(function (acc, item, i) { return (acc.concat([[item, el.primary[El.NavItems][i]]])); }, []);
-        navItemMaps.byClone = new Map(mergedByIndex);
         container.appendChild(original);
         container.appendChild(cloned);
         targetElem.parentNode.replaceChild(container, targetElem);
     }
     function onIntersect(_a) {
         var target = _a.target, intersectionRatio = _a.intersectionRatio;
-        var targetElem = navItemMaps.byClone.get(target);
+        var targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
         var navToPopulate = intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav;
         if (!targetElem)
             return;
@@ -92,9 +96,7 @@ function pplus(targetElem, options) {
         setupEl();
         bindListeners();
     }());
-    return {
-        el: el
-    };
+    return {};
 }
 
 module.exports = pplus;
