@@ -5,8 +5,7 @@ var El;
     El["PrimaryNav"] = "primary-nav";
     El["OverflowNav"] = "overflow-nav";
     El["ToggleBtn"] = "toggle-btn";
-    El["NavItem"] = "nav-item";
-    El["NavItems"] = "nav-items";
+    El["NavItems"] = "nav-item";
 })(El || (El = {}));
 function eventTarget() {
     var port1 = new MessageChannel().port1;
@@ -55,7 +54,7 @@ function pplus(targetElem, options) {
         return "data-" + key;
     }
     function createMarkup() {
-        return "\n      <div " + dv(El.Wrapper) + " class=\"" + cn(El.Wrapper) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + " \n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItem) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <" + targetElem.tagName + " \n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n        >\n        </" + targetElem.tagName + ">\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n        >More</button>\n      <div>\n    ";
+        return "\n      <div " + dv(El.Wrapper) + " class=\"" + cn(El.Wrapper) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + " \n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <" + targetElem.tagName + " \n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n        >\n        </" + targetElem.tagName + ">\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n        >More</button>\n      <div>\n    ";
     }
     function setupEl() {
         var markup = createMarkup();
@@ -64,12 +63,12 @@ function pplus(targetElem, options) {
         var cloned = original.cloneNode(true);
         el.primary[El.Wrapper] = original.querySelector("[" + dv(El.Wrapper) + "]");
         el.primary[El.PrimaryNav] = original.querySelector("[" + dv(El.PrimaryNav) + "]");
-        el.primary[El.NavItems] = original.querySelectorAll("[" + dv(El.NavItem) + "]");
+        el.primary[El.NavItems] = original.querySelectorAll("[" + dv(El.NavItems) + "]");
         el.primary[El.OverflowNav] = original.querySelector("[" + dv(El.OverflowNav) + "]");
         el.primary[El.ToggleBtn] = original.querySelector("[" + dv(El.ToggleBtn) + "]");
         el.primary[El.ToggleBtn].style.display = 'none';
         el.clone[El.Wrapper] = cloned.querySelector("[" + dv(El.Wrapper) + "]");
-        el.clone[El.NavItems] = Array.from(cloned.querySelectorAll("[" + dv(El.NavItem) + "]"));
+        el.clone[El.NavItems] = Array.from(cloned.querySelectorAll("[" + dv(El.NavItems) + "]"));
         el.clone[El.ToggleBtn] = cloned.querySelector("[" + dv(El.ToggleBtn) + "]");
         container.appendChild(original);
         container.appendChild(cloned);

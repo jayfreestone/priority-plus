@@ -4,8 +4,7 @@ enum El {
   PrimaryNav = 'primary-nav',
   OverflowNav = 'overflow-nav',
   ToggleBtn = 'toggle-btn',
-  NavItem = 'nav-item',
-  NavItems = 'nav-items',
+  NavItems = 'nav-item',
 }
 
 function eventTarget() {
@@ -76,7 +75,7 @@ function pplus(targetElem, options) {
             class="${cn(El.PrimaryNav)}"
           >
             ${Array.from(targetElem.children).map((elem: HTMLElement) => (
-              `<li ${dv(El.NavItem)}>${elem.innerHTML}</li>`
+              `<li ${dv(El.NavItems)}>${elem.innerHTML}</li>`
             )).join('')}
           </${targetElem.tagName}>
         </div>
@@ -102,13 +101,13 @@ function pplus(targetElem, options) {
 
     el.primary[El.Wrapper] = original.querySelector(`[${dv(El.Wrapper)}]`);
     el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`);
-    el.primary[El.NavItems] = original.querySelectorAll(`[${dv(El.NavItem)}]`);
+    el.primary[El.NavItems] = original.querySelectorAll(`[${dv(El.NavItems)}]`);
     el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`);
     el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`);
     el.primary[El.ToggleBtn].style.display = 'none';
 
     el.clone[El.Wrapper] = cloned.querySelector(`[${dv(El.Wrapper)}]`);
-    el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItem)}]`));
+    el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
 
     container.appendChild(original);
