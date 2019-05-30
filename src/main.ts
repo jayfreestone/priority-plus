@@ -7,6 +7,11 @@ enum El {
   NavItems = 'nav-item',
 }
 
+enum StateModifiers {
+  ButtonVisible = 'is-showing-toggle',
+  OverflowVisible = 'is-showing-overflow',
+}
+
 function eventTarget() {
   const { port1 } = new MessageChannel();
   return {
@@ -41,6 +46,10 @@ function pplus(targetElem, options) {
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
   };
 
+  const stateClassNames = {
+
+  };
+
   const getElemMirror = (() => {
     const cache = new Map();
 
@@ -70,7 +79,7 @@ function pplus(targetElem, options) {
     return `
       <div ${dv(El.Wrapper)} class="${cn(El.Wrapper)}">
         <div class="${cn(El.PrimaryNavWrapper)}">
-          <${targetElem.tagName} 
+          <${targetElem.tagName}
             ${dv(El.PrimaryNav)}
             class="${cn(El.PrimaryNav)}"
           >
@@ -79,15 +88,16 @@ function pplus(targetElem, options) {
             )).join('')}
           </${targetElem.tagName}>
         </div>
-        <${targetElem.tagName} 
+        <button
+          ${dv(El.ToggleBtn)}
+          class="${cn(El.ToggleBtn)}"
+          aria-expanded="false"
+        >More</button>
+        <${targetElem.tagName}
           ${dv(El.OverflowNav)}
           class="${cn(El.OverflowNav)}"
         >
         </${targetElem.tagName}>
-        <button
-          ${dv(El.ToggleBtn)}
-          class="${cn(El.ToggleBtn)}"
-        >More</button>
       <div>
     `;
   }
@@ -104,11 +114,13 @@ function pplus(targetElem, options) {
     el.primary[El.NavItems] = original.querySelectorAll(`[${dv(El.NavItems)}]`);
     el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`);
     el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`);
-    el.primary[El.ToggleBtn].style.display = 'none';
 
     el.clone[El.Wrapper] = cloned.querySelector(`[${dv(El.Wrapper)}]`);
     el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
+
+    el.clone[El.Wrapper].setAttribute('aria-hidden', true);
+    el.clone[El.Wrapper].classList.add(`${classNames[El.Wrapper]}--clone`);
 
     container.appendChild(original);
     container.appendChild(cloned);
@@ -126,17 +138,41 @@ function pplus(targetElem, options) {
     el.primary[navToPopulate].appendChild(targetElem);
 
     updateBtnDisplay();
+
+    if (el.primary[El.OverflowNav].children.length === 0) {
+      setOverflowNavOpen(false);
+    }
   }
 
   function updateBtnDisplay() {
-    [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach((btn) => {
-      btn.style.display = el.primary[El.OverflowNav].children.length > 0 ? 'block' : 'none';
+    const show = el.primary[El.OverflowNav].children.length > 0;
+
+    [el.primary[El.Wrapper], el.clone[El.Wrapper]].forEach((wrapper) => {
+      wrapper.classList[show ? 'add' : 'remove'](
+        `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`
+      );
     })
   }
 
   function intersectionCallback(e) {
     e.forEach(onIntersect);
     eventChannel.dispatchEvent(new CustomEvent('intersect'));
+  }
+
+  function setOverflowNavOpen(open = true) {
+    const openClass = `${classNames[El.Wrapper]}--${StateModifiers.OverflowVisible}`;
+    el.primary[El.Wrapper].classList[open ? 'add' : 'remove'](openClass);
+    el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function toggleOverflowNav() {
+    const openClass = `${classNames[El.Wrapper]}--${StateModifiers.OverflowVisible}`;
+    setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
+  }
+
+  function onToggleClick(e) {
+    e.preventDefault();
+    toggleOverflowNav();
   }
 
   function bindListeners() {
@@ -147,6 +183,8 @@ function pplus(targetElem, options) {
     });
 
     el.clone[El.NavItems].forEach(elem => observer.observe(elem));
+
+    el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
   }
 
   function on(eventType, cb) {
