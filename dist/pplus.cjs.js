@@ -23,6 +23,7 @@ function eventTarget() {
 }
 var Events;
 (function (Events) {
+    Events["Init"] = "init";
     Events["ShowOverflow"] = "showOverflow";
     Events["HideOverflow"] = "hideOverflow";
     Events["ItemsChanged"] = "itemsChanged";
@@ -38,6 +39,9 @@ function createShowOverflowEvent() {
 }
 function createHideOverflowEvent() {
     return createEvent(Events.HideOverflow);
+}
+function createInitEvent() {
+    return createEvent(Events.Init);
 }
 function createItemsChangedEvent(_a) {
     var overflowCount = _a.overflowCount;
@@ -104,44 +108,44 @@ function pplus(targetElem, options) {
         el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
         container.appendChild(original);
         container.appendChild(cloned);
+        // By default every item belongs in the primary nav, since the intersection
+        // observer will run on-load anyway.
         el.clone[El.NavItems].forEach(function (item) { return itemMap.set(item, El.PrimaryNav); });
         targetElem.parentNode.replaceChild(container, targetElem);
     }
-    // function onIntersect({ target, intersectionRatio }) {
-    //   const targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
-    //   console.log('fired onIntersect');
-    //   if (!targetElem) return;
-    //   // @todo: First time we run this, we are potentially appending continuously
-    //   // instead of batching this up.
-    //   if (intersectionRatio < 1) {
-    //     el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
-    //   } else {
-    //     el.primary[El.PrimaryNav].appendChild(targetElem);
-    //   }
-    // }
     function updateBtnDisplay(show) {
+        if (show === void 0) { show = true; }
         el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
     }
+    function generateNav(navType) {
+        var newNav = el.primary[navType].cloneNode();
+        // Always use the clone as the base for our new nav,
+        // since the order is canonical and it is never filtered.
+        el.clone[El.NavItems]
+            .filter(function (item) { return itemMap.get(item) === navType; })
+            .forEach(function (item) {
+            newNav.appendChild(getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(item));
+        });
+        return newNav;
+    }
+    function updateNav(navType) {
+        var newNav = generateNav(navType);
+        // Replace the existing nav element in the DOM
+        el.primary[navType].parentNode.replaceChild(newNav, el.primary[navType]);
+        // Update our reference to it
+        el.primary[navType] = newNav;
+    }
+    // Updates our references
     function onIntersect(_a) {
         var target = _a.target, intersectionRatio = _a.intersectionRatio;
         itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
     }
     function intersectionCallback(events) {
         events.forEach(onIntersect);
-        [El.PrimaryNav, El.OverflowNav].forEach(generateNav);
+        [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
         eventChannel.dispatchEvent(createItemsChangedEvent({
             overflowCount: el.primary[El.OverflowNav].children.length
         }));
-    }
-    function generateNav(navType) {
-        var newNav = el.primary[navType].cloneNode();
-        el.clone[El.NavItems].forEach(function (item) {
-            if (itemMap.get(item) === navType) {
-                newNav.appendChild(getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(item));
-            }
-        });
-        el.primary[navType].parentNode.replaceChild(newNav, el.primary[navType]);
-        el.primary[navType] = newNav;
     }
     function setOverflowNavOpen(open) {
         if (open === void 0) { open = true; }
@@ -182,7 +186,7 @@ function pplus(targetElem, options) {
     (function init() {
         setupEl();
         bindListeners();
-        eventChannel.dispatchEvent(new CustomEvent('init'));
+        eventChannel.dispatchEvent(createInitEvent());
     }());
     return {
         on: on

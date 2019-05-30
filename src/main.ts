@@ -7,6 +7,8 @@ enum El {
   NavItems = 'nav-item',
 }
 
+type NavType = El.PrimaryNav | El.OverflowNav;
+
 enum StateModifiers {
   ButtonVisible = 'is-showing-toggle',
   OverflowVisible = 'is-showing-overflow',
@@ -21,12 +23,13 @@ function eventTarget() {
 }
 
 enum Events {
+  Init = 'init',
   ShowOverflow = 'showOverflow',
   HideOverflow = 'hideOverflow',
   ItemsChanged = 'itemsChanged',
 }
 
-function createEvent(name, payload = {}) {
+function createEvent(name: Events, payload = {}) {
   return new CustomEvent(name, {
     detail: payload,
   });
@@ -40,7 +43,17 @@ function createHideOverflowEvent() {
   return createEvent(Events.HideOverflow);
 }
 
-function createItemsChangedEvent({ overflowCount }) {
+function createInitEvent() {
+  return createEvent(Events.Init);
+}
+
+type ItemsChangedEvent = {
+  detail: {
+    overflowCount: number
+  },
+};
+
+function createItemsChangedEvent({ overflowCount }: ItemsChangedEvent['detail']) {
   return createEvent(Events.ItemsChanged, { overflowCount });
 }
 
@@ -75,7 +88,7 @@ function pplus(targetElem, options) {
   const getElemMirror = (() => {
     const cache = new Map();
 
-    return function getMirror(keyArr, valueArr) {
+    return function getMirror(keyArr: HTMLElement[], valueArr: HTMLElement[]): Map<HTMLElement, HTMLElement> {
       if (!cache.get(keyArr)) {
         cache.set(
           keyArr,
@@ -89,15 +102,15 @@ function pplus(targetElem, options) {
     };
   })();
 
-  function cn(key: El) {
+  function cn(key: El): string {
     return classNames[key].join(' ');
   }
 
-  function dv(key: El) {
+  function dv(key: El): string {
     return `data-${key}`;
   }
 
-  function createMarkup() {
+  function createMarkup(): string {
     return `
       <div ${dv(El.Wrapper)} class="${cn(El.Wrapper)}">
         <div class="${cn(El.PrimaryNavWrapper)}">
@@ -150,68 +163,64 @@ function pplus(targetElem, options) {
     container.appendChild(original);
     container.appendChild(cloned);
 
+    // By default every item belongs in the primary nav, since the intersection
+    // observer will run on-load anyway.
     el.clone[El.NavItems].forEach(item => itemMap.set(item, El.PrimaryNav));
 
     targetElem.parentNode.replaceChild(container, targetElem);
   }
 
-  // function onIntersect({ target, intersectionRatio }) {
-  //   const targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
-
-  //   console.log('fired onIntersect');
-
-  //   if (!targetElem) return;
-
-  //   // @todo: First time we run this, we are potentially appending continuously
-  //   // instead of batching this up.
-
-  //   if (intersectionRatio < 1) {
-  //     el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
-  //   } else {
-  //     el.primary[El.PrimaryNav].appendChild(targetElem);
-  //   }
-  // }
-
-  function updateBtnDisplay(show) {
+  function updateBtnDisplay(show: Boolean = true) {
     el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](
-      `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`
+      `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`,
     );
   }
 
-  function onIntersect({ target, intersectionRatio }) {
-    itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
-  }
-
-  function intersectionCallback(events) {
-    events.forEach(onIntersect);
-
-    [El.PrimaryNav, El.OverflowNav].forEach(generateNav);
-
-    eventChannel.dispatchEvent(createItemsChangedEvent({
-      overflowCount: el.primary[El.OverflowNav].children.length,
-    }));
-  }
-
-  function generateNav(navType) {
+  function generateNav(navType: NavType): HTMLElement {
     const newNav = el.primary[navType].cloneNode();
 
-    el.clone[El.NavItems].forEach((item) => {
-      if (itemMap.get(item) === navType) {
+    // Always use the clone as the base for our new nav,
+    // since the order is canonical and it is never filtered.
+    el.clone[El.NavItems]
+      .filter(item => itemMap.get(item) === navType)
+      .forEach((item) => {
         newNav.appendChild(
           getElemMirror(
             el.clone[El.NavItems],
             el.primary[El.NavItems]
           ).get(item),
         );
-      }
-    });
+      })
 
+    return newNav
+  }
+
+  function updateNav(navType: NavType) {
+    const newNav = generateNav(navType);
+
+    // Replace the existing nav element in the DOM
     el.primary[navType].parentNode.replaceChild(
       newNav,
       el.primary[navType],
     );
 
+    // Update our reference to it
     el.primary[navType] = newNav;
+  }
+
+  // Updates our references
+  function onIntersect({ target, intersectionRatio }: IntersectionObserverEntry) {
+    itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
+  }
+
+  function intersectionCallback(events: IntersectionObserverEntry[]) {
+    events.forEach(onIntersect);
+
+    [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
+
+    eventChannel.dispatchEvent(createItemsChangedEvent({
+      overflowCount: el.primary[El.OverflowNav].children.length,
+    }));
   }
 
   function setOverflowNavOpen(open = true) {
@@ -230,12 +239,12 @@ function pplus(targetElem, options) {
     setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
   }
 
-  function onToggleClick(e) {
+  function onToggleClick(e: Event) {
     e.preventDefault();
     toggleOverflowNav();
   }
 
-  function onItemsChanged({ detail: { overflowCount } }) {
+  function onItemsChanged({ detail: { overflowCount } }: ItemsChangedEvent) {
     updateBtnDisplay(overflowCount > 0);
 
     if (overflowCount === 0) {
@@ -257,14 +266,14 @@ function pplus(targetElem, options) {
     eventChannel.addEventListener(Events.ItemsChanged, onItemsChanged);
   }
 
-  function on(eventType, cb) {
+  function on(eventType: Events, cb: Function) {
     return eventChannel.addEventListener(eventType, cb);
   }
 
   (function init() {
     setupEl();
     bindListeners();
-    eventChannel.dispatchEvent(new CustomEvent('init'));
+    eventChannel.dispatchEvent(createInitEvent());
   }());
 
   return {
