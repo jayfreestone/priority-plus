@@ -50,6 +50,7 @@
   function pplus(targetElem, options) {
       var _a, _b, _c;
       var eventChannel = eventTarget();
+      var itemMap = new Map();
       var el = {
           primary: (_a = {},
               _a[El.Wrapper] = undefined,
@@ -107,31 +108,44 @@
           el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
           container.appendChild(original);
           container.appendChild(cloned);
+          el.clone[El.NavItems].forEach(function (item) { return itemMap.set(item, El.PrimaryNav); });
           targetElem.parentNode.replaceChild(container, targetElem);
       }
-      function onIntersect(_a) {
-          var target = _a.target, intersectionRatio = _a.intersectionRatio;
-          var targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
-          console.log('fired onIntersect');
-          if (!targetElem)
-              return;
-          // @todo: First time we run this, we are potentially appending continuously
-          // instead of batching this up.
-          if (intersectionRatio < 1) {
-              el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
-          }
-          else {
-              el.primary[El.PrimaryNav].appendChild(targetElem);
-          }
-      }
+      // function onIntersect({ target, intersectionRatio }) {
+      //   const targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
+      //   console.log('fired onIntersect');
+      //   if (!targetElem) return;
+      //   // @todo: First time we run this, we are potentially appending continuously
+      //   // instead of batching this up.
+      //   if (intersectionRatio < 1) {
+      //     el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
+      //   } else {
+      //     el.primary[El.PrimaryNav].appendChild(targetElem);
+      //   }
+      // }
       function updateBtnDisplay(show) {
           el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
       }
-      function intersectionCallback(e) {
-          e.forEach(onIntersect);
+      function onIntersect(_a) {
+          var target = _a.target, intersectionRatio = _a.intersectionRatio;
+          itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
+      }
+      function intersectionCallback(events) {
+          events.forEach(onIntersect);
+          [El.PrimaryNav, El.OverflowNav].forEach(generateNav);
           eventChannel.dispatchEvent(createItemsChangedEvent({
               overflowCount: el.primary[El.OverflowNav].children.length
           }));
+      }
+      function generateNav(navType) {
+          var newNav = el.primary[navType].cloneNode();
+          el.clone[El.NavItems].forEach(function (item) {
+              if (itemMap.get(item) === navType) {
+                  newNav.appendChild(getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(item));
+              }
+          });
+          el.primary[navType].parentNode.replaceChild(newNav, el.primary[navType]);
+          el.primary[navType] = newNav;
       }
       function setOverflowNavOpen(open) {
           if (open === void 0) { open = true; }
