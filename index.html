@@ -86,6 +86,10 @@
   </style>
   <script>
     const inst = pplus(document.querySelector('.js-p-target'));
+    inst.on('itemsChanged', ({ detail: { overflowCount } }) => {
+      console.log('We now have this many items in the overflow: ', overflowCount);
+    });
+  /**
 
     inst.on('init', () => {
       console.log('We init-ed!');
@@ -109,7 +113,7 @@
 
     inst.on('hideOverflow', (e) => {
       console.log('We are hiding overflow.');
-    });
+    }); */
 
     // console.log(inst);
   </script>

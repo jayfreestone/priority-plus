@@ -104,6 +104,7 @@
           el.clone[El.ToggleBtn] = cloned.querySelector("[" + dv(El.ToggleBtn) + "]");
           el.clone[El.Wrapper].setAttribute('aria-hidden', true);
           el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--clone");
+          el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
           container.appendChild(original);
           container.appendChild(cloned);
           targetElem.parentNode.replaceChild(container, targetElem);
@@ -114,23 +115,18 @@
           var navToPopulate = intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav;
           if (!targetElem)
               return;
-          targetElem.remove();
           // @todo: First time we run this, we are potentially appending continuously
           // instead of batching this up.
-          console.log('Running append for ', targetElem);
           el.primary[navToPopulate].appendChild(targetElem);
-          eventChannel.dispatchEvent(createItemsChangedEvent({
-              overflowCount: el.primary[El.OverflowNav].children.length
-          }));
       }
       function updateBtnDisplay(show) {
-          [el.primary[El.Wrapper], el.clone[El.Wrapper]].forEach(function (wrapper) {
-              wrapper.classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
-          });
+          el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
       }
       function intersectionCallback(e) {
           e.forEach(onIntersect);
-          eventChannel.dispatchEvent(new CustomEvent('intersect'));
+          eventChannel.dispatchEvent(createItemsChangedEvent({
+              overflowCount: el.primary[El.OverflowNav].children.length
+          }));
       }
       function setOverflowNavOpen(open) {
           if (open === void 0) { open = true; }
@@ -177,6 +173,7 @@
           on: on
       };
   }
+  //# sourceMappingURL=main.js.map
 
   return pplus;
 

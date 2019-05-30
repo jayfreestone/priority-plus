@@ -338,3 +338,9 @@ textarea {
   pointer-events: none;
   visibility: hidden;
 }
+
+
+.p-plus__toggle-btn {
+  min-width: 10rem;
+  flex-shrink: 0;
+}
