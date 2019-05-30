@@ -112,12 +112,17 @@
       function onIntersect(_a) {
           var target = _a.target, intersectionRatio = _a.intersectionRatio;
           var targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
-          var navToPopulate = intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav;
+          console.log('fired onIntersect');
           if (!targetElem)
               return;
           // @todo: First time we run this, we are potentially appending continuously
           // instead of batching this up.
-          el.primary[navToPopulate].appendChild(targetElem);
+          if (intersectionRatio < 1) {
+              el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
+          }
+          else {
+              el.primary[El.PrimaryNav].appendChild(targetElem);
+          }
       }
       function updateBtnDisplay(show) {
           el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
@@ -155,7 +160,7 @@
           var observer = new IntersectionObserver(intersectionCallback, {
               root: el.clone[El.Wrapper],
               rootMargin: '0px 0px 0px 0px',
-              threshold: [0, 1]
+              threshold: [1]
           });
           el.clone[El.NavItems].forEach(function (elem) { return observer.observe(elem); });
           el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);

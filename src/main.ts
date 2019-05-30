@@ -153,13 +153,19 @@ function pplus(targetElem, options) {
 
   function onIntersect({ target, intersectionRatio }) {
     const targetElem = getElemMirror(el.clone[El.NavItems], el.primary[El.NavItems]).get(target);
-    const navToPopulate = intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav;
+
+    console.log('fired onIntersect');
 
     if (!targetElem) return;
 
     // @todo: First time we run this, we are potentially appending continuously
     // instead of batching this up.
-    el.primary[navToPopulate].appendChild(targetElem);
+
+    if (intersectionRatio < 1) {
+      el.primary[El.OverflowNav].insertBefore(targetElem, el.primary[El.OverflowNav].firstElementChild);
+    } else {
+      el.primary[El.PrimaryNav].appendChild(targetElem);
+    }
   }
 
   function updateBtnDisplay(show) {
@@ -209,7 +215,7 @@ function pplus(targetElem, options) {
     const observer = new IntersectionObserver(intersectionCallback, {
       root: el.clone[El.Wrapper],
       rootMargin: '0px 0px 0px 0px',
-      threshold: [0, 1],
+      threshold: [1],
     });
 
     el.clone[El.NavItems].forEach(elem => observer.observe(elem));
