@@ -20,6 +20,30 @@ function eventTarget() {
   };
 }
 
+enum Events {
+  ShowOverflow = 'showOverflow',
+  HideOverflow = 'hideOverflow',
+  ItemsChanged = 'itemsChanged',
+}
+
+function createEvent(name, payload = {}) {
+  return new CustomEvent(name, {
+    detail: payload,
+  });
+}
+
+function createShowOverflowEvent() {
+  return createEvent(Events.ShowOverflow);
+}
+
+function createHideOverflowEvent() {
+  return createEvent(Events.HideOverflow);
+}
+
+function createItemsChangedEvent({ overflowCount }) {
+  return createEvent(Events.ItemsChanged, { overflowCount });
+}
+
 function pplus(targetElem, options) {
   const eventChannel = eventTarget();
 
@@ -44,10 +68,6 @@ function pplus(targetElem, options) {
     [El.PrimaryNav]: ['p-plus__primary'],
     [El.OverflowNav]: ['p-plus__overflow'],
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
-  };
-
-  const stateClassNames = {
-
   };
 
   const getElemMirror = (() => {
@@ -96,6 +116,7 @@ function pplus(targetElem, options) {
         <${targetElem.tagName}
           ${dv(El.OverflowNav)}
           class="${cn(El.OverflowNav)}"
+          aria-hidden="true"
         >
         </${targetElem.tagName}>
       <div>
@@ -135,18 +156,17 @@ function pplus(targetElem, options) {
     if (!targetElem) return;
 
     targetElem.remove();
+    // @todo: First time we run this, we are potentially appending continuously
+    // instead of batching this up.
+    console.log('Running append for ', targetElem);
     el.primary[navToPopulate].appendChild(targetElem);
 
-    updateBtnDisplay();
-
-    if (el.primary[El.OverflowNav].children.length === 0) {
-      setOverflowNavOpen(false);
-    }
+    eventChannel.dispatchEvent(createItemsChangedEvent({
+      overflowCount: el.primary[El.OverflowNav].children.length,
+    }));
   }
 
-  function updateBtnDisplay() {
-    const show = el.primary[El.OverflowNav].children.length > 0;
-
+  function updateBtnDisplay(show) {
     [el.primary[El.Wrapper], el.clone[El.Wrapper]].forEach((wrapper) => {
       wrapper.classList[show ? 'add' : 'remove'](
         `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`
@@ -162,7 +182,12 @@ function pplus(targetElem, options) {
   function setOverflowNavOpen(open = true) {
     const openClass = `${classNames[El.Wrapper]}--${StateModifiers.OverflowVisible}`;
     el.primary[El.Wrapper].classList[open ? 'add' : 'remove'](openClass);
+    el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
     el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    eventChannel.dispatchEvent(
+      open ? createShowOverflowEvent() : createHideOverflowEvent(),
+    );
   }
 
   function toggleOverflowNav() {
@@ -175,6 +200,14 @@ function pplus(targetElem, options) {
     toggleOverflowNav();
   }
 
+  function onItemsChanged({ detail: { overflowCount } }) {
+    updateBtnDisplay(overflowCount > 0);
+
+    if (overflowCount === 0) {
+      setOverflowNavOpen(false);
+    }
+  }
+
   function bindListeners() {
     const observer = new IntersectionObserver(intersectionCallback, {
       root: el.clone[El.Wrapper],
@@ -185,6 +218,8 @@ function pplus(targetElem, options) {
     el.clone[El.NavItems].forEach(elem => observer.observe(elem));
 
     el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
+
+    eventChannel.addEventListener(Events.ItemsChanged, onItemsChanged);
   }
 
   function on(eventType, cb) {

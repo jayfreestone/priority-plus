@@ -95,6 +95,22 @@
       console.log('We intersected', detail);
     });
 
+    inst.on('open', ({ detail }) => {
+      console.log('We opened', detail);
+    });
+
+    inst.on('itemsChanged', ({ detail: { overflowCount } }) => {
+      console.log('We now have this many items in the overflow: ', overflowCount);
+    });
+
+    inst.on('showOverflow', (e) => {
+      console.log('We are showing overflow.');
+    });
+
+    inst.on('hideOverflow', (e) => {
+      console.log('We are hiding overflow.');
+    });
+
     // console.log(inst);
   </script>
 
