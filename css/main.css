@@ -307,6 +307,14 @@ textarea {
   display: none;
 }
 
+.p-plus--is-hiding-primary .p-plus__toggle-btn {
+  flex-grow: 1;
+}
+
+.p-plus--is-hiding-primary .p-plus__primary-wrapper {
+  display: none;
+}
+
 .p-plus__primary-wrapper {
   display: flex;
   flex-grow: 1;
@@ -341,6 +349,5 @@ textarea {
 
 
 .p-plus__toggle-btn {
-  min-width: 10rem;
   flex-shrink: 0;
 }

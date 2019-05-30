@@ -17,6 +17,7 @@
   (function (StateModifiers) {
       StateModifiers["ButtonVisible"] = "is-showing-toggle";
       StateModifiers["OverflowVisible"] = "is-showing-overflow";
+      StateModifiers["PrimaryHidden"] = "is-hiding-primary";
   })(StateModifiers || (StateModifiers = {}));
   function eventTarget() {
       var port1 = new MessageChannel().port1;
@@ -163,6 +164,12 @@
           var openClass = classNames[El.Wrapper] + "--" + StateModifiers.OverflowVisible;
           setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
       }
+      function setPrimaryHidden(hidden) {
+          if (hidden === void 0) { hidden = true; }
+          var hiddenClass = classNames[El.Wrapper] + "--" + StateModifiers.PrimaryHidden;
+          el.primary[El.Wrapper].classList[hidden ? 'add' : 'remove'](hiddenClass);
+          el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
+      }
       function onToggleClick(e) {
           e.preventDefault();
           toggleOverflowNav();
@@ -173,6 +180,7 @@
           if (overflowCount === 0) {
               setOverflowNavOpen(false);
           }
+          setPrimaryHidden(overflowCount === el.clone[El.NavItems].length);
       }
       function bindListeners() {
           var observer = new IntersectionObserver(intersectionCallback, {

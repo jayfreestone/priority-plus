@@ -12,6 +12,7 @@ type NavType = El.PrimaryNav | El.OverflowNav;
 enum StateModifiers {
   ButtonVisible = 'is-showing-toggle',
   OverflowVisible = 'is-showing-overflow',
+  PrimaryHidden = 'is-hiding-primary',
 }
 
 function eventTarget() {
@@ -239,6 +240,12 @@ function pplus(targetElem, options) {
     setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
   }
 
+  function setPrimaryHidden(hidden = true) {
+    const hiddenClass = `${classNames[El.Wrapper]}--${StateModifiers.PrimaryHidden}`;
+    el.primary[El.Wrapper].classList[hidden ? 'add' : 'remove'](hiddenClass);
+    el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
+  }
+
   function onToggleClick(e: Event) {
     e.preventDefault();
     toggleOverflowNav();
@@ -250,6 +257,8 @@ function pplus(targetElem, options) {
     if (overflowCount === 0) {
       setOverflowNavOpen(false);
     }
+
+    setPrimaryHidden(overflowCount === el.clone[El.NavItems].length);
   }
 
   function bindListeners() {

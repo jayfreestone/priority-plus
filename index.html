@@ -55,6 +55,10 @@
   <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.3.1.min.js"><\/script>')</script>
   <script src="dist/pplus.umd.js"></script>
   <style>
+    .p-plus--is-showing-overflow.p-plus--is-hiding-primary .p-plus__overflow {
+      left: 0;
+    }
+
     .p-plus__primary > li a {
       display: block;
       padding: 1em 2em;
@@ -74,14 +78,16 @@
       border-left: 1px solid #fff;
     }
 
-    .p-plus__toggle {
-      padding: 0.5em 1em;
+    .p-plus__toggle-btn {
+      padding: 1em;
+      min-width: 6rem;
     }
 
     .p-plus__overflow {
       background: blue;
       padding: 2rem;
       margin: 0;
+      min-width: 10em;
     }
   </style>
   <script>
