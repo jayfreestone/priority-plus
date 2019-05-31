@@ -208,7 +208,6 @@
           on: on
       };
   }
-  //# sourceMappingURL=pplus.js.map
 
   return pplus;
 

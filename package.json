@@ -8,8 +8,8 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "node test/test.js",
-    "pretest": "npm run build"
+    "test": "mocha -r ts-node/register src/**/*.spec.ts",
+    "test:watch": "npm run test -- --watch  --watch-extensions ts"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,14 @@
     "rollup": "^1.6.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript": "^1.0.0",
+    "ts-node": "^8.2.0",
     "tslib": "^1.9.3",
     "typescript": "^3.3.3333"
   }
