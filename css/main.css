@@ -1,8 +1,3 @@
-.container {
-  max-width: 80em;
-  margin: 0 auto;
-}
-
 .p-plus-container {
   position: relative;
 }
@@ -20,6 +15,10 @@
   width: 100%;
   pointer-events: none;
   visibility: hidden;
+}
+
+.p-plus--clone .p-plus__primary-wrapper {
+  overflow: hidden;
 }
 
 .p-plus--is-showing-overflow .p-plus__overflow {
@@ -43,7 +42,6 @@
 .p-plus__primary-wrapper {
   display: flex;
   flex-grow: 1;
-  overflow: hidden;
 }
 
 .p-plus__primary {
@@ -56,9 +54,6 @@
 
 .p-plus__primary > li {
   flex: 1 0 auto;
-  /* padding: 1em 2em;
-  min-width: 6em;
-  text-align: center; */
 }
 
 .p-plus__overflow {
