@@ -17,6 +17,7 @@
   visibility: hidden;
 }
 
+.p-plus--clone,
 .p-plus--clone .p-plus__primary-wrapper {
   overflow: hidden;
 }
