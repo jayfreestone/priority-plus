@@ -25,7 +25,7 @@ enum StateModifiers {
   PrimaryHidden = 'is-hiding-primary',
 }
 
-function pplus(targetElem, options) {
+function pplus(targetElem: HTMLElement, options?: Object) {
   const eventChannel = eventTarget();
 
   const itemMap = new Map();

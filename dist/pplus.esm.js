@@ -202,5 +202,6 @@ function pplus(targetElem, options) {
         on: on
     };
 }
+//# sourceMappingURL=pplus.js.map
 
 export default pplus;

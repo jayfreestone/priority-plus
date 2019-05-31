@@ -8,8 +8,8 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "mocha -r ts-node/register src/**/*.spec.ts",
-    "test:watch": "npm run test -- --watch  --watch-extensions ts"
+    "test": "mocha src/**/*.spec.js",
+    "test:watch": "npm run test -- --watch"
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,9 @@
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
+    "fs": "0.0.1-security",
     "mocha": "^6.1.4",
+    "puppeteer": "^1.17.0",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript": "^1.0.0",
