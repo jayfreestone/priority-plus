@@ -15,9 +15,6 @@
   width: 100%;
   pointer-events: none;
   visibility: hidden;
-}
-
-.p-plus--clone .p-plus__primary-wrapper {
   overflow: hidden;
 }
 
