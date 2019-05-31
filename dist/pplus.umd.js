@@ -4,21 +4,6 @@
   (global = global || self, global.pplus = factory());
 }(this, function () { 'use strict';
 
-  var El;
-  (function (El) {
-      El["Wrapper"] = "wrapper";
-      El["PrimaryNavWrapper"] = "primary-nav-wrapper";
-      El["PrimaryNav"] = "primary-nav";
-      El["OverflowNav"] = "overflow-nav";
-      El["ToggleBtn"] = "toggle-btn";
-      El["NavItems"] = "nav-item";
-  })(El || (El = {}));
-  var StateModifiers;
-  (function (StateModifiers) {
-      StateModifiers["ButtonVisible"] = "is-showing-toggle";
-      StateModifiers["OverflowVisible"] = "is-showing-overflow";
-      StateModifiers["PrimaryHidden"] = "is-hiding-primary";
-  })(StateModifiers || (StateModifiers = {}));
   function eventTarget() {
       var port1 = new MessageChannel().port1;
       return {
@@ -26,6 +11,8 @@
           addEventListener: port1.addEventListener.bind(port1)
       };
   }
+  //# sourceMappingURL=eventTarget.js.map
+
   var Events;
   (function (Events) {
       Events["Init"] = "init";
@@ -52,6 +39,23 @@
       var overflowCount = _a.overflowCount;
       return createEvent(Events.ItemsChanged, { overflowCount: overflowCount });
   }
+  //# sourceMappingURL=createEvent.js.map
+
+  var El;
+  (function (El) {
+      El["Wrapper"] = "wrapper";
+      El["PrimaryNavWrapper"] = "primary-nav-wrapper";
+      El["PrimaryNav"] = "primary-nav";
+      El["OverflowNav"] = "overflow-nav";
+      El["ToggleBtn"] = "toggle-btn";
+      El["NavItems"] = "nav-item";
+  })(El || (El = {}));
+  var StateModifiers;
+  (function (StateModifiers) {
+      StateModifiers["ButtonVisible"] = "is-showing-toggle";
+      StateModifiers["OverflowVisible"] = "is-showing-overflow";
+      StateModifiers["PrimaryHidden"] = "is-hiding-primary";
+  })(StateModifiers || (StateModifiers = {}));
   function pplus(targetElem, options) {
       var _a, _b, _c;
       var eventChannel = eventTarget();
@@ -204,7 +208,7 @@
           on: on
       };
   }
-  //# sourceMappingURL=main.js.map
+  //# sourceMappingURL=pplus.js.map
 
   return pplus;
 

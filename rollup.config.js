@@ -6,7 +6,7 @@ import pkg from './package.json';
 export default [
   // browser-friendly UMD build
   {
-    input: 'src/main.ts',
+    input: 'src/pplus.ts',
     output: {
       name: 'pplus',
       file: pkg.browser,
@@ -26,7 +26,7 @@ export default [
   // an array for the `output` option, where we can specify
   // `file` and `format` for each target)
   {
-    input: 'src/main.ts',
+    input: 'src/pplus.ts',
     external: ['ms'],
     output: [
       { file: pkg.main, format: 'cjs' },

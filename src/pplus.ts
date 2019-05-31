@@ -1,3 +1,13 @@
+import eventTarget from './events/eventTarget';
+import {
+  Events,
+  ItemsChangedEvent,
+  createInitEvent,
+  createHideOverflowEvent,
+  createShowOverflowEvent,
+  createItemsChangedEvent,
+} from './events/createEvent';
+
 enum El {
   Wrapper = 'wrapper',
   PrimaryNavWrapper = 'primary-nav-wrapper',
@@ -13,49 +23,6 @@ enum StateModifiers {
   ButtonVisible = 'is-showing-toggle',
   OverflowVisible = 'is-showing-overflow',
   PrimaryHidden = 'is-hiding-primary',
-}
-
-function eventTarget() {
-  const { port1 } = new MessageChannel();
-  return {
-    dispatchEvent: port1.dispatchEvent.bind(port1),
-    addEventListener: port1.addEventListener.bind(port1),
-  };
-}
-
-enum Events {
-  Init = 'init',
-  ShowOverflow = 'showOverflow',
-  HideOverflow = 'hideOverflow',
-  ItemsChanged = 'itemsChanged',
-}
-
-function createEvent(name: Events, payload = {}) {
-  return new CustomEvent(name, {
-    detail: payload,
-  });
-}
-
-function createShowOverflowEvent() {
-  return createEvent(Events.ShowOverflow);
-}
-
-function createHideOverflowEvent() {
-  return createEvent(Events.HideOverflow);
-}
-
-function createInitEvent() {
-  return createEvent(Events.Init);
-}
-
-type ItemsChangedEvent = {
-  detail: {
-    overflowCount: number
-  },
-};
-
-function createItemsChangedEvent({ overflowCount }: ItemsChangedEvent['detail']) {
-  return createEvent(Events.ItemsChanged, { overflowCount });
 }
 
 function pplus(targetElem, options) {
