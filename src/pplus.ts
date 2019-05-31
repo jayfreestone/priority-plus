@@ -26,12 +26,23 @@ enum StateModifiers {
   PrimaryHidden = 'is-hiding-primary',
 }
 
-function pplus(targetElem: HTMLElement, userOptions?: Object) {
+interface Options {
+  innerToggleTemplate?: string|Function;
+  classNames?: {
+    [El.Wrapper]: string[],
+    [El.PrimaryNavWrapper]: string[],
+    [El.PrimaryNav]: string[],
+    [El.OverflowNav]: string[],
+    [El.ToggleBtn]: string[],
+  },
+}
+
+function pplus(targetElem: HTMLElement, userOptions?: Options) {
   const eventChannel = eventTarget();
 
   const itemMap = new Map();
 
-  const defaultOptions = {
+  const defaultOptions: Options = {
     innerToggleTemplate: 'More',
     classNames: {
       [El.Wrapper]: ['p-plus'],
@@ -42,7 +53,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Object) {
     },
   };
 
-  const options = deepmerge(
+  const options: Options = deepmerge(
     defaultOptions,
     userOptions,
     { arrayMerge: (_, source) => source },
