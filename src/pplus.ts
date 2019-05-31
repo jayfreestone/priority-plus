@@ -140,7 +140,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   function setupEl() {
     const markup = createMarkup();
     const container = document.createElement('div');
-    container.classList.add(classNames[El.Container]);
+    container.classList.add(...classNames[El.Container]);
 
     const original = document.createRange().createContextualFragment(markup);
     const cloned = <Element>original.cloneNode(true);
