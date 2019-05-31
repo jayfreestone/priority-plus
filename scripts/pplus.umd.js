@@ -13,6 +13,117 @@
   }
   //# sourceMappingURL=eventTarget.js.map
 
+  var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+  function createCommonjsModule(fn, module) {
+  	return module = { exports: {} }, fn(module, module.exports), module.exports;
+  }
+
+  var umd = createCommonjsModule(function (module, exports) {
+  (function (global, factory) {
+  	module.exports = factory();
+  }(commonjsGlobal, (function () {
+  var isMergeableObject = function isMergeableObject(value) {
+  	return isNonNullObject(value)
+  		&& !isSpecial(value)
+  };
+
+  function isNonNullObject(value) {
+  	return !!value && typeof value === 'object'
+  }
+
+  function isSpecial(value) {
+  	var stringValue = Object.prototype.toString.call(value);
+
+  	return stringValue === '[object RegExp]'
+  		|| stringValue === '[object Date]'
+  		|| isReactElement(value)
+  }
+
+  // see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
+  var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
+  var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
+
+  function isReactElement(value) {
+  	return value.$$typeof === REACT_ELEMENT_TYPE
+  }
+
+  function emptyTarget(val) {
+  	return Array.isArray(val) ? [] : {}
+  }
+
+  function cloneUnlessOtherwiseSpecified(value, options) {
+  	return (options.clone !== false && options.isMergeableObject(value))
+  		? deepmerge(emptyTarget(value), value, options)
+  		: value
+  }
+
+  function defaultArrayMerge(target, source, options) {
+  	return target.concat(source).map(function(element) {
+  		return cloneUnlessOtherwiseSpecified(element, options)
+  	})
+  }
+
+  function getMergeFunction(key, options) {
+  	if (!options.customMerge) {
+  		return deepmerge
+  	}
+  	var customMerge = options.customMerge(key);
+  	return typeof customMerge === 'function' ? customMerge : deepmerge
+  }
+
+  function mergeObject(target, source, options) {
+  	var destination = {};
+  	if (options.isMergeableObject(target)) {
+  		Object.keys(target).forEach(function(key) {
+  			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+  		});
+  	}
+  	Object.keys(source).forEach(function(key) {
+  		if (!options.isMergeableObject(source[key]) || !target[key]) {
+  			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
+  		} else {
+  			destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
+  		}
+  	});
+  	return destination
+  }
+
+  function deepmerge(target, source, options) {
+  	options = options || {};
+  	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
+  	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
+
+  	var sourceIsArray = Array.isArray(source);
+  	var targetIsArray = Array.isArray(target);
+  	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
+
+  	if (!sourceAndTargetTypesMatch) {
+  		return cloneUnlessOtherwiseSpecified(source, options)
+  	} else if (sourceIsArray) {
+  		return options.arrayMerge(target, source, options)
+  	} else {
+  		return mergeObject(target, source, options)
+  	}
+  }
+
+  deepmerge.all = function deepmergeAll(array, options) {
+  	if (!Array.isArray(array)) {
+  		throw new Error('first argument should be an array')
+  	}
+
+  	return array.reduce(function(prev, next) {
+  		return deepmerge(prev, next, options)
+  	}, {})
+  };
+
+  var deepmerge_1 = deepmerge;
+
+  return deepmerge_1;
+
+  })));
+  });
+
   var Events;
   (function (Events) {
       Events["Init"] = "init";
@@ -43,7 +154,8 @@
 
   var El;
   (function (El) {
-      El["Wrapper"] = "wrapper";
+      El["Container"] = "container";
+      El["Main"] = "main";
       El["PrimaryNavWrapper"] = "primary-nav-wrapper";
       El["PrimaryNav"] = "primary-nav";
       El["OverflowNav"] = "overflow-nav";
@@ -56,31 +168,37 @@
       StateModifiers["OverflowVisible"] = "is-showing-overflow";
       StateModifiers["PrimaryHidden"] = "is-hiding-primary";
   })(StateModifiers || (StateModifiers = {}));
-  function pplus(targetElem, options) {
+  function pplus(targetElem, userOptions) {
       var _a, _b, _c;
       var eventChannel = eventTarget();
       var itemMap = new Map();
-      var el = {
-          primary: (_a = {},
-              _a[El.Wrapper] = undefined,
-              _a[El.PrimaryNav] = undefined,
-              _a[El.NavItems] = undefined,
-              _a[El.OverflowNav] = undefined,
-              _a[El.ToggleBtn] = undefined,
-              _a),
-          clone: (_b = {},
-              _b[El.Wrapper] = undefined,
-              _b[El.NavItems] = undefined,
-              _b[El.ToggleBtn] = undefined,
-              _b)
+      var defaultOptions = {
+          innerToggleTemplate: 'More',
+          classNames: (_a = {},
+              _a[El.Container] = ['p-plus-container'],
+              _a[El.Main] = ['p-plus'],
+              _a[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
+              _a[El.PrimaryNav] = ['p-plus__primary'],
+              _a[El.OverflowNav] = ['p-plus__overflow'],
+              _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
+              _a)
       };
-      var classNames = (_c = {},
-          _c[El.Wrapper] = ['p-plus'],
-          _c[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
-          _c[El.PrimaryNav] = ['p-plus__primary'],
-          _c[El.OverflowNav] = ['p-plus__overflow'],
-          _c[El.ToggleBtn] = ['p-plus__toggle-btn'],
-          _c);
+      var options = umd(defaultOptions, userOptions, { arrayMerge: function (_, source) { return source; } });
+      var classNames = options.classNames;
+      var el = {
+          primary: (_b = {},
+              _b[El.Main] = undefined,
+              _b[El.PrimaryNav] = undefined,
+              _b[El.NavItems] = undefined,
+              _b[El.OverflowNav] = undefined,
+              _b[El.ToggleBtn] = undefined,
+              _b),
+          clone: (_c = {},
+              _c[El.Main] = undefined,
+              _c[El.NavItems] = undefined,
+              _c[El.ToggleBtn] = undefined,
+              _c)
+      };
       var getElemMirror = (function () {
           var cache = new Map();
           return function getMirror(keyArr, valueArr) {
@@ -90,6 +208,12 @@
               return cache.get(keyArr);
           };
       })();
+      function processTemplate(input, args) {
+          if (args === void 0) { args = {}; }
+          if (typeof input === 'string')
+              return input;
+          return input(args);
+      }
       function cn(key) {
           return classNames[key].join(' ');
       }
@@ -97,24 +221,25 @@
           return "data-" + key;
       }
       function createMarkup() {
-          return "\n      <div " + dv(El.Wrapper) + " class=\"" + cn(El.Wrapper) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >More</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      <div>\n    ";
+          return "\n      <div " + dv(El.Main) + " class=\"" + cn(El.Main) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >" + processTemplate(options.innerToggleTemplate) + "</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      </div>\n    ";
       }
       function setupEl() {
           var markup = createMarkup();
-          var container = document.createDocumentFragment();
+          var container = document.createElement('div');
+          container.classList.add(classNames[El.Container]);
           var original = document.createRange().createContextualFragment(markup);
           var cloned = original.cloneNode(true);
-          el.primary[El.Wrapper] = original.querySelector("[" + dv(El.Wrapper) + "]");
+          el.primary[El.Main] = original.querySelector("[" + dv(El.Main) + "]");
           el.primary[El.PrimaryNav] = original.querySelector("[" + dv(El.PrimaryNav) + "]");
           el.primary[El.NavItems] = original.querySelectorAll("[" + dv(El.NavItems) + "]");
           el.primary[El.OverflowNav] = original.querySelector("[" + dv(El.OverflowNav) + "]");
           el.primary[El.ToggleBtn] = original.querySelector("[" + dv(El.ToggleBtn) + "]");
-          el.clone[El.Wrapper] = cloned.querySelector("[" + dv(El.Wrapper) + "]");
+          el.clone[El.Main] = cloned.querySelector("[" + dv(El.Main) + "]");
           el.clone[El.NavItems] = Array.from(cloned.querySelectorAll("[" + dv(El.NavItems) + "]"));
           el.clone[El.ToggleBtn] = cloned.querySelector("[" + dv(El.ToggleBtn) + "]");
-          el.clone[El.Wrapper].setAttribute('aria-hidden', true);
-          el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--clone");
-          el.clone[El.Wrapper].classList.add(classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
+          el.clone[El.Main].setAttribute('aria-hidden', true);
+          el.clone[El.Main].classList.add(classNames[El.Main] + "--clone");
+          el.clone[El.Main].classList.add(classNames[El.Main] + "--" + StateModifiers.ButtonVisible);
           container.appendChild(original);
           container.appendChild(cloned);
           // By default every item belongs in the primary nav, since the intersection
@@ -124,7 +249,16 @@
       }
       function updateBtnDisplay(show) {
           if (show === void 0) { show = true; }
-          el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
+          el.primary[El.Main].classList[show ? 'add' : 'remove'](classNames[El.Main] + "--" + StateModifiers.ButtonVisible);
+          if (typeof options.innerToggleTemplate !== 'string') {
+              // We need to do it for both, as layout is affected
+              [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach(function (btn) {
+                  btn.innerHTML = processTemplate(options.innerToggleTemplate, {
+                      toggleCount: el.primary[El.OverflowNav].children.length,
+                      totalCount: el.clone[El.NavItems].length
+                  });
+              });
+          }
       }
       function generateNav(navType) {
           var newNav = el.primary[navType].cloneNode();
@@ -158,20 +292,20 @@
       }
       function setOverflowNavOpen(open) {
           if (open === void 0) { open = true; }
-          var openClass = classNames[El.Wrapper] + "--" + StateModifiers.OverflowVisible;
-          el.primary[El.Wrapper].classList[open ? 'add' : 'remove'](openClass);
+          var openClass = classNames[El.Main] + "--" + StateModifiers.OverflowVisible;
+          el.primary[El.Main].classList[open ? 'add' : 'remove'](openClass);
           el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
           el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
           eventChannel.dispatchEvent(open ? createShowOverflowEvent() : createHideOverflowEvent());
       }
       function toggleOverflowNav() {
-          var openClass = classNames[El.Wrapper] + "--" + StateModifiers.OverflowVisible;
-          setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
+          var openClass = classNames[El.Main] + "--" + StateModifiers.OverflowVisible;
+          setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
       }
       function setPrimaryHidden(hidden) {
           if (hidden === void 0) { hidden = true; }
-          var hiddenClass = classNames[El.Wrapper] + "--" + StateModifiers.PrimaryHidden;
-          el.primary[El.Wrapper].classList[hidden ? 'add' : 'remove'](hiddenClass);
+          var hiddenClass = classNames[El.Main] + "--" + StateModifiers.PrimaryHidden;
+          el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
           el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
       }
       function onToggleClick(e) {
@@ -188,7 +322,7 @@
       }
       function bindListeners() {
           var observer = new IntersectionObserver(intersectionCallback, {
-              root: el.clone[El.Wrapper],
+              root: el.clone[El.Main],
               rootMargin: '0px 0px 0px 0px',
               threshold: [1]
           });

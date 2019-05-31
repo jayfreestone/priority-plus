@@ -1,5 +1,10 @@
 Array.from(document.querySelectorAll('.js-p-target')).forEach((target) => {
-  pplus(target);
+  pplus(target, {
+    innerToggleTemplate: ({ totalCount, toggleCount }) =>
+      toggleCount === totalCount
+        ? 'Menu'
+        : `<span aria-label="More">+ (${toggleCount})</span>`,
+  });
 });
 
 function resizeable(elem) {

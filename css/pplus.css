@@ -1,3 +1,7 @@
+.p-plus-container {
+  position: relative;
+}
+
 .p-plus {
   display: flex;
   position: relative;
@@ -5,9 +9,16 @@
 }
 
 .p-plus--clone {
-  /* margin-top: -100%; */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   pointer-events: none;
   visibility: hidden;
+}
+
+.p-plus--clone .p-plus__primary-wrapper {
+  overflow: hidden;
 }
 
 .p-plus--is-showing-overflow .p-plus__overflow {
@@ -20,21 +31,17 @@
   display: none;
 }
 
-.p-plus--is-hiding-primary .p-plus__primary-wrapper {
-  display: none;
-}
-
 .p-plus--is-hiding-primary .p-plus__toggle-btn {
   flex-grow: 1;
+}
+
+.p-plus--is-hiding-primary .p-plus__primary-wrapper {
+  display: none;
 }
 
 .p-plus__primary-wrapper {
   display: flex;
   flex-grow: 1;
-}
-
-.p-plus--clone .p-plus__primary-wrapper {
-  overflow: hidden;
 }
 
 .p-plus__primary {

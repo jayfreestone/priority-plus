@@ -1,54 +1,14 @@
-.p-plus {
-  box-shadow: 0 13px 27px -5px rgba(50,50,93,.25), 0 8px 16px -8px rgba(0,0,0,.3), 0 -6px 16px -6px rgba(0,0,0,.025);
+:root {
+  --t-hl: #4263eb;
 }
 
-.p-plus--is-showing-overflow.p-plus--is-hiding-primary .p-plus__overflow {
-  left: 0;
+:focus {
+  outline: 4px solid #e67700;
 }
 
-.p-plus__primary li:not(:first-child)::before {
-  content: '';
-  height: 1rem;
-  width: 1px;
-  display: block;
-  background-color: #fff;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.p-plus__primary > li a {
-  display: block;
-  padding: 1.5em 1em;
-  min-width: 6em;
-  text-align: center;
-}
-
-/* .p-plus__primary > li a:focus {
-  outline: none;
-  box-shadow: inset 5px solid #fff;
-} */
-
-.p-plus__primary {
-  background-color: #212529;
-}
-
-.p-plus a {
+::selection {
   color: #fff;
-  text-decoration: none;
-}
-
-.p-plus__toggle-btn {
-  padding: 1em;
-  min-width: 6rem;
-  border-left: 1px solid #fff;
-}
-
-.p-plus__overflow {
-  background: #364fc7;
-  padding: 2rem;
-  margin: 1px 0 0;
-  min-width: 10em;
+  background: var(--t-hl);
 }
 
 body {
@@ -83,11 +43,50 @@ textarea {
   margin-right: auto;
 }
 
+.p-plus {
+  box-shadow: 0 13px 27px -5px rgba(50,50,93,.25), 0 8px 16px -8px rgba(0,0,0,.3), 0 -6px 16px -6px rgba(0,0,0,.025);
+}
+
+.p-plus--is-showing-overflow.p-plus--is-hiding-primary .p-plus__overflow {
+  left: 0;
+}
 
 .p-plus__primary {
   background-color: #4263eb;
 }
 
-:focus {
-  outline: 4px solid #e67700;
+.p-plus__primary li:not(:first-child)::before {
+  content: '';
+  height: 1rem;
+  width: 1px;
+  display: block;
+  background-color: #fff;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.p-plus__primary > li a {
+  display: block;
+  padding: 1.5em 1em;
+  min-width: 6em;
+  text-align: center;
+}
+
+.p-plus a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.p-plus__toggle-btn {
+  padding: 1em;
+  min-width: 6rem;
+  border-left: 1px solid #fff;
+}
+
+.p-plus__overflow {
+  background: #364fc7;
+  padding: 2rem;
+  margin: 1px 0 0;
+  min-width: 10em;
 }
