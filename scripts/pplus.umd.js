@@ -183,7 +183,7 @@
               _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
               _a)
       };
-      var options = umd(defaultOptions, userOptions, { arrayMerge: function (_, source) { return source; } });
+      var options = umd(defaultOptions, userOptions || {}, { arrayMerge: function (_, source) { return source; } });
       var classNames = options.classNames;
       var el = {
           primary: (_b = {},

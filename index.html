@@ -19,23 +19,25 @@
 
 <body>
 <div class="container">
-  <h1>Priority Plus</h1>
-  <p>A modern implementation of the <a target="_blank" rel="nofollow noopener" href="https://css-tricks.com/the-priority-navigation-pattern/">priority plus</a> navigation pattern.</p>
-  <p>Instead of measuring the navigation items and calculating if there is enough room to accomodate them, it uses the IntersectionObserver API, making it more performant and generally snazzier ✨</p>
+  <div class="hero">
+    <h1 class="hero__title">Priority Plus</h1>
+    <p>A modern implementation of the <a target="_blank" rel="nofollow noopener" href="https://css-tricks.com/the-priority-navigation-pattern/">priority plus</a> navigation pattern.</p>
+    <p>Instead of measuring the navigation items and calculating if there is enough room to accomodate them, it uses the IntersectionObserver API, making it more performant and generally snazzier ✨</p>
+  </div>
 
-  <div class="js-resizeable">
-    <label>
+  <div class="js-resizeable resizeable">
+    <label class="resizeable__control">
       Width
       <input
         class="js-resizeable__control"
         type="range"
-        min="0"
+        min="20"
         max="100"
         value="100"
         step="10"
       />
     </label>
-    <div class="js-resizeable__target">
+    <div class="js-resizeable__target resizeable__target">
       <div class="demo-menu">
         <ul class="js-p-target">
           <li><a href="#">Home</a></li>
