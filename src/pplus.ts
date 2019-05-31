@@ -130,7 +130,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
           aria-hidden="true"
         >
         </${targetElem.tagName}>
-      <div>
+      </div>
     `;
   }
 
