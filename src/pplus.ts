@@ -10,7 +10,8 @@ import {
 } from './events/createEvent';
 
 enum El {
-  Wrapper = 'wrapper',
+  Container = 'container',
+  Main = 'main',
   PrimaryNavWrapper = 'primary-nav-wrapper',
   PrimaryNav = 'primary-nav',
   OverflowNav = 'overflow-nav',
@@ -29,7 +30,8 @@ enum StateModifiers {
 interface Options {
   innerToggleTemplate?: string|Function;
   classNames?: {
-    [El.Wrapper]: string[],
+    [El.Container]: string[],
+    [El.Main]: string[],
     [El.PrimaryNavWrapper]: string[],
     [El.PrimaryNav]: string[],
     [El.OverflowNav]: string[],
@@ -45,7 +47,8 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   const defaultOptions: Options = {
     innerToggleTemplate: 'More',
     classNames: {
-      [El.Wrapper]: ['p-plus'],
+      [El.Container]: ['p-plus-container'],
+      [El.Main]: ['p-plus'],
       [El.PrimaryNavWrapper]: ['p-plus__primary-wrapper'],
       [El.PrimaryNav]: ['p-plus__primary'],
       [El.OverflowNav]: ['p-plus__overflow'],
@@ -63,14 +66,14 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   const el = {
     primary: {
-      [El.Wrapper]: undefined,
+      [El.Main]: undefined,
       [El.PrimaryNav]: undefined,
       [El.NavItems]: undefined,
       [El.OverflowNav]: undefined,
       [El.ToggleBtn]: undefined,
     },
     clone: {
-      [El.Wrapper]: undefined,
+      [El.Main]: undefined,
       [El.NavItems]: undefined,
       [El.ToggleBtn]: undefined,
     },
@@ -108,7 +111,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   function createMarkup(): string {
     return `
-      <div ${dv(El.Wrapper)} class="${cn(El.Wrapper)}">
+      <div ${dv(El.Main)} class="${cn(El.Main)}">
         <div class="${cn(El.PrimaryNavWrapper)}">
           <${targetElem.tagName}
             ${dv(El.PrimaryNav)}
@@ -136,25 +139,26 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   function setupEl() {
     const markup = createMarkup();
-    const container = document.createDocumentFragment();
+    const container = document.createElement('div');
+    container.classList.add(classNames[El.Container]);
 
     const original = document.createRange().createContextualFragment(markup);
     const cloned = <Element>original.cloneNode(true);
 
-    el.primary[El.Wrapper] = original.querySelector(`[${dv(El.Wrapper)}]`);
+    el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`);
     el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`);
     el.primary[El.NavItems] = original.querySelectorAll(`[${dv(El.NavItems)}]`);
     el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`);
     el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`);
 
-    el.clone[El.Wrapper] = cloned.querySelector(`[${dv(El.Wrapper)}]`);
+    el.clone[El.Main] = cloned.querySelector(`[${dv(El.Main)}]`);
     el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
 
-    el.clone[El.Wrapper].setAttribute('aria-hidden', true);
-    el.clone[El.Wrapper].classList.add(`${classNames[El.Wrapper]}--clone`);
+    el.clone[El.Main].setAttribute('aria-hidden', true);
+    el.clone[El.Main].classList.add(`${classNames[El.Main]}--clone`);
 
-    el.clone[El.Wrapper].classList.add(`${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`);
+    el.clone[El.Main].classList.add(`${classNames[El.Main]}--${StateModifiers.ButtonVisible}`);
 
     container.appendChild(original);
     container.appendChild(cloned);
@@ -167,8 +171,8 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }
 
   function updateBtnDisplay(show: Boolean = true) {
-    el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](
-      `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`,
+    el.primary[El.Main].classList[show ? 'add' : 'remove'](
+      `${classNames[El.Main]}--${StateModifiers.ButtonVisible}`,
     );
 
     if (typeof options.innerToggleTemplate !== 'string') {
@@ -230,8 +234,8 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }
 
   function setOverflowNavOpen(open = true) {
-    const openClass = `${classNames[El.Wrapper]}--${StateModifiers.OverflowVisible}`;
-    el.primary[El.Wrapper].classList[open ? 'add' : 'remove'](openClass);
+    const openClass = `${classNames[El.Main]}--${StateModifiers.OverflowVisible}`;
+    el.primary[El.Main].classList[open ? 'add' : 'remove'](openClass);
     el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
     el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
 
@@ -241,13 +245,13 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }
 
   function toggleOverflowNav() {
-    const openClass = `${classNames[El.Wrapper]}--${StateModifiers.OverflowVisible}`;
-    setOverflowNavOpen(!el.primary[El.Wrapper].classList.contains(openClass));
+    const openClass = `${classNames[El.Main]}--${StateModifiers.OverflowVisible}`;
+    setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
   }
 
   function setPrimaryHidden(hidden = true) {
-    const hiddenClass = `${classNames[El.Wrapper]}--${StateModifiers.PrimaryHidden}`;
-    el.primary[El.Wrapper].classList[hidden ? 'add' : 'remove'](hiddenClass);
+    const hiddenClass = `${classNames[El.Main]}--${StateModifiers.PrimaryHidden}`;
+    el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
     el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
   }
 
@@ -268,7 +272,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   function bindListeners() {
     const observer = new IntersectionObserver(intersectionCallback, {
-      root: el.clone[El.Wrapper],
+      root: el.clone[El.Main],
       rootMargin: '0px 0px 0px 0px',
       threshold: [1],
     });
