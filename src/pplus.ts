@@ -58,7 +58,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   const options: Options = deepmerge(
     defaultOptions,
-    userOptions,
+    userOptions || {},
     { arrayMerge: (_, source) => source },
   );
 
