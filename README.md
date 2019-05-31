@@ -1,6 +1,6 @@
 # Priority Plus
 
-An modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
+A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
 Instead of measuring the navigation items and calculating if there is enough room to accomodate them, it uses the [IntersectionObserver API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API), making it more performant and generally snazzier ✨
 
@@ -18,7 +18,7 @@ This is *perfect* for the priority + pattern, as it doesn't require measuring it
 
 ## Options
 
-## Classes
+### Classes
 If you'd like to override the default classes, you can pass in a `classNames` object like so:
 
 ```javascript
@@ -33,41 +33,48 @@ pplus(document.querySelector('.js-p-target'), {
 
 Classes must be passed as an array.
 
-### Available classes
-
 #### container
+
 **Default:** 'p-plus-container'
 
 This is the wrapper that collects both 'clones' of the navigation. It's purpose is to provide a way to obscure the clone.
 
 #### main
+
 **Default:** 'p-plus'
 
 The class applied to each of the top-level navigation wrappers. Be aware it aplies to both the clone and the visible copy.
 
 #### primary-nav-wrapper
+
 **Default:** 'p-plus__primary-wrapper'
 
 Outer wrapper for the 'primary' (non-overflow) navigation.
 
 #### primary-nav
+
 **Default:** 'p-plus__primary'
 
 Inner wrapper for the 'primary' (non-overflow) navigation.
 
 #### overflow-nav
+
 **Default:** 'p-plus__overflow'
 
 Wrapper for the overflow navigation.
 
 #### toggle-btn
+
 **Default:** 'p-plus__toggle-btn'
 
 Applied to the dropdown menu toggle button.
 
 ## Templates 
+
 ### innerToggleTemplate
+
 **Type:** `String|Function`
+
 **Default:** 'More'
 
 Overrides the inner contents of the 'view more' button. If you pass a string, then it will only render once, but if you pass it a function it will re-render every time the navigation is updated.
@@ -87,14 +94,19 @@ pplus(document.querySelector('.js-p-target'), {
 ## Events
 
 ### init
+
 **Usage:** Triggered when the lib has loaded and swapped out the nav.
 
 ### showOverflow
+
 **Usage:** Triggered when the overflow nav becomes visible.
 
 ### hideOverflow
+
 **Usage:** Triggered when the overflow nav becomes invisible.
 
 ### itemsChanged
+
 **Arguments:** `overflowCount` (The number of items in the overflow nav)
+
 **Usage:** Triggered when the navigation items are updated (either added/removed).
