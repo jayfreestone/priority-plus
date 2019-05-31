@@ -21,13 +21,32 @@
 <div class="container">
   <h1>Priority Plus</h1>
   <p>A modern implementation of the <a target="_blank" rel="nofollow noopener" href="https://css-tricks.com/the-priority-navigation-pattern/">priority plus</a> navigation pattern.</p>
-  <ul class="js-p-target">
-    <li><a href="/">Home</a></li>
-    <li><a href="/">About</a></li>
-    <li><a href="/">Work</a></li>
-    <li><a href="/">Services longer nav title</a></li>
-    <li><a href="/">Contact</a></li>
-  </ul>
+  <p>Instead of measuring the navigation items and calculating if there is enough room to accomodate them, it uses the IntersectionObserver API, making it more performant and generally snazzier ✨</p>
+
+  <div class="js-resizeable">
+    <label>
+      Width
+      <input
+        class="js-resizeable__control"
+        type="range"
+        min="0"
+        max="100"
+        value="100"
+        step="10"
+      />
+    </label>
+    <div class="js-resizeable__target">
+      <div class="demo-menu">
+        <ul class="js-p-target">
+          <li><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Work</a></li>
+          <li><a href="#">Services longer nav title</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script defer src="scripts/pplus.umd.js"></script>
