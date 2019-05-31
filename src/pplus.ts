@@ -1,4 +1,5 @@
 import eventTarget from './events/eventTarget';
+import deepmerge from 'deepmerge';
 import {
   Events,
   ItemsChangedEvent,
@@ -25,10 +26,29 @@ enum StateModifiers {
   PrimaryHidden = 'is-hiding-primary',
 }
 
-function pplus(targetElem: HTMLElement, options?: Object) {
+function pplus(targetElem: HTMLElement, userOptions?: Object) {
   const eventChannel = eventTarget();
 
   const itemMap = new Map();
+
+  const defaultOptions = {
+    innerToggleTemplate: 'More',
+    classNames: {
+      [El.Wrapper]: ['p-plus'],
+      [El.PrimaryNavWrapper]: ['p-plus__primary-wrapper'],
+      [El.PrimaryNav]: ['p-plus__primary'],
+      [El.OverflowNav]: ['p-plus__overflow'],
+      [El.ToggleBtn]: ['p-plus__toggle-btn'],
+    },
+  };
+
+  const options = deepmerge(
+    defaultOptions,
+    userOptions,
+    { arrayMerge: (_, source) => source },
+  );
+
+  const { classNames } = options;
 
   const el = {
     primary: {
@@ -43,14 +63,6 @@ function pplus(targetElem: HTMLElement, options?: Object) {
       [El.NavItems]: undefined,
       [El.ToggleBtn]: undefined,
     },
-  };
-
-  const classNames = {
-    [El.Wrapper]: ['p-plus'],
-    [El.PrimaryNavWrapper]: ['p-plus__primary-wrapper'],
-    [El.PrimaryNav]: ['p-plus__primary'],
-    [El.OverflowNav]: ['p-plus__overflow'],
-    [El.ToggleBtn]: ['p-plus__toggle-btn'],
   };
 
   const getElemMirror = (() => {
@@ -69,6 +81,11 @@ function pplus(targetElem: HTMLElement, options?: Object) {
       return cache.get(keyArr);
     };
   })();
+
+  function processTemplate(input: string|Function, args = {}) {
+    if (typeof input === 'string') return input;
+    return input(args);
+  }
 
   function cn(key: El): string {
     return classNames[key].join(' ');
@@ -95,7 +112,7 @@ function pplus(targetElem: HTMLElement, options?: Object) {
           ${dv(El.ToggleBtn)}
           class="${cn(El.ToggleBtn)}"
           aria-expanded="false"
-        >More</button>
+        >${processTemplate(options.innerToggleTemplate)}</button>
         <${targetElem.tagName}
           ${dv(El.OverflowNav)}
           class="${cn(El.OverflowNav)}"
@@ -142,6 +159,16 @@ function pplus(targetElem: HTMLElement, options?: Object) {
     el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](
       `${classNames[El.Wrapper]}--${StateModifiers.ButtonVisible}`,
     );
+
+    if (typeof options.innerToggleTemplate !== 'string') {
+      // We need to do it for both, as layout is affected
+      [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach((btn) => {
+        btn.innerHTML = processTemplate(options.innerToggleTemplate, {
+          toggleCount: el.primary[El.OverflowNav].children.length,
+          totalCount: el.clone[El.NavItems].length,
+        });
+      })
+    }
   }
 
   function generateNav(navType: NavType): HTMLElement {

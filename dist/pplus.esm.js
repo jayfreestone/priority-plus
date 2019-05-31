@@ -1,3 +1,5 @@
+import deepmerge from 'deepmerge';
+
 function eventTarget() {
     var port1 = new MessageChannel().port1;
     return {
@@ -50,31 +52,36 @@ var StateModifiers;
     StateModifiers["OverflowVisible"] = "is-showing-overflow";
     StateModifiers["PrimaryHidden"] = "is-hiding-primary";
 })(StateModifiers || (StateModifiers = {}));
-function pplus(targetElem, options) {
+function pplus(targetElem, userOptions) {
     var _a, _b, _c;
     var eventChannel = eventTarget();
     var itemMap = new Map();
-    var el = {
-        primary: (_a = {},
-            _a[El.Wrapper] = undefined,
-            _a[El.PrimaryNav] = undefined,
-            _a[El.NavItems] = undefined,
-            _a[El.OverflowNav] = undefined,
-            _a[El.ToggleBtn] = undefined,
-            _a),
-        clone: (_b = {},
-            _b[El.Wrapper] = undefined,
-            _b[El.NavItems] = undefined,
-            _b[El.ToggleBtn] = undefined,
-            _b)
+    var defaultOptions = {
+        innerToggleTemplate: 'More',
+        classNames: (_a = {},
+            _a[El.Wrapper] = ['p-plus'],
+            _a[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
+            _a[El.PrimaryNav] = ['p-plus__primary'],
+            _a[El.OverflowNav] = ['p-plus__overflow'],
+            _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
+            _a)
     };
-    var classNames = (_c = {},
-        _c[El.Wrapper] = ['p-plus'],
-        _c[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
-        _c[El.PrimaryNav] = ['p-plus__primary'],
-        _c[El.OverflowNav] = ['p-plus__overflow'],
-        _c[El.ToggleBtn] = ['p-plus__toggle-btn'],
-        _c);
+    var options = deepmerge(defaultOptions, userOptions, { arrayMerge: function (_, source) { return source; } });
+    var classNames = options.classNames;
+    var el = {
+        primary: (_b = {},
+            _b[El.Wrapper] = undefined,
+            _b[El.PrimaryNav] = undefined,
+            _b[El.NavItems] = undefined,
+            _b[El.OverflowNav] = undefined,
+            _b[El.ToggleBtn] = undefined,
+            _b),
+        clone: (_c = {},
+            _c[El.Wrapper] = undefined,
+            _c[El.NavItems] = undefined,
+            _c[El.ToggleBtn] = undefined,
+            _c)
+    };
     var getElemMirror = (function () {
         var cache = new Map();
         return function getMirror(keyArr, valueArr) {
@@ -84,6 +91,12 @@ function pplus(targetElem, options) {
             return cache.get(keyArr);
         };
     })();
+    function processTemplate(input, args) {
+        if (args === void 0) { args = {}; }
+        if (typeof input === 'string')
+            return input;
+        return input(args);
+    }
     function cn(key) {
         return classNames[key].join(' ');
     }
@@ -91,7 +104,7 @@ function pplus(targetElem, options) {
         return "data-" + key;
     }
     function createMarkup() {
-        return "\n      <div " + dv(El.Wrapper) + " class=\"" + cn(El.Wrapper) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >More</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      <div>\n    ";
+        return "\n      <div " + dv(El.Wrapper) + " class=\"" + cn(El.Wrapper) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >" + processTemplate(options.innerToggleTemplate) + "</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      <div>\n    ";
     }
     function setupEl() {
         var markup = createMarkup();
@@ -119,6 +132,15 @@ function pplus(targetElem, options) {
     function updateBtnDisplay(show) {
         if (show === void 0) { show = true; }
         el.primary[El.Wrapper].classList[show ? 'add' : 'remove'](classNames[El.Wrapper] + "--" + StateModifiers.ButtonVisible);
+        if (typeof options.innerToggleTemplate !== 'string') {
+            // We need to do it for both, as layout is affected
+            [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach(function (btn) {
+                btn.innerHTML = processTemplate(options.innerToggleTemplate, {
+                    toggleCount: el.primary[El.OverflowNav].children.length,
+                    totalCount: el.clone[El.NavItems].length
+                });
+            });
+        }
     }
     function generateNav(navType) {
         var newNav = el.primary[navType].cloneNode();

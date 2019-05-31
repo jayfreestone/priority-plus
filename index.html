@@ -91,7 +91,15 @@
     }
   </style>
   <script>
-    const inst = pplus(document.querySelector('.js-p-target'));
+    const inst = pplus(document.querySelector('.js-p-target'), {
+      classNames: {
+        wrapper: ['p-plus'],
+      },
+      innerToggleTemplate: ({ toggleCount, totalCount }) => `
+        ...${toggleCount && toggleCount !== totalCount ? `(${toggleCount})` : ''}
+      `,
+    });
+
     inst.on('itemsChanged', ({ detail: { overflowCount } }) => {
       console.log('We now have this many items in the overflow: ', overflowCount);
     });
