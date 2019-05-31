@@ -1,0 +1,59 @@
+
+.p-plus--is-showing-overflow.p-plus--is-hiding-primary .p-plus__overflow {
+  left: 0;
+}
+
+.p-plus__primary > li a {
+  display: block;
+  padding: 1em 2em;
+  min-width: 6em;
+  text-align: center;
+}
+
+.p-plus__primary {
+  background-color: #212529;
+}
+
+.p-plus a {
+  color: #fff;
+}
+
+.p-plus__primary > li:not(:first-child) {
+  border-left: 1px solid #fff;
+}
+
+.p-plus__toggle-btn {
+  padding: 1em;
+  min-width: 6rem;
+}
+
+.p-plus__overflow {
+  background: blue;
+  padding: 2rem;
+  margin: 0;
+  min-width: 10em;
+}
+
+
+
+body {
+  font-family: input-mono, monospace;
+  font-weight: 400;
+  background-color: #f1f3f5;
+}
+
+button {
+  background-color: #f08c00;
+}
+
+.container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 70rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+.p-plus__primary {
+}
