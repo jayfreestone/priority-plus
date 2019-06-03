@@ -16,6 +16,30 @@ As the items overflow, they trigger the IntsersectionObserver set up on the pare
 
 This is *perfect* for the priority + pattern, as it doesn't require measuring items or fixing widths/heights - all we need to do is ensure that the cloned copy doesn't wrap (which we can use `flexbox` for).
 
+## Methods
+
+The methods available on a new instance.
+
+### getNavElements()
+
+Retrieves an object containing references to each element in the primary generated navigation.
+
+### on(eventType: string, cb: Function)
+
+Sets up an event listener on the instance (not the target element). See [events](#events) for a list of the events that are triggered.
+
+### off(eventType: string, cb: Function)
+
+Destroys an event listener.
+
+### setOverflowNavOpen(open: boolean)
+
+Opens or closes the overflow navigation programatically.
+
+### toggleOverflowNav()
+
+Opens the overflow nav if closed, closes it if open.
+
 ## Options
 
 ### Classes

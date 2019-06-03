@@ -358,6 +358,22 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }
 
   /**
+   * Removes an event listener.
+   */
+  function off(eventType: Events, cb: (eventDetail: object) => void) {
+    return eventChannel.removeEventListener(eventType, cb);
+  }
+
+  /**
+   * Retrives an index of the primary nav elements.
+   */
+  function getNavElements() {
+    // Clone it to avoid users changing the el references,
+    // e.g. inst.getNavElements()['toggle-btn'] = null;
+    return {...el.primary};
+  }
+
+  /**
    * Establishes initial event listeners.
    */
   function bindListeners() {
@@ -382,7 +398,11 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }());
 
   return {
+    getNavElements,
+    off,
     on,
+    setOverflowNavOpen,
+    toggleOverflowNav,
   };
 }
 

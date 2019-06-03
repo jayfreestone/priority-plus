@@ -4,6 +4,32 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var deepmerge = _interopDefault(require('deepmerge'));
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
 var Events;
 (function (Events) {
     Events["Init"] = "init";
@@ -36,7 +62,8 @@ function eventTarget() {
     var port1 = new MessageChannel().port1;
     return {
         addEventListener: port1.addEventListener.bind(port1),
-        dispatchEvent: port1.dispatchEvent.bind(port1)
+        dispatchEvent: port1.dispatchEvent.bind(port1),
+        removeEventListener: port1.removeEventListener.bind(port1)
     };
 }
 //# sourceMappingURL=eventTarget.js.map
@@ -324,6 +351,20 @@ function pplus(targetElem, userOptions) {
         return eventChannel.addEventListener(eventType, cb);
     }
     /**
+     * Removes an event listener.
+     */
+    function off(eventType, cb) {
+        return eventChannel.removeEventListener(eventType, cb);
+    }
+    /**
+     * Retrives an index of the primary nav elements.
+     */
+    function getNavElements() {
+        // Clone it to avoid users changing the el references,
+        // e.g. inst.getNavElements()['toggle-btn'] = null;
+        return __assign({}, el.primary);
+    }
+    /**
      * Establishes initial event listeners.
      */
     function bindListeners() {
@@ -343,7 +384,11 @@ function pplus(targetElem, userOptions) {
         eventChannel.dispatchEvent(createInitEvent());
     }());
     return {
-        on: on
+        getNavElements: getNavElements,
+        off: off,
+        on: on,
+        setOverflowNavOpen: setOverflowNavOpen,
+        toggleOverflowNav: toggleOverflowNav
     };
 }
 //# sourceMappingURL=pplus.js.map
