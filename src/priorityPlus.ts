@@ -51,7 +51,7 @@ const defaultOptions: Options = {
   innerToggleTemplate: 'More',
 };
 
-function pplus(targetElem: HTMLElement, userOptions: Options = {}) {
+function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   /**
    * The instance's event emitter.
    */
@@ -405,4 +405,4 @@ function pplus(targetElem: HTMLElement, userOptions: Options = {}) {
   };
 }
 
-export default pplus;
+export default priorityPlus;

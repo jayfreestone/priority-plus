@@ -1,5 +1,3 @@
-'use strict';
-
 var Events;
 (function (Events) {
     Events["Init"] = "init";
@@ -24,7 +22,6 @@ function createInitEvent() {
 function createItemsChangedEvent({ overflowCount }) {
     return createEvent(Events.ItemsChanged, { overflowCount });
 }
-//# sourceMappingURL=createEvent.js.map
 
 function eventTarget() {
     const { port1 } = new MessageChannel();
@@ -34,7 +31,6 @@ function eventTarget() {
         removeEventListener: port1.removeEventListener.bind(port1)
     };
 }
-//# sourceMappingURL=eventTarget.js.map
 
 /**
  * Joins an array of error messages into one message.
@@ -74,7 +70,6 @@ function validateInput(targetElem, userOptions, defaultOptions) {
 function validateAndThrow(targetElem, userOptions, defaultOptions) {
     throwValidation(validateInput(targetElem, userOptions, defaultOptions));
 }
-//# sourceMappingURL=validation.js.map
 
 var El;
 (function (El) {
@@ -103,7 +98,7 @@ const defaultOptions = {
     },
     innerToggleTemplate: 'More',
 };
-function pplus(targetElem, userOptions = {}) {
+function priorityPlus(targetElem, userOptions = {}) {
     /**
      * The instance's event emitter.
      */
@@ -372,6 +367,5 @@ function pplus(targetElem, userOptions = {}) {
         toggleOverflowNav,
     };
 }
-//# sourceMappingURL=pplus.js.map
 
-module.exports = pplus;
+export default priorityPlus;

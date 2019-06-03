@@ -46,7 +46,7 @@ Opens the overflow nav if closed, closes it if open.
 If you'd like to override the default classes, you can pass in a `classNames` object like so:
 
 ```javascript
-pplus(document.querySelector('.js-p-target'), {
+priorityPlus(document.querySelector('.js-p-target'), {
   classNames: {
     // Will override the p-plus class.
     // Other classes will be un-touched.
@@ -108,7 +108,7 @@ The function receives an object containing two parameters, `toggleCount` (the nu
 Example:
 
 ```javascript
-pplus(document.querySelector('.js-p-target'), {
+priorityPlus(document.querySelector('.js-p-target'), {
   innerToggleTemplate: ({ toggleCount, totalCount }) => `
     Menu${toggleCount && toggleCount !== totalCount ? ` (${toggleCount})` : ''}
   `,
