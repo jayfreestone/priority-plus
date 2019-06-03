@@ -1,13 +1,24 @@
+/**
+ * Wraps both the visible and cloned nav so we can hide the clone with
+ * absolute positioning.
+ */
 .p-plus-container {
   position: relative;
 }
 
+/**
+ * Applied to the navigation wrappers. Flexbox is used so the items 'overflow'
+ * and also expand to fill additional space.
+ */
 .p-plus {
   display: flex;
   position: relative;
   z-index: 0;
 }
 
+/**
+ * Applied only to the invisible 'clone' copy, which we hide.
+ */
 .p-plus--clone {
   position: absolute;
   top: 0;
@@ -17,17 +28,24 @@
   visibility: hidden;
 }
 
+/**
+ * Ensure we don't cause on-page visible overflow.
+ */
 .p-plus--clone,
 .p-plus--clone .p-plus__primary-wrapper {
   overflow: hidden;
 }
 
+/**
+ * 'Active' styles for the overflow nav.
+ */
 .p-plus--is-showing-overflow .p-plus__overflow {
   display: block;
-  top: 100%;
-  right: 0;
 }
 
+/**
+ * Hides the toggle button when all the nav items are visible.
+ */
 .p-plus:not(.p-plus--is-showing-toggle) .p-plus__toggle-btn {
   display: none;
 }
@@ -36,6 +54,9 @@
   flex-grow: 1;
 }
 
+/**
+ * Hides the primary navigation container when all items are in the overflow.
+ */
 .p-plus--is-hiding-primary .p-plus__primary-wrapper {
   display: none;
 }
@@ -57,9 +78,14 @@
   flex: 1 0 auto;
 }
 
+/**
+ * The overflow 'dropdown' navigation.
+ */
 .p-plus__overflow {
   display: none;
   position: absolute;
+  top: 100%;
+  right: 0;
 }
 
 .p-plus__toggle-btn {
