@@ -8,6 +8,7 @@ import {
   ItemsChangedEvent,
 } from './events/createEvent';
 import eventTarget from './events/eventTarget';
+import validateAndThrow from './validation';
 
 enum El {
   Container = 'container',
@@ -302,6 +303,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   }
 
   (function init() {
+    validateAndThrow(targetElem, userOptions, defaultOptions),
     setupEl();
     bindListeners();
     eventChannel.dispatchEvent(createInitEvent());
