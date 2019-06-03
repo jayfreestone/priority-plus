@@ -1,5 +1,5 @@
 Array.from(document.querySelectorAll('.js-p-target')).forEach((target) => {
-  pplus(target, {
+  priorityPlus(target, {
     innerToggleTemplate: ({ totalCount, toggleCount }) =>
       toggleCount === totalCount
         ? 'Menu'
