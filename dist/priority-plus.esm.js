@@ -210,6 +210,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
         el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
         el.clone[El.Main].setAttribute('aria-hidden', 'true');
+        el.clone[El.Main].setAttribute('data-clone', 'true');
         el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--clone`);
         el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--${StateModifiers.ButtonVisible}`);
         container.appendChild(original);
