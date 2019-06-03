@@ -5,11 +5,11 @@ export enum Events {
   ItemsChanged = 'itemsChanged',
 }
 
-export type ItemsChangedEvent = {
+export interface ItemsChangedEvent {
   detail: {
     overflowCount: number,
-  },
-};
+  };
+}
 
 function createEvent(name: Events, payload = {}) {
   return new CustomEvent(name, {

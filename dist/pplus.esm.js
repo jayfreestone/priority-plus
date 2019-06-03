@@ -31,8 +31,8 @@ function createItemsChangedEvent(_a) {
 function eventTarget() {
     var port1 = new MessageChannel().port1;
     return {
-        dispatchEvent: port1.dispatchEvent.bind(port1),
-        addEventListener: port1.addEventListener.bind(port1)
+        addEventListener: port1.addEventListener.bind(port1),
+        dispatchEvent: port1.dispatchEvent.bind(port1)
     };
 }
 //# sourceMappingURL=eventTarget.js.map
