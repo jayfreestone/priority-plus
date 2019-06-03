@@ -81,6 +81,7 @@ function validateAndThrow(targetElem, userOptions, defaultOptions) {
 }
 //# sourceMappingURL=validation.js.map
 
+var _a;
 var El;
 (function (El) {
     El["Container"] = "container";
@@ -97,37 +98,51 @@ var StateModifiers;
     StateModifiers["OverflowVisible"] = "is-showing-overflow";
     StateModifiers["PrimaryHidden"] = "is-hiding-primary";
 })(StateModifiers || (StateModifiers = {}));
+var defaultOptions = {
+    classNames: (_a = {},
+        _a[El.Container] = ['p-plus-container'],
+        _a[El.Main] = ['p-plus'],
+        _a[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
+        _a[El.PrimaryNav] = ['p-plus__primary'],
+        _a[El.OverflowNav] = ['p-plus__overflow'],
+        _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
+        _a),
+    innerToggleTemplate: 'More'
+};
 function pplus(targetElem, userOptions) {
-    var _a, _b, _c;
+    var _a, _b;
+    /**
+     * The instance's event emitter.
+     */
     var eventChannel = eventTarget();
+    /**
+     * A map of navigation list items to their current designation (either the
+     * primary nav or the overflow nav), based on if they 'fit'.
+     */
     var itemMap = new Map();
-    var defaultOptions = {
-        classNames: (_a = {},
-            _a[El.Container] = ['p-plus-container'],
-            _a[El.Main] = ['p-plus'],
-            _a[El.PrimaryNavWrapper] = ['p-plus__primary-wrapper'],
-            _a[El.PrimaryNav] = ['p-plus__primary'],
-            _a[El.OverflowNav] = ['p-plus__overflow'],
-            _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
-            _a),
-        innerToggleTemplate: 'More'
-    };
     var options = deepmerge(defaultOptions, userOptions || {}, { arrayMerge: function (_, source) { return source; } });
     var classNames = options.classNames;
+    /**
+     * References to DOM elements so we can easily retrieve them.
+     */
     var el = {
-        clone: (_b = {},
+        clone: (_a = {},
+            _a[El.Main] = undefined,
+            _a[El.NavItems] = undefined,
+            _a[El.ToggleBtn] = undefined,
+            _a),
+        primary: (_b = {},
             _b[El.Main] = undefined,
+            _b[El.PrimaryNav] = undefined,
             _b[El.NavItems] = undefined,
+            _b[El.OverflowNav] = undefined,
             _b[El.ToggleBtn] = undefined,
-            _b),
-        primary: (_c = {},
-            _c[El.Main] = undefined,
-            _c[El.PrimaryNav] = undefined,
-            _c[El.NavItems] = undefined,
-            _c[El.OverflowNav] = undefined,
-            _c[El.ToggleBtn] = undefined,
-            _c)
+            _b)
     };
+    /**
+     * Gets an element's 'mirror' Map for the clone/primary navigation - e.g.
+     * if you pass a clone Map, you get the original Map and vice-versa.
+     */
     var getElemMirror = (function () {
         var cache = new Map();
         return function getMirror(keyArr, valueArr) {
@@ -137,21 +152,37 @@ function pplus(targetElem, userOptions) {
             return cache.get(keyArr);
         };
     })();
+    /**
+     * Generates classes based on an element name.
+     */
+    function cn(key) {
+        return classNames[key].join(' ');
+    }
+    /**
+     * Generates data-attributes based on an element name. These are used to query
+     * the generated DOM and populate the 'el' object.
+     */
+    function dv(key) {
+        return "data-" + key;
+    }
+    /**
+     * Takes a string/function template and returns a DOM string.
+     */
     function processTemplate(input, args) {
         if (args === void 0) { args = {}; }
         if (typeof input === 'string')
             return input;
         return input(args);
     }
-    function cn(key) {
-        return classNames[key].join(' ');
-    }
-    function dv(key) {
-        return "data-" + key;
-    }
+    /**
+     * Generates the HTML to use in-place of the user's supplied element.
+     */
     function createMarkup() {
         return "\n      <div " + dv(El.Main) + " class=\"" + cn(El.Main) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >" + processTemplate(options.innerToggleTemplate) + "</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      </div>\n    ";
     }
+    /**
+     * Replaces the navigation with the two clones and populates the 'el' object.
+     */
     function setupEl() {
         var _a;
         var markup = createMarkup();
@@ -177,6 +208,9 @@ function pplus(targetElem, userOptions) {
         el.clone[El.NavItems].forEach(function (item) { return itemMap.set(item, El.PrimaryNav); });
         targetElem.parentNode.replaceChild(container, targetElem);
     }
+    /**
+     * Sets the toggle button visibility.
+     */
     function updateBtnDisplay(show) {
         if (show === void 0) { show = true; }
         el.primary[El.Main].classList[show ? 'add' : 'remove'](classNames[El.Main] + "--" + StateModifiers.ButtonVisible);
@@ -190,6 +224,12 @@ function pplus(targetElem, userOptions) {
             });
         }
     }
+    /**
+     * (Re) generate the navigation list for either the visible or the overflow nav.
+     * We use this to completely recreate the nav each time we update it,
+     * avoiding ordering complexity and having to run append multiple times on
+     * the mounted nav.
+     */
     function generateNav(navType) {
         var newNav = el.primary[navType].cloneNode();
         // Always use the clone as the base for our new nav,
@@ -201,6 +241,9 @@ function pplus(targetElem, userOptions) {
         });
         return newNav;
     }
+    /**
+     * Replaces the passed in nav type with a newly generated copy in the DOM.
+     */
     function updateNav(navType) {
         var newNav = generateNav(navType);
         // Replace the existing nav element in the DOM
@@ -208,18 +251,29 @@ function pplus(targetElem, userOptions) {
         // Update our reference to it
         el.primary[navType] = newNav;
     }
-    // Updates our references
+    /**
+     * Run every time a nav item intersects with the parent container.
+     * We use this opporunity to check which type of nav the items belong to.
+     */
     function onIntersect(_a) {
         var target = _a.target, intersectionRatio = _a.intersectionRatio;
         itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
     }
+    /**
+     * The IO callback, which collects intersection events.
+     */
     function intersectionCallback(events) {
+        // Update the designation
         events.forEach(onIntersect);
+        // Update the navs to reflect the new changes
         [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
         eventChannel.dispatchEvent(createItemsChangedEvent({
             overflowCount: el.primary[El.OverflowNav].children.length
         }));
     }
+    /**
+     * Sets the visibility of the overflow navigation.
+     */
     function setOverflowNavOpen(open) {
         if (open === void 0) { open = true; }
         var openClass = classNames[El.Main] + "--" + StateModifiers.OverflowVisible;
@@ -228,20 +282,33 @@ function pplus(targetElem, userOptions) {
         el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
         eventChannel.dispatchEvent(open ? createShowOverflowEvent() : createHideOverflowEvent());
     }
+    /**
+     * Toggles the visibility of the overflow navigation.
+     */
     function toggleOverflowNav() {
         var openClass = classNames[El.Main] + "--" + StateModifiers.OverflowVisible;
         setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
     }
+    /**
+     * Sets the visibility of the primary navigation (we hide the primary nav
+     * when all the navigation items are hidden in the overflow nav).
+     */
     function setPrimaryHidden(hidden) {
         if (hidden === void 0) { hidden = true; }
         var hiddenClass = classNames[El.Main] + "--" + StateModifiers.PrimaryHidden;
         el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
         el.primary[El.PrimaryNav].setAttribute('aria-hidden', String(hidden));
     }
+    /**
+     * Handle the overflow-nav toggle btn click.
+     */
     function onToggleClick(e) {
         e.preventDefault();
         toggleOverflowNav();
     }
+    /**
+     * Callback for when either nav is updated.
+     */
     function onItemsChanged(_a) {
         var overflowCount = _a.detail.overflowCount;
         updateBtnDisplay(overflowCount > 0);
@@ -250,6 +317,15 @@ function pplus(targetElem, userOptions) {
         }
         setPrimaryHidden(overflowCount === el.clone[El.NavItems].length);
     }
+    /**
+     * Creates an event listener.
+     */
+    function on(eventType, cb) {
+        return eventChannel.addEventListener(eventType, cb);
+    }
+    /**
+     * Establishes initial event listeners.
+     */
     function bindListeners() {
         var observer = new IntersectionObserver(intersectionCallback, {
             root: el.clone[El.Main],
@@ -259,9 +335,6 @@ function pplus(targetElem, userOptions) {
         el.clone[El.NavItems].forEach(function (elem) { return observer.observe(elem); });
         el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
         eventChannel.addEventListener(Events.ItemsChanged, onItemsChanged);
-    }
-    function on(eventType, cb) {
-        return eventChannel.addEventListener(eventType, cb);
     }
     (function init() {
         validateAndThrow(targetElem, userOptions, defaultOptions),
