@@ -1,13 +1,13 @@
-import eventTarget from './events/eventTarget';
 import deepmerge from 'deepmerge';
 import {
+  createHideOverflowEvent,
+  createInitEvent,
+  createItemsChangedEvent,
+  createShowOverflowEvent,
   Events,
   ItemsChangedEvent,
-  createInitEvent,
-  createHideOverflowEvent,
-  createShowOverflowEvent,
-  createItemsChangedEvent,
 } from './events/createEvent';
+import eventTarget from './events/eventTarget';
 
 enum El {
   Container = 'container',
@@ -28,7 +28,7 @@ enum StateModifiers {
 }
 
 interface Options {
-  innerToggleTemplate?: string|Function;
+  innerToggleTemplate?: string|((args: object) => string);
   classNames?: {
     [El.Container]: string[],
     [El.Main]: string[],
@@ -36,7 +36,7 @@ interface Options {
     [El.PrimaryNav]: string[],
     [El.OverflowNav]: string[],
     [El.ToggleBtn]: string[],
-  },
+  };
 }
 
 function pplus(targetElem: HTMLElement, userOptions?: Options) {
@@ -45,7 +45,6 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   const itemMap = new Map();
 
   const defaultOptions: Options = {
-    innerToggleTemplate: 'More',
     classNames: {
       [El.Container]: ['p-plus-container'],
       [El.Main]: ['p-plus'],
@@ -54,6 +53,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
       [El.OverflowNav]: ['p-plus__overflow'],
       [El.ToggleBtn]: ['p-plus__toggle-btn'],
     },
+    innerToggleTemplate: 'More',
   };
 
   const options: Options = deepmerge(
@@ -64,17 +64,30 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
 
   const { classNames } = options;
 
-  const el = {
+  const el: {
+    clone: {
+      [El.Main]: HTMLElement,
+      [El.NavItems]: HTMLElement[],
+      [El.ToggleBtn]: HTMLElement,
+    },
+    primary: {
+      [El.Main]: HTMLElement,
+      [El.PrimaryNav]: HTMLElement,
+      [El.NavItems]: HTMLElement[],
+      [El.OverflowNav]: HTMLElement,
+      [El.ToggleBtn]: HTMLElement,
+    },
+  } = {
+    clone: {
+      [El.Main]: undefined,
+      [El.NavItems]: undefined,
+      [El.ToggleBtn]: undefined,
+    },
     primary: {
       [El.Main]: undefined,
       [El.PrimaryNav]: undefined,
       [El.NavItems]: undefined,
       [El.OverflowNav]: undefined,
-      [El.ToggleBtn]: undefined,
-    },
-    clone: {
-      [El.Main]: undefined,
-      [El.NavItems]: undefined,
       [El.ToggleBtn]: undefined,
     },
   };
@@ -88,7 +101,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
           keyArr,
           new Map(Array.from(keyArr).reduce((acc, item, i) => (
             acc.concat([[item, valueArr[i]]])
-          ), []))
+          ), [])),
         );
       }
 
@@ -96,7 +109,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     };
   })();
 
-  function processTemplate(input: string|Function, args = {}) {
+  function processTemplate(input: string|((args: object) => string), args = {}): string {
     if (typeof input === 'string') return input;
     return input(args);
   }
@@ -143,11 +156,11 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     container.classList.add(...classNames[El.Container]);
 
     const original = document.createRange().createContextualFragment(markup);
-    const cloned = <Element>original.cloneNode(true);
+    const cloned = original.cloneNode(true) as Element;
 
     el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`);
     el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`);
-    el.primary[El.NavItems] = original.querySelectorAll(`[${dv(El.NavItems)}]`);
+    el.primary[El.NavItems] = Array.from(original.querySelectorAll(`[${dv(El.NavItems)}]`));
     el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`);
     el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`);
 
@@ -155,7 +168,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
 
-    el.clone[El.Main].setAttribute('aria-hidden', true);
+    el.clone[El.Main].setAttribute('aria-hidden', 'true');
     el.clone[El.Main].classList.add(`${classNames[El.Main]}--clone`);
 
     el.clone[El.Main].classList.add(`${classNames[El.Main]}--${StateModifiers.ButtonVisible}`);
@@ -170,19 +183,19 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     targetElem.parentNode.replaceChild(container, targetElem);
   }
 
-  function updateBtnDisplay(show: Boolean = true) {
+  function updateBtnDisplay(show: boolean = true) {
     el.primary[El.Main].classList[show ? 'add' : 'remove'](
       `${classNames[El.Main]}--${StateModifiers.ButtonVisible}`,
     );
 
     if (typeof options.innerToggleTemplate !== 'string') {
       // We need to do it for both, as layout is affected
-      [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach((btn) => {
+      [el.primary[El.ToggleBtn], el.clone[El.ToggleBtn]].forEach(btn => {
         btn.innerHTML = processTemplate(options.innerToggleTemplate, {
           toggleCount: el.primary[El.OverflowNav].children.length,
           totalCount: el.clone[El.NavItems].length,
         });
-      })
+      });
     }
   }
 
@@ -193,16 +206,16 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     // since the order is canonical and it is never filtered.
     el.clone[El.NavItems]
       .filter(item => itemMap.get(item) === navType)
-      .forEach((item) => {
+      .forEach(item => {
         newNav.appendChild(
           getElemMirror(
             el.clone[El.NavItems],
-            el.primary[El.NavItems]
+            el.primary[El.NavItems],
           ).get(item),
         );
-      })
+      });
 
-    return newNav
+    return newNav as HTMLElement;
   }
 
   function updateNav(navType: NavType) {
@@ -252,7 +265,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
   function setPrimaryHidden(hidden = true) {
     const hiddenClass = `${classNames[El.Main]}--${StateModifiers.PrimaryHidden}`;
     el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
-    el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
+    el.primary[El.PrimaryNav].setAttribute('aria-hidden', String(hidden));
   }
 
   function onToggleClick(e: Event) {
@@ -284,7 +297,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     eventChannel.addEventListener(Events.ItemsChanged, onItemsChanged);
   }
 
-  function on(eventType: Events, cb: Function) {
+  function on(eventType: Events, cb: (eventDetail: object) => void) {
     return eventChannel.addEventListener(eventType, cb);
   }
 

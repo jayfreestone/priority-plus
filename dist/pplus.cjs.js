@@ -4,15 +4,6 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var deepmerge = _interopDefault(require('deepmerge'));
 
-function eventTarget() {
-    var port1 = new MessageChannel().port1;
-    return {
-        dispatchEvent: port1.dispatchEvent.bind(port1),
-        addEventListener: port1.addEventListener.bind(port1)
-    };
-}
-//# sourceMappingURL=eventTarget.js.map
-
 var Events;
 (function (Events) {
     Events["Init"] = "init";
@@ -41,6 +32,15 @@ function createItemsChangedEvent(_a) {
 }
 //# sourceMappingURL=createEvent.js.map
 
+function eventTarget() {
+    var port1 = new MessageChannel().port1;
+    return {
+        dispatchEvent: port1.dispatchEvent.bind(port1),
+        addEventListener: port1.addEventListener.bind(port1)
+    };
+}
+//# sourceMappingURL=eventTarget.js.map
+
 var El;
 (function (El) {
     El["Container"] = "container";
@@ -62,7 +62,6 @@ function pplus(targetElem, userOptions) {
     var eventChannel = eventTarget();
     var itemMap = new Map();
     var defaultOptions = {
-        innerToggleTemplate: 'More',
         classNames: (_a = {},
             _a[El.Container] = ['p-plus-container'],
             _a[El.Main] = ['p-plus'],
@@ -70,21 +69,22 @@ function pplus(targetElem, userOptions) {
             _a[El.PrimaryNav] = ['p-plus__primary'],
             _a[El.OverflowNav] = ['p-plus__overflow'],
             _a[El.ToggleBtn] = ['p-plus__toggle-btn'],
-            _a)
+            _a),
+        innerToggleTemplate: 'More'
     };
     var options = deepmerge(defaultOptions, userOptions || {}, { arrayMerge: function (_, source) { return source; } });
     var classNames = options.classNames;
     var el = {
-        primary: (_b = {},
+        clone: (_b = {},
             _b[El.Main] = undefined,
-            _b[El.PrimaryNav] = undefined,
             _b[El.NavItems] = undefined,
-            _b[El.OverflowNav] = undefined,
             _b[El.ToggleBtn] = undefined,
             _b),
-        clone: (_c = {},
+        primary: (_c = {},
             _c[El.Main] = undefined,
+            _c[El.PrimaryNav] = undefined,
             _c[El.NavItems] = undefined,
+            _c[El.OverflowNav] = undefined,
             _c[El.ToggleBtn] = undefined,
             _c)
     };
@@ -113,20 +113,21 @@ function pplus(targetElem, userOptions) {
         return "\n      <div " + dv(El.Main) + " class=\"" + cn(El.Main) + "\">\n        <div class=\"" + cn(El.PrimaryNavWrapper) + "\">\n          <" + targetElem.tagName + "\n            " + dv(El.PrimaryNav) + "\n            class=\"" + cn(El.PrimaryNav) + "\"\n          >\n            " + Array.from(targetElem.children).map(function (elem) { return ("<li " + dv(El.NavItems) + ">" + elem.innerHTML + "</li>"); }).join('') + "\n          </" + targetElem.tagName + ">\n        </div>\n        <button\n          " + dv(El.ToggleBtn) + "\n          class=\"" + cn(El.ToggleBtn) + "\"\n          aria-expanded=\"false\"\n        >" + processTemplate(options.innerToggleTemplate) + "</button>\n        <" + targetElem.tagName + "\n          " + dv(El.OverflowNav) + "\n          class=\"" + cn(El.OverflowNav) + "\"\n          aria-hidden=\"true\"\n        >\n        </" + targetElem.tagName + ">\n      </div>\n    ";
     }
     function setupEl() {
+        var _a;
         var markup = createMarkup();
         var container = document.createElement('div');
-        container.classList.add(classNames[El.Container]);
+        (_a = container.classList).add.apply(_a, classNames[El.Container]);
         var original = document.createRange().createContextualFragment(markup);
         var cloned = original.cloneNode(true);
         el.primary[El.Main] = original.querySelector("[" + dv(El.Main) + "]");
         el.primary[El.PrimaryNav] = original.querySelector("[" + dv(El.PrimaryNav) + "]");
-        el.primary[El.NavItems] = original.querySelectorAll("[" + dv(El.NavItems) + "]");
+        el.primary[El.NavItems] = Array.from(original.querySelectorAll("[" + dv(El.NavItems) + "]"));
         el.primary[El.OverflowNav] = original.querySelector("[" + dv(El.OverflowNav) + "]");
         el.primary[El.ToggleBtn] = original.querySelector("[" + dv(El.ToggleBtn) + "]");
         el.clone[El.Main] = cloned.querySelector("[" + dv(El.Main) + "]");
         el.clone[El.NavItems] = Array.from(cloned.querySelectorAll("[" + dv(El.NavItems) + "]"));
         el.clone[El.ToggleBtn] = cloned.querySelector("[" + dv(El.ToggleBtn) + "]");
-        el.clone[El.Main].setAttribute('aria-hidden', true);
+        el.clone[El.Main].setAttribute('aria-hidden', 'true');
         el.clone[El.Main].classList.add(classNames[El.Main] + "--clone");
         el.clone[El.Main].classList.add(classNames[El.Main] + "--" + StateModifiers.ButtonVisible);
         container.appendChild(original);
@@ -195,7 +196,7 @@ function pplus(targetElem, userOptions) {
         if (hidden === void 0) { hidden = true; }
         var hiddenClass = classNames[El.Main] + "--" + StateModifiers.PrimaryHidden;
         el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
-        el.primary[El.PrimaryNav].setAttribute('aria-hidden', hidden);
+        el.primary[El.PrimaryNav].setAttribute('aria-hidden', String(hidden));
     }
     function onToggleClick(e) {
         e.preventDefault();
