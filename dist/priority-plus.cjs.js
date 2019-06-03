@@ -24,6 +24,7 @@ function createInitEvent() {
 function createItemsChangedEvent({ overflowCount }) {
     return createEvent(Events.ItemsChanged, { overflowCount });
 }
+//# sourceMappingURL=createEvent.js.map
 
 function eventTarget() {
     const { port1 } = new MessageChannel();
@@ -33,6 +34,7 @@ function eventTarget() {
         removeEventListener: port1.removeEventListener.bind(port1)
     };
 }
+//# sourceMappingURL=eventTarget.js.map
 
 /**
  * Joins an array of error messages into one message.
@@ -72,6 +74,7 @@ function validateInput(targetElem, userOptions, defaultOptions) {
 function validateAndThrow(targetElem, userOptions, defaultOptions) {
     throwValidation(validateInput(targetElem, userOptions, defaultOptions));
 }
+//# sourceMappingURL=validation.js.map
 
 var El;
 (function (El) {
@@ -369,5 +372,6 @@ function priorityPlus(targetElem, userOptions = {}) {
         toggleOverflowNav,
     };
 }
+//# sourceMappingURL=priorityPlus.js.map
 
 module.exports = priorityPlus;
