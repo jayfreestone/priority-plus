@@ -1,4 +1,3 @@
-import deepmerge from 'deepmerge';
 import {
   createHideOverflowEvent,
   createInitEvent,
@@ -29,7 +28,6 @@ enum StateModifiers {
 }
 
 interface Options {
-  innerToggleTemplate?: string|((args: object) => string);
   classNames?: {
     [El.Container]: string[],
     [El.Main]: string[],
@@ -38,6 +36,7 @@ interface Options {
     [El.OverflowNav]: string[],
     [El.ToggleBtn]: string[],
   };
+  innerToggleTemplate?: string|((args: object) => string);
 }
 
 const defaultOptions: Options = {
@@ -52,7 +51,7 @@ const defaultOptions: Options = {
   innerToggleTemplate: 'More',
 };
 
-function pplus(targetElem: HTMLElement, userOptions?: Options) {
+function pplus(targetElem: HTMLElement, userOptions: Options = {}) {
   /**
    * The instance's event emitter.
    */
@@ -64,11 +63,11 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
    */
   const itemMap: Map<HTMLElement|Element, NavType> = new Map();
 
-  const options: Options = deepmerge(
-    defaultOptions,
-    userOptions || {},
-    { arrayMerge: (_, source) => source },
-  );
+  const options: Options = {
+    ...defaultOptions,
+    ...userOptions,
+    classNames: { ...defaultOptions.classNames, ...userOptions.classNames },
+  };
 
   const { classNames } = options;
 
@@ -200,9 +199,9 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
 
     el.clone[El.Main].setAttribute('aria-hidden', 'true');
-    el.clone[El.Main].classList.add(`${classNames[El.Main]}--clone`);
+    el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--clone`);
 
-    el.clone[El.Main].classList.add(`${classNames[El.Main]}--${StateModifiers.ButtonVisible}`);
+    el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--${StateModifiers.ButtonVisible}`);
 
     container.appendChild(original);
     container.appendChild(cloned);
@@ -219,7 +218,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
    */
   function updateBtnDisplay(show: boolean = true) {
     el.primary[El.Main].classList[show ? 'add' : 'remove'](
-      `${classNames[El.Main]}--${StateModifiers.ButtonVisible}`,
+      `${classNames[El.Main][0]}--${StateModifiers.ButtonVisible}`,
     );
 
     if (typeof options.innerToggleTemplate !== 'string') {
@@ -301,7 +300,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
    * Sets the visibility of the overflow navigation.
    */
   function setOverflowNavOpen(open = true) {
-    const openClass = `${classNames[El.Main]}--${StateModifiers.OverflowVisible}`;
+    const openClass = `${classNames[El.Main][0]}--${StateModifiers.OverflowVisible}`;
     el.primary[El.Main].classList[open ? 'add' : 'remove'](openClass);
     el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
     el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -315,7 +314,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
    * Toggles the visibility of the overflow navigation.
    */
   function toggleOverflowNav() {
-    const openClass = `${classNames[El.Main]}--${StateModifiers.OverflowVisible}`;
+    const openClass = `${classNames[El.Main][0]}--${StateModifiers.OverflowVisible}`;
     setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
   }
 
@@ -324,7 +323,7 @@ function pplus(targetElem: HTMLElement, userOptions?: Options) {
    * when all the navigation items are hidden in the overflow nav).
    */
   function setPrimaryHidden(hidden = true) {
-    const hiddenClass = `${classNames[El.Main]}--${StateModifiers.PrimaryHidden}`;
+    const hiddenClass = `${classNames[El.Main][0]}--${StateModifiers.PrimaryHidden}`;
     el.primary[El.Main].classList[hidden ? 'add' : 'remove'](hiddenClass);
     el.primary[El.PrimaryNav].setAttribute('aria-hidden', String(hidden));
   }
