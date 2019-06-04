@@ -46,7 +46,7 @@ describe('Nav items', () => {
         .then(isOverflowing())
         .then((overflowing) => {
           cy
-            .get('[data-main]:not([data-clone]) [data-toggle-btn]')
+            .get('@toggle-btn')
             .should(overflowing ? 'be.visible' : 'not.be.visible')
             .then(getNavItemsAs(newPrimaryItems, '[data-primary-nav]'));
 
@@ -69,9 +69,11 @@ describe('Nav items', () => {
 
   beforeEach(() => {
     cy.visit('http://127.0.0.1:8080');
+    cy.get('[data-main]:not([data-clone]) [data-toggle-btn]')
+      .as('toggle-btn');
   });
 
-  describe('are moved to the overflow', () => {
+  describe('are moved to the overflow nav', () => {
     it('at 768px', () => {
       cy
         .then(getItemsAfterBreakpoint({ breakpoint: 768 }))
@@ -85,7 +87,7 @@ describe('Nav items', () => {
     });
   });
 
-  describe('are moved to the primary', () => {
+  describe('are moved to the primary nav', () => {
     beforeEach(() => {
       cy.viewport(320, 660);
     });
