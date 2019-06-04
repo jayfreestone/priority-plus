@@ -1,83 +1,87 @@
-Cypress.Commands.add('getNavItemsAs', (as, navSelector = '') => {
-  cy
-    .get(`[data-main]:not([data-clone]) ${navSelector} [data-nav-item]`)
-    .invoke('toArray')
-    .as(as);
-});
-
-Cypress.Commands.add('isOverflowing', () => (
-  cy
-    .get('[data-container]')
-    .invoke('outerWidth')
-    .then(containerWidth => (
-      cy
-        .get('[data-clone] [data-primary-nav]')
-        .invoke('outerWidth')
-        .then(cloneWidth => cloneWidth > containerWidth)
-    ))
-));
-
-Cypress.Commands.add('getItemsAfterBreakpoint', (options) => {
-  const {
-    breakpoint = [1000, 660],
-    as: {
-      originalNavItems = 'originalItems',
-      newOverflowItems = 'newOverflowItems',
-      newPrimaryItems = 'newPrimaryItems',
-    } = {},
-  } = options;
-  cy.getNavItemsAs(originalNavItems);
-  cy.viewport(...breakpoint);
-
-  // Required to 'wait' for mounting and library init
-  cy.get('[data-toggle-btn]').should('exist');
-
-  cy
-    .isOverflowing()
-    .then((isOverflowing) => {
-      cy
-        .get('[data-main]:not([data-clone]) [data-toggle-btn]')
-        .should(isOverflowing ? 'be.visible' : 'not.be.visible');
-
-      cy.getNavItemsAs(newPrimaryItems, '[data-primary-nav]');
-
-      if (isOverflowing) {
-        cy.getNavItemsAs(newOverflowItems, '[data-overflow-nav]');
-      } else {
-        cy.wrap([]).as(newOverflowItems);
-      }
-    });
-});
-
 describe('Nav items', () => {
+  function isOverflowing() {
+    return () => (
+      cy
+        .get('[data-container]')
+        .invoke('outerWidth')
+        .then(containerWidth => (
+          cy
+            .get('[data-clone] [data-primary-nav]')
+            .invoke('outerWidth')
+            .then(cloneWidth => cloneWidth > containerWidth)
+        ))
+    );
+  }
+
+  function expectOriginalComparison() {
+    return function({ newPrimaryItems = [], newOverflowItems = [], originalItems = [] }) {
+      expect([...newPrimaryItems, ...newOverflowItems])
+        .to.deep.equal([...originalItems]);
+    };
+  }
+
+  function getNavItemsAs(as, navSelector = '') {
+    return () => (
+      cy
+        .get(`[data-main]:not([data-clone]) ${navSelector} [data-nav-item]`)
+        .invoke('toArray')
+        .as(as)
+    );
+  }
+
+  function getItemsAfterBreakpoint(options) {
+    return () => {
+      const {
+        breakpoint = 1000,
+        as: {
+          originalItems = 'originalItems',
+          newOverflowItems = 'newOverflowItems',
+          newPrimaryItems = 'newPrimaryItems',
+        } = {},
+      } = options;
+      cy.then(getNavItemsAs(originalItems));
+      cy.viewport(breakpoint, Cypress.config('viewportHeight'));
+
+      return cy
+        .then(isOverflowing())
+        .then((overflowing) => {
+          cy
+            .get('[data-main]:not([data-clone]) [data-toggle-btn]')
+            .should(overflowing ? 'be.visible' : 'not.be.visible')
+            .then(getNavItemsAs(newPrimaryItems, '[data-primary-nav]'));
+
+          if (overflowing) {
+            cy.then(getNavItemsAs(newOverflowItems, '[data-overflow-nav]'));
+          } else {
+            cy.wrap([]).as(newOverflowItems);
+          }
+
+          return cy.then(function() {
+            return {
+              originalItems: this.originalItems,
+              newPrimaryItems: this.newPrimaryItems,
+              newOverflowItems: this.newOverflowItems
+            };
+          });
+        });
+    };
+  }
+
+  beforeEach(() => {
+    cy.visit('http://127.0.0.1:8080');
+  });
+
   describe('are moved to the overflow', () => {
     it('at 768px', () => {
-      cy.visit('http://127.0.0.1:8080');
-
-      cy.getItemsAfterBreakpoint({
-        breakpoint: [768, 660],
-      });
-
       cy
-      .then(function() {
-        expect([...this.newPrimaryItems, ...this.newOverflowItems])
-          .to.deep.equal([...this.originalItems]);
-      });
-
+        .then(getItemsAfterBreakpoint({ breakpoint: 768 }))
+        .then(expectOriginalComparison());
     });
 
     it('at 320px', () => {
-      cy.visit('http://127.0.0.1:8080');
-
-      cy.getItemsAfterBreakpoint({
-        breakpoint: [320, 660],
-      });
-
       cy
-      .then(function() {
-        expect([...this.newPrimaryItems, ...this.newOverflowItems])
-          .to.deep.equal([...this.originalItems]);
-      });
+        .then(getItemsAfterBreakpoint({ breakpoint: 320 }))
+        .then(expectOriginalComparison());
     });
   });
 
@@ -87,36 +91,15 @@ describe('Nav items', () => {
     });
 
     it('at 768px', () => {
-      cy.visit('http://127.0.0.1:8080');
-
-      cy.getItemsAfterBreakpoint({
-        breakpoint: [768, 660],
-      });
-
       cy
-      .then(function() {
-        expect([...this.newPrimaryItems, ...this.newOverflowItems])
-          .to.deep.equal([...this.originalItems]);
-      });
+        .then(getItemsAfterBreakpoint({ breakpoint: 768 }))
+        .then(expectOriginalComparison());
     });
 
     it('at 1000px', () => {
-      cy.visit('http://127.0.0.1:8080');
-
-      // cy
-      //   .get('[data-clone] [data-primary-nav]')
-      //   .invoke('outerWidth')
-      //   .then(x => console.log(x));
-
-      cy.getItemsAfterBreakpoint({
-        breakpoint: [1000, 660],
-      });
-
       cy
-      .then(function() {
-        expect([...this.newPrimaryItems, ...this.newOverflowItems])
-          .to.deep.equal([...this.originalItems]);
-      });
+        .then(getItemsAfterBreakpoint({ breakpoint: 1000 }))
+        .then(expectOriginalComparison());
     });
   });
 });
