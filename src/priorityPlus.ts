@@ -184,6 +184,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     const markup = createMarkup();
     const container = document.createElement('div');
     container.classList.add(...classNames[El.Container]);
+    container.setAttribute(dv(El.Container), 'true');
 
     const original = document.createRange().createContextualFragment(markup);
     const cloned = original.cloneNode(true) as Element;
