@@ -337,6 +337,8 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     eventChannel.dispatchEvent(
       open ? createShowOverflowEvent() : createHideOverflowEvent(),
     );
+
+    return this;
   }
 
   /**
@@ -345,6 +347,8 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   function toggleOverflowNav() {
     const openClass = `${classNames[El.Main][0]}--${StateModifiers.OverflowVisible}`;
     setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
+
+    return this;
   }
 
   /**

@@ -306,6 +306,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
         el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
         eventChannel.dispatchEvent(open ? createShowOverflowEvent() : createHideOverflowEvent());
+        return this;
     }
     /**
      * Toggles the visibility of the overflow navigation.
@@ -313,6 +314,7 @@ function priorityPlus(targetElem, userOptions = {}) {
     function toggleOverflowNav() {
         const openClass = `${classNames[El.Main][0]}--${StateModifiers.OverflowVisible}`;
         setOverflowNavOpen(!el.primary[El.Main].classList.contains(openClass));
+        return this;
     }
     /**
      * Sets the visibility of the primary navigation (we hide the primary nav
@@ -341,7 +343,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         setPrimaryHidden(overflowCount === el.clone[El.NavItems].length);
     }
     /**
-     * Creates an event listener.
+     * Registers an an event listener for the instance.
      * By default the callback will only be run after the first-load of the library.
      * However this can be overridden by setting 'afterReady' to 'false'.
      */
