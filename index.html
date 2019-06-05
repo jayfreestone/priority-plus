@@ -59,11 +59,24 @@
     }
   </style>
   <script>
+    const queryParams = new URLSearchParams(window.location.search);
+
     const inst = priorityPlus(document.querySelector('.js-p-target'), {
+      defaultOverflowVisible: Boolean(queryParams.get('showOverflow')),
       classNames: {
         main: ['p-plus'],
       },
     });
+
+    inst.on('hideOverflow', () => console.log('running hideOverflow'));
+
+    window.$inst = inst;
+
+/**
+    inst.on('itemsChanged', () => {
+      console.log('itemsChanged');
+    });
+    */
   </script>
 </body>
 </html>

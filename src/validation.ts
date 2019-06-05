@@ -22,7 +22,7 @@ function validateTarget(targetElem: HTMLElement) {
  */
 function validateOptions(userOptions: object, defaultOptions: object) {
   return Object.keys(userOptions)
-    .map(key => !defaultOptions[key] ? `Unrecognised option: ${key}` : undefined)
+    .map(key => typeof defaultOptions[key] === 'undefined' ? `Unrecognised option: ${key}` : undefined)
     .filter(Boolean);
 }
 

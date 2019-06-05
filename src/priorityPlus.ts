@@ -36,6 +36,7 @@ interface Options {
     [El.OverflowNav]: string[],
     [El.ToggleBtn]: string[],
   };
+  defaultOverflowVisible?: boolean;
   innerToggleTemplate?: string|((args: object) => string);
 }
 
@@ -48,6 +49,7 @@ const defaultOptions: Options = {
     [El.OverflowNav]: ['p-plus__overflow'],
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
   },
+  defaultOverflowVisible: false,
   innerToggleTemplate: 'More',
 };
 
@@ -396,6 +398,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     setupEl();
     bindListeners();
     eventChannel.dispatchEvent(createInitEvent());
+    if (options.defaultOverflowVisible) setOverflowNavOpen(true);
   }());
 
   return {

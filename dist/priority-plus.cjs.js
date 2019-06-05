@@ -59,7 +59,7 @@ function validateTarget(targetElem) {
  */
 function validateOptions(userOptions, defaultOptions) {
     return Object.keys(userOptions)
-        .map(key => !defaultOptions[key] ? `Unrecognised option: ${key}` : undefined)
+        .map(key => typeof defaultOptions[key] === 'undefined' ? `Unrecognised option: ${key}` : undefined)
         .filter(Boolean);
 }
 /**
@@ -74,7 +74,6 @@ function validateInput(targetElem, userOptions, defaultOptions) {
 function validateAndThrow(targetElem, userOptions, defaultOptions) {
     throwValidation(validateInput(targetElem, userOptions, defaultOptions));
 }
-//# sourceMappingURL=validation.js.map
 
 var El;
 (function (El) {
@@ -101,6 +100,7 @@ const defaultOptions = {
         [El.OverflowNav]: ['p-plus__overflow'],
         [El.ToggleBtn]: ['p-plus__toggle-btn'],
     },
+    defaultOverflowVisible: false,
     innerToggleTemplate: 'More',
 };
 function priorityPlus(targetElem, userOptions = {}) {
@@ -365,6 +365,8 @@ function priorityPlus(targetElem, userOptions = {}) {
             setupEl();
         bindListeners();
         eventChannel.dispatchEvent(createInitEvent());
+        if (options.defaultOverflowVisible)
+            setOverflowNavOpen(true);
     }());
     return {
         getNavElements,
