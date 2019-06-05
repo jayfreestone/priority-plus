@@ -107,9 +107,11 @@ function priorityPlus(targetElem, userOptions = {}) {
      * A map of navigation list items to their current designation (either the
      * primary nav or the overflow nav), based on if they 'fit'.
      */
-    const state = {
+    const inst = {
+        eventListeners: new Map(),
         eventReady: false,
         itemMap: new WeakMap(),
+        observer: undefined,
     };
     const options = Object.assign({}, defaultOptions, userOptions, { classNames: Object.assign({}, defaultOptions.classNames, userOptions.classNames) });
     const { classNames } = options;
@@ -117,6 +119,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      * References to DOM elements so we can easily retrieve them.
      */
     const el = {
+        [El.Container]: undefined,
         clone: {
             [El.Main]: undefined,
             [El.NavItems]: undefined,
@@ -196,11 +199,12 @@ function priorityPlus(targetElem, userOptions = {}) {
      * Replaces the navigation with the two clones and populates the 'el' object.
      */
     function setupEl() {
-        const { itemMap } = state;
+        const { itemMap } = inst;
         const markup = createMarkup();
         const container = document.createElement('div');
         container.classList.add(...classNames[El.Container]);
         container.setAttribute(dv(El.Container), 'true');
+        el[El.Container] = container;
         const original = document.createRange().createContextualFragment(markup);
         const cloned = original.cloneNode(true);
         el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`);
@@ -244,7 +248,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      * the mounted nav.
      */
     function generateNav(navType) {
-        const { itemMap } = state;
+        const { itemMap } = inst;
         const newNav = el.primary[navType].cloneNode();
         // Always use the clone as the base for our new nav,
         // since the order is canonical and it is never filtered.
@@ -270,7 +274,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      * We use this opportunity to check which type of nav the items belong to.
      */
     function onIntersect({ target, intersectionRatio }) {
-        state.itemMap.set(target, intersectionRatio < 0.99 ? El.OverflowNav : El.PrimaryNav);
+        inst.itemMap.set(target, intersectionRatio < 0.99 ? El.OverflowNav : El.PrimaryNav);
     }
     /**
      * The IO callback, which collects intersection events.
@@ -289,7 +293,7 @@ function priorityPlus(targetElem, userOptions = {}) {
          * the first itemsChanged and showOverflow events) will be sent to user-defined
          * listeners.
          */
-        state.eventReady = true;
+        inst.eventReady = true;
     }
     /**
      * Sets the visibility of the overflow navigation.
@@ -340,16 +344,22 @@ function priorityPlus(targetElem, userOptions = {}) {
      * However this can be overridden by setting 'afterReady' to 'false'.
      */
     function on(eventType, cb, afterReady = true) {
-        return eventChannel.addEventListener(eventType, event => {
-            if (!afterReady || state.eventReady)
+        function wrappedCallback(event) {
+            if (!afterReady || inst.eventReady)
                 cb(event);
-        });
+        }
+        // Store it so we can remove it later
+        inst.eventListeners.set(cb, { eventType, wrappedCallback });
+        eventChannel.addEventListener(eventType, wrappedCallback);
+        return this;
     }
     /**
      * Removes an event listener.
      */
     function off(eventType, cb) {
-        return eventChannel.removeEventListener(eventType, cb);
+        const { wrappedCallback } = inst.eventListeners.get(cb);
+        eventChannel.removeEventListener(eventType, wrappedCallback);
+        return this;
     }
     /**
      * Retrieves an index of the primary nav elements.
@@ -363,18 +373,29 @@ function priorityPlus(targetElem, userOptions = {}) {
      * Establishes initial event listeners.
      */
     function bindListeners() {
-        const observer = new IntersectionObserver(intersectionCallback, {
+        inst.observer = new IntersectionObserver(intersectionCallback, {
             root: el.clone[El.Main],
             rootMargin: '0px 0px 0px 0px',
             threshold: [0.99],
         });
-        el.clone[El.NavItems].forEach(elem => observer.observe(elem));
+        el.clone[El.NavItems].forEach(elem => inst.observer.observe(elem));
         el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
         on(Events.ItemsChanged, onItemsChanged, false);
     }
-    // destroy() {
-    //
-    // }
+    /**
+     * Remove listeners and attempt to reset the DOM.
+     */
+    function destroy() {
+        inst.observer.disconnect();
+        el.primary[El.ToggleBtn].removeEventListener('click', onToggleClick);
+        // Unhook instance based event listeners
+        Array.from(inst.eventListeners.entries())
+            .forEach(([cb, { eventType }]) => {
+            off(eventType, cb);
+        });
+        // Attempt to reset the DOM back to how it was
+        el[El.Container].parentNode.replaceChild(targetElem, el[El.Container]);
+    }
     (function init() {
         validateAndThrow(targetElem, userOptions, defaultOptions),
             setupEl();
@@ -383,6 +404,7 @@ function priorityPlus(targetElem, userOptions = {}) {
             setOverflowNavOpen(true);
     }());
     return {
+        destroy,
         getNavElements,
         off,
         on,
