@@ -1,5 +1,4 @@
 export enum Events {
-  Init = 'init',
   ShowOverflow = 'showOverflow',
   HideOverflow = 'hideOverflow',
   ItemsChanged = 'itemsChanged',
@@ -23,10 +22,6 @@ export function createShowOverflowEvent() {
 
 export function createHideOverflowEvent() {
   return createEvent(Events.HideOverflow);
-}
-
-export function createInitEvent() {
-  return createEvent(Events.Init);
 }
 
 export function createItemsChangedEvent({ overflowCount }: ItemsChangedEvent['detail']) {
