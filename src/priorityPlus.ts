@@ -379,7 +379,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   }
 
   /**
-   * Creates an event listener.
+   * Registers an an event listener for the instance.
    * By default the callback will only be run after the first-load of the library.
    * However this can be overridden by setting 'afterReady' to 'false'.
    */
