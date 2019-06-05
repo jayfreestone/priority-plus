@@ -72,6 +72,7 @@ function validateInput(targetElem, userOptions, defaultOptions) {
 function validateAndThrow(targetElem, userOptions, defaultOptions) {
     throwValidation(validateInput(targetElem, userOptions, defaultOptions));
 }
+//# sourceMappingURL=validation.js.map
 
 var El;
 (function (El) {
@@ -268,7 +269,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      * We use this opporunity to check which type of nav the items belong to.
      */
     function onIntersect({ target, intersectionRatio }) {
-        itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
+        itemMap.set(target, intersectionRatio < 0.99 ? El.OverflowNav : El.PrimaryNav);
     }
     /**
      * The IO callback, which collects intersection events.
@@ -352,7 +353,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         const observer = new IntersectionObserver(intersectionCallback, {
             root: el.clone[El.Main],
             rootMargin: '0px 0px 0px 0px',
-            threshold: [1],
+            threshold: [0.99],
         });
         el.clone[El.NavItems].forEach(elem => observer.observe(elem));
         el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
@@ -374,6 +375,5 @@ function priorityPlus(targetElem, userOptions = {}) {
         toggleOverflowNav,
     };
 }
-//# sourceMappingURL=priorityPlus.js.map
 
 export default priorityPlus;

@@ -282,7 +282,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    * We use this opporunity to check which type of nav the items belong to.
    */
   function onIntersect({ target, intersectionRatio }: IntersectionObserverEntry) {
-    itemMap.set(target, intersectionRatio < 1 ? El.OverflowNav : El.PrimaryNav);
+    itemMap.set(target, intersectionRatio < 0.99 ? El.OverflowNav : El.PrimaryNav);
   }
 
   /**
@@ -383,7 +383,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     const observer = new IntersectionObserver(intersectionCallback, {
       root: el.clone[El.Main],
       rootMargin: '0px 0px 0px 0px',
-      threshold: [1],
+      threshold: [0.99],
     });
 
     el.clone[El.NavItems].forEach(elem => observer.observe(elem));
