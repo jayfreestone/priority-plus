@@ -65,7 +65,7 @@ describe('Nav items', () => {
   }
 
   beforeEach(() => {
-    cy.visit('http://127.0.0.1:8080');
+    cy.visit('/');
     cy.get('[data-main]:not([data-clone]) [data-toggle-btn]')
       .as('toggle-btn');
   });

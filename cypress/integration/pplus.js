@@ -2,7 +2,7 @@ import priorityPlus from '../../dist/priority-plus.cjs';
 
 describe('Events', () => {
   beforeEach(() => {
-    cy.visit('http://127.0.0.1:8080');
+    cy.visit('/');
     cy.window()
       .then(({ $inst }) => $inst)
       .as('instance');
