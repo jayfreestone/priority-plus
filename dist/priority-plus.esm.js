@@ -267,7 +267,7 @@ function priorityPlus(targetElem, userOptions = {}) {
     }
     /**
      * Run every time a nav item intersects with the parent container.
-     * We use this opporunity to check which type of nav the items belong to.
+     * We use this opportunity to check which type of nav the items belong to.
      */
     function onIntersect({ target, intersectionRatio }) {
         state.itemMap.set(target, intersectionRatio < 0.99 ? El.OverflowNav : El.PrimaryNav);
