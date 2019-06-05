@@ -109,7 +109,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      */
     const state = {
         eventReady: false,
-        itemMap: new Map(),
+        itemMap: new WeakMap(),
     };
     const options = Object.assign({}, defaultOptions, userOptions, { classNames: Object.assign({}, defaultOptions.classNames, userOptions.classNames) });
     const { classNames } = options;
@@ -372,6 +372,9 @@ function priorityPlus(targetElem, userOptions = {}) {
         el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
         on(Events.ItemsChanged, onItemsChanged, false);
     }
+    // destroy() {
+    //
+    // }
     (function init() {
         validateAndThrow(targetElem, userOptions, defaultOptions),
             setupEl();

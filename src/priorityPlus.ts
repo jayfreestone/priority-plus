@@ -64,10 +64,10 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    */
   const state: {
     eventReady: boolean,
-    itemMap: Map<HTMLElement|Element, NavType>,
+    itemMap: WeakMap<HTMLElement|Element, NavType>,
   } = {
     eventReady: false,
-    itemMap: new Map(),
+    itemMap: new WeakMap(),
   };
 
   const options: Options = {
@@ -411,6 +411,10 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
 
     on(Events.ItemsChanged, onItemsChanged, false);
   }
+
+  // destroy() {
+  //
+  // }
 
   (function init() {
     validateAndThrow(targetElem, userOptions, defaultOptions),
