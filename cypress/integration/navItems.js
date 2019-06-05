@@ -1,8 +1,7 @@
 describe('Nav items', () => {
   function isOverflowing() {
     return () => (
-      cy
-        .get('[data-container]')
+      cy.get('[data-container]')
         .invoke('outerWidth')
         .then(containerWidth => (
           cy
@@ -22,8 +21,7 @@ describe('Nav items', () => {
 
   function getNavItemsAs(as, navSelector = '') {
     return () => (
-      cy
-        .get(`[data-main]:not([data-clone]) ${navSelector} [data-nav-item]`)
+      cy.get(`[data-main]:not([data-clone]) ${navSelector} [data-nav-item]`)
         .invoke('toArray')
         .as(as)
     );
@@ -45,8 +43,7 @@ describe('Nav items', () => {
       return cy
         .then(isOverflowing())
         .then((overflowing) => {
-          cy
-            .get('@toggle-btn')
+          cy.get('@toggle-btn')
             .should(overflowing ? 'be.visible' : 'not.be.visible')
             .then(getNavItemsAs(newPrimaryItems, '[data-primary-nav]'));
 
@@ -75,14 +72,12 @@ describe('Nav items', () => {
 
   describe('are moved to the overflow nav', () => {
     it('at 768px', () => {
-      cy
-        .then(getItemsAfterBreakpoint({ breakpoint: 768 }))
+      cy.then(getItemsAfterBreakpoint({ breakpoint: 768 }))
         .then(expectOriginalComparison());
     });
 
     it('at 320px', () => {
-      cy
-        .then(getItemsAfterBreakpoint({ breakpoint: 320 }))
+      cy.then(getItemsAfterBreakpoint({ breakpoint: 320 }))
         .then(expectOriginalComparison());
     });
   });
@@ -93,14 +88,12 @@ describe('Nav items', () => {
     });
 
     it('at 768px', () => {
-      cy
-        .then(getItemsAfterBreakpoint({ breakpoint: 768 }))
+      cy.then(getItemsAfterBreakpoint({ breakpoint: 768 }))
         .then(expectOriginalComparison());
     });
 
     it('at 1000px', () => {
-      cy
-        .then(getItemsAfterBreakpoint({ breakpoint: 1000 }))
+      cy.then(getItemsAfterBreakpoint({ breakpoint: 1000 }))
         .then(expectOriginalComparison());
     });
   });
