@@ -2,6 +2,16 @@
 
 A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
+[Demo](https://jayfreestone.github.io/priority-plus/)
+
+**The short stuff**:
+
+- Vanilla JS, dependency free. Available as an ES6 module, CJS module, or a UMD bundle.
+- Uses the [`IntersectionObserver` API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API) instead of width-based calculations.
+- Toggles the appropriate [WAI-ARIA](https://www.w3.org/WAI/standards-guidelines/aria/) attributes to remain accessible.
+- Provides a class hook to style the menu differently when all items are in the overflow/hidden.
+- Provides a way to update the overflow toggle button with the hidden item count.
+
 The UMD build comes in at roughly 7kb, 2kb after `gzip`.
 
 ## What is it
