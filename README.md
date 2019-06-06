@@ -69,6 +69,11 @@ You can create a new instance by passing in an `HTMLElement` that is the direct 
 </nav>
 ```
 
+```css
+// Doesn't have to be SASS, just ensure the CSS is included.
+@import "../node_modules/priority-nav/css/main";
+```
+
 ```javascript
 import priorityPlus from 'priority-plus';
 priorityPlus(document.querySelector('.js-p-target'));
