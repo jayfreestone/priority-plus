@@ -165,6 +165,8 @@ priorityPlus(document.querySelector('.js-p-target'), {
 });
 ```
 
+Be aware that if you alter the width of the element by changing its content, you could create a loop wherein the button updates, triggering a new intersection, which causes the button to update (and so on). Therefore it's probably a good idea to apply a width to the button so it remains consistent.
+
 ## Events
 
 Arguments are provided via the `details` property.
