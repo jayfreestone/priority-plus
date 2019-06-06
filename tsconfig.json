@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "sourceMap": true,
+    "module": "commonjs",
+    "target": "es6",
+    "lib": [
+      "dom",
+      "es6"
+    ]
+  },
+  "compileOnSave": false
+}

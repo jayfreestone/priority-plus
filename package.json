@@ -25,6 +25,7 @@
     "rollup": "^1.6.0"
   },
   "devDependencies": {
+    "@cypress/webpack-preprocessor": "^4.1.0",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "concurrently": "^4.1.0",
@@ -34,8 +35,10 @@
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-terser": "^5.0.0",
     "rollup-plugin-typescript": "^1.0.0",
+    "ts-loader": "^6.0.2",
     "tslib": "^1.9.3",
     "tslint": "^5.17.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.3.3333",
+    "webpack": "^4.33.0"
   }
 }
