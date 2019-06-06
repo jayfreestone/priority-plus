@@ -7,6 +7,7 @@ import {
 } from './events/createEvent';
 import eventTarget from './events/eventTarget';
 import validateAndThrow from './validation';
+import createMirror from './utils/createMirror';
 
 enum El {
   Container = 'container',
@@ -122,22 +123,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    * Gets an element's 'mirror' Map for the clone/primary navigation - e.g.
    * if you pass a clone Map, you get the original Map and vice-versa.
    */
-  const getElemMirror = (() => {
-    const cache = new Map();
-
-    return function getMirror(keyArr: HTMLElement[], valueArr: HTMLElement[]): Map<HTMLElement, HTMLElement> {
-      if (!cache.get(keyArr)) {
-        cache.set(
-          keyArr,
-          new Map(Array.from(keyArr).reduce((acc, item, i) => (
-            acc.concat([[item, valueArr[i]]])
-          ), [])),
-        );
-      }
-
-      return cache.get(keyArr);
-    };
-  })();
+  const getElemMirror = createMirror();
 
   /**
    * Generates classes based on an element name.

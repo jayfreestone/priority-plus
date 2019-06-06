@@ -72,6 +72,20 @@ function validateAndThrow(targetElem, userOptions, defaultOptions) {
 }
 //# sourceMappingURL=validation.js.map
 
+function createMirror() {
+    const cache = new WeakMap();
+    /**
+     * Retrieves a Map of 'mirrored' elements, collected by index, e.g.
+     * the comparable element in a different array that shares the same index.
+     */
+    return function getMirror(keyArr, valueArr) {
+        if (!cache.get(keyArr)) {
+            cache.set(keyArr, new Map(Array.from(keyArr).reduce((acc, item, i) => (acc.concat([[item, valueArr[i]]])), [])));
+        }
+        return cache.get(keyArr);
+    };
+}
+
 var El;
 (function (El) {
     El["Container"] = "container";
@@ -139,15 +153,7 @@ function priorityPlus(targetElem, userOptions = {}) {
      * Gets an element's 'mirror' Map for the clone/primary navigation - e.g.
      * if you pass a clone Map, you get the original Map and vice-versa.
      */
-    const getElemMirror = (() => {
-        const cache = new Map();
-        return function getMirror(keyArr, valueArr) {
-            if (!cache.get(keyArr)) {
-                cache.set(keyArr, new Map(Array.from(keyArr).reduce((acc, item, i) => (acc.concat([[item, valueArr[i]]])), [])));
-            }
-            return cache.get(keyArr);
-        };
-    })();
+    const getElemMirror = createMirror();
     /**
      * Generates classes based on an element name.
      */
