@@ -145,11 +145,9 @@ Each class override must be passed as an array.
 | `overflow-nav` | `p-plus__overflow` | Wrapper for the overflow navigation.
 | `toggle-btn` | `p-plus__toggle-btn` | Applied to the dropdown menu toggle button.
 
-## Templates 
+### Templates 
 
-### innerToggleTemplate
-
-**Type:** `String|Function`
+#### `innerToggleTemplate(String|Function)`
 
 **Default:** 'More'
 
@@ -169,20 +167,10 @@ priorityPlus(document.querySelector('.js-p-target'), {
 
 ## Events
 
-### init
+Arguments are provided via the `details` property.
 
-**Usage:** Triggered when the lib has loaded and swapped out the nav.
-
-### showOverflow
-
-**Usage:** Triggered when the overflow nav becomes visible.
-
-### hideOverflow
-
-**Usage:** Triggered when the overflow nav becomes invisible.
-
-### itemsChanged
-
-**Arguments:** `overflowCount` (The number of items in the overflow nav)
-
-**Usage:** Triggered when the navigation items are updated (either added/removed).
+| Name | Arguments  | Description |
+|------|----------|----------|
+| `showOverflow` | None | Triggered when the overflow nav becomes visible.
+| `hideOverflow` | None | Triggered when the overflow nav becomes invisible.
+| `itemsChanged` | `overflowCount` (The number of items in the overflow nav) | Triggered when the navigation items are updated (either added/removed).
