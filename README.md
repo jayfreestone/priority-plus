@@ -2,6 +2,8 @@
 
 A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
+The UMD build comes in at roughly 7kb, 2kb after `gzip`.
+
 ## What is it
 
 As [Brad](http://bradfrost.com/blog/post/complex-navigation-patterns-for-responsive-design/#priority-plus) explains:
@@ -44,6 +46,12 @@ It also *clones* this version, so there are actually two versions of the new nav
 As the items overflow, they trigger the parent's `IntersectionObserver`. This means we can easily detect when (and in which direction) a new nav item clashes with the outer boundary of the navigation.
 
 Once we detect a collision, we store which navigation it should now belong to (primary or overflow) and update both in the DOM.
+
+## Browser support
+
+This library is designed to work with modern browsers, and as such makes no promises when it comes to the likes of InternetExplorer.
+
+However, provided you bring-your-own support for the `IntersectionObserver` API and include the library in a transpiled bundle, there's no (obvious) reason it wouldn't work in anything that supports `Map`/`WeakMap`.
 
 ## Getting started
 
