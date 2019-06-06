@@ -8,6 +8,7 @@ import {
 import eventTarget from './events/eventTarget';
 import validateAndThrow from './validation';
 import createMirror from './utils/createMirror';
+import processTemplate from './utils/processTemplate';
 
 enum El {
   Container = 'container',
@@ -138,14 +139,6 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    */
   function dv(key: El): string {
     return `data-${key}`;
-  }
-
-  /**
-   * Takes a string/function template and returns a DOM string.
-   */
-  function processTemplate(input: string|((args: object) => string), args = {}): string {
-    if (typeof input === 'string') return input;
-    return input(args);
   }
 
   /**

@@ -83,6 +83,17 @@ function createMirror() {
         return cache.get(keyArr);
     };
 }
+//# sourceMappingURL=createMirror.js.map
+
+/**
+ * Takes a string/function template and returns a DOM string.
+ */
+function processTemplate(input, args = {}) {
+    if (typeof input === 'string')
+        return input;
+    return input(args);
+}
+//# sourceMappingURL=processTemplate.js.map
 
 var El;
 (function (El) {
@@ -164,14 +175,6 @@ function priorityPlus(targetElem, userOptions = {}) {
      */
     function dv(key) {
         return `data-${key}`;
-    }
-    /**
-     * Takes a string/function template and returns a DOM string.
-     */
-    function processTemplate(input, args = {}) {
-        if (typeof input === 'string')
-            return input;
-        return input(args);
     }
     /**
      * Generates the HTML to use in-place of the user's supplied element.
