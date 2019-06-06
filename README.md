@@ -22,31 +22,18 @@ When initiated, the library creates a new version of your navigation with the re
 
 ```html
 <div data-main class="p-plus">
-	<div class="p-plus__primary-wrapper">
-	  <ul
-		  data-primary-nav
-		  class="p-plus__primary"
-		  aria-hidden="false"
-	  >
-		  <li data-nav-item>
-			  <a href="#">Home</a>
-		  </li>
-		  <!-- etc -->
-	  </ul>
-	</div>
-	<button
-		data-toggle-btn
-		class="p-plus__toggle-btn"
-		aria-expanded="false"
-	>
-		<span aria-label="More">+ (0)</span>
-	</button>
-	<ul
-		data-overflow-nav
-		class="p-plus__overflow"
-		aria-hidden="true"
-	>
-	</ul>
+  <div class="p-plus__primary-wrapper">
+    <ul data-primary-nav class="p-plus__primary" aria-hidden="false">
+      <li data-nav-item>
+        <a href="#">Home</a>
+      </li>
+      <!-- etc -->
+    </ul>
+  </div>
+  <button data-toggle-btn class="p-plus__toggle-btn" aria-expanded="false">
+    <span aria-label="More">+ (0)</span>
+  </button>
+  <ul data-overflow-nav class="p-plus__overflow" aria-hidden="true"></ul>
 </div>
 ```
 
