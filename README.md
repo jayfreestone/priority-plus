@@ -1,10 +1,10 @@
 # Priority Plus
 
-A modern implementation of the [priority plus](http://bradfrost.com/blog/post/complex-navigation-patterns-for-responsive-design/#priority-plus) navigation pattern.
+A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
 ## What is it
 
-As Brad explains:
+As [Brad](http://bradfrost.com/blog/post/complex-navigation-patterns-for-responsive-design/#priority-plus) explains:
 
 > The Priority+ pattern...exposes what’s deemed to be the most important navigation elements and tucks away less important items behind a “more” link. The less important items are revealed when the user clicks the “more” link.
 
@@ -12,13 +12,43 @@ As Brad explains:
 
 This library implements the pattern by fitting as many navigation items as possible into the 'primary' navigation, and then automatically moving the rest into a dropdown. If more space becomes available, the links are gradually re-instated into the primary navigation.
 
-There are already examples of libraries that follow this behaviour, such as [PriorityNav.js](http://gijsroge.github.io/priority-nav.js/). However most of these were written before the advent of modern browser APIs such as the [`IntersectionObserver`](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API). Instead they usually work by measuring the parent and child elements, then calculating how many can and cannot fit.
+There are already examples of libraries that follow this behaviour, such as [PriorityNav.js](http://gijsroge.github.io/priority-nav.js/). However most of these were written before the advent of modern browser APIs such as the [`IntersectionObserver`](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API). Instead they work by measuring the parent and child elements, then calculating how many can and cannot fit.
 
 Instead, this library uses an `IntersectionObserver` to avoid costly measurements, instead relying on the browser to tell us when an element 'intersects' with the edge of the viewport. The result is faster - and generally snazzier.
 
 ## How it works
 
-When initiated, the library creates a new version of your navigation with the required markup, including a toggle button.
+When initiated, the library creates a new version of your navigation with the required markup, including a toggle button:
+
+```html
+<div data-main class="p-plus">
+	<div class="p-plus__primary-wrapper">
+	  <ul
+		  data-primary-nav
+		  class="p-plus__primary"
+		  aria-hidden="false"
+	  >
+		  <li data-nav-item>
+			  <a href="#">Home</a>
+		  </li>
+		  <!-- etc -->
+	  </ul>
+	</div>
+	<button
+		data-toggle-btn
+		class="p-plus__toggle-btn"
+		aria-expanded="false"
+	>
+		<span aria-label="More">+ (0)</span>
+	</button>
+	<ul
+		data-overflow-nav
+		class="p-plus__overflow"
+		aria-hidden="true"
+	>
+	</ul>
+</div>
+```
 
 It also *clones* this version, so there are actually two versions of the new navigation living on the page. One is the visible navigation that the library will add and remove elements from, and the other is an invisible copy that always retains the full set of nav items (which are forced to overflow horizontally).
 
@@ -34,12 +64,12 @@ You can create a new instance by passing in an `HTMLElement` that is the direct 
 
 ```html
 <nav>
-	<ul class="js-p-target">
-		<li><a href="/">Home</a></li>
-	  <li><a href="/">About</a></li>
-	  <li><a href="/">Work</a></li>
-	  <li><a href="/">Services longer nav title</a></li>
-	  <li><a href="/">Contact</a></li>
+  <ul class="js-p-target">
+    <li><a href="/">Home</a></li>
+    <li><a href="/">About</a></li>
+    <li><a href="/">Work</a></li>
+    <li><a href="/">Services longer nav title</a></li>
+    <li><a href="/">Contact</a></li>
   </ul>
 </nav>
 ```
