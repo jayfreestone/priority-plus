@@ -30,6 +30,79 @@ function eventTarget() {
 }
 //# sourceMappingURL=eventTarget.js.map
 
+function createEventHandler() {
+    const state = { eventReady: false };
+    const eventChannel = eventTarget();
+    const eventListeners = new Map();
+    /**
+     * Registers an an event listener for the instance.
+     * By default the callback will only be run after the first-load.
+     * However this can be overridden by setting 'afterReady' to 'false'.
+     */
+    function on(eventType, cb, afterReady = true) {
+        function wrappedCallback(event) {
+            if (!afterReady || state.eventReady)
+                cb(event);
+        }
+        // Store it so we can remove it later
+        eventListeners.set(cb, { eventType, wrappedCallback });
+        eventChannel.addEventListener(eventType, wrappedCallback);
+        return this;
+    }
+    /**
+     * Removes an event listener.
+     */
+    function off(eventType, cb) {
+        const { wrappedCallback } = eventListeners.get(cb);
+        eventChannel.removeEventListener(eventType, wrappedCallback);
+        return this;
+    }
+    /**
+     * Dispatch an event.
+     */
+    function trigger(event) {
+        eventChannel.dispatchEvent(event);
+    }
+    /**
+     * Set if we're ready to fire event callbacks.
+     */
+    function setEventReady(ready = true) {
+        state.eventReady = ready;
+    }
+    return {
+        off,
+        on,
+        setEventReady,
+        trigger,
+    };
+}
+//# sourceMappingURL=eventHandler.js.map
+
+function createMirror() {
+    const cache = new WeakMap();
+    /**
+     * Retrieves a Map of 'mirrored' elements, collected by index, e.g.
+     * the comparable element in a different array that shares the same index.
+     */
+    return function getMirror(keyArr, valueArr) {
+        if (!cache.get(keyArr)) {
+            cache.set(keyArr, new Map(Array.from(keyArr).reduce((acc, item, i) => (acc.concat([[item, valueArr[i]]])), [])));
+        }
+        return cache.get(keyArr);
+    };
+}
+//# sourceMappingURL=createMirror.js.map
+
+/**
+ * Takes a string/function template and returns a DOM string.
+ */
+function processTemplate(input, args = {}) {
+    if (typeof input === 'string')
+        return input;
+    return input(args);
+}
+//# sourceMappingURL=processTemplate.js.map
+
 /**
  * Joins an array of error messages into one message.
  */
@@ -70,31 +143,6 @@ function validateAndThrow(targetElem, userOptions, defaultOptions) {
 }
 //# sourceMappingURL=validation.js.map
 
-function createMirror() {
-    const cache = new WeakMap();
-    /**
-     * Retrieves a Map of 'mirrored' elements, collected by index, e.g.
-     * the comparable element in a different array that shares the same index.
-     */
-    return function getMirror(keyArr, valueArr) {
-        if (!cache.get(keyArr)) {
-            cache.set(keyArr, new Map(Array.from(keyArr).reduce((acc, item, i) => (acc.concat([[item, valueArr[i]]])), [])));
-        }
-        return cache.get(keyArr);
-    };
-}
-//# sourceMappingURL=createMirror.js.map
-
-/**
- * Takes a string/function template and returns a DOM string.
- */
-function processTemplate(input, args = {}) {
-    if (typeof input === 'string')
-        return input;
-    return input(args);
-}
-//# sourceMappingURL=processTemplate.js.map
-
 var El;
 (function (El) {
     El["Container"] = "container";
@@ -127,14 +175,13 @@ function priorityPlus(targetElem, userOptions = {}) {
     /**
      * The instance's event emitter.
      */
-    const eventChannel = eventTarget();
+    const eventHandler = createEventHandler();
     /**
      * A map of navigation list items to their current designation (either the
      * primary nav or the overflow nav), based on if they 'fit'.
      */
     const inst = {
         eventListeners: new Map(),
-        eventReady: false,
         itemMap: new WeakMap(),
         observer: undefined,
     };
@@ -293,7 +340,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         events.forEach(onIntersect);
         // Update the navs to reflect the new changes
         [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
-        eventChannel.dispatchEvent(createItemsChangedEvent({
+        eventHandler.trigger(createItemsChangedEvent({
             overflowCount: el.primary[El.OverflowNav].children.length,
         }));
         /**
@@ -302,7 +349,7 @@ function priorityPlus(targetElem, userOptions = {}) {
          * the first itemsChanged and showOverflow events) will be sent to user-defined
          * listeners.
          */
-        inst.eventReady = true;
+        eventHandler.setEventReady(true);
     }
     /**
      * Sets the visibility of the overflow navigation.
@@ -312,7 +359,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         el.primary[El.Main].classList[open ? 'add' : 'remove'](openClass);
         el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
         el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
-        eventChannel.dispatchEvent(open ? createShowOverflowEvent() : createHideOverflowEvent());
+        eventHandler.trigger(open ? createShowOverflowEvent() : createHideOverflowEvent());
         return this;
     }
     /**
@@ -350,29 +397,6 @@ function priorityPlus(targetElem, userOptions = {}) {
         setPrimaryHidden(overflowCount === el.clone[El.NavItems].length);
     }
     /**
-     * Registers an an event listener for the instance.
-     * By default the callback will only be run after the first-load of the library.
-     * However this can be overridden by setting 'afterReady' to 'false'.
-     */
-    function on(eventType, cb, afterReady = true) {
-        function wrappedCallback(event) {
-            if (!afterReady || inst.eventReady)
-                cb(event);
-        }
-        // Store it so we can remove it later
-        inst.eventListeners.set(cb, { eventType, wrappedCallback });
-        eventChannel.addEventListener(eventType, wrappedCallback);
-        return this;
-    }
-    /**
-     * Removes an event listener.
-     */
-    function off(eventType, cb) {
-        const { wrappedCallback } = inst.eventListeners.get(cb);
-        eventChannel.removeEventListener(eventType, wrappedCallback);
-        return this;
-    }
-    /**
      * Retrieves an index of the primary nav elements.
      */
     function getNavElements() {
@@ -391,7 +415,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         });
         el.clone[El.NavItems].forEach(elem => inst.observer.observe(elem));
         el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
-        on(Events.ItemsChanged, onItemsChanged, false);
+        eventHandler.on(Events.ItemsChanged, onItemsChanged, false);
     }
     /**
      * Remove listeners and attempt to reset the DOM.
@@ -402,7 +426,7 @@ function priorityPlus(targetElem, userOptions = {}) {
         // Unhook instance based event listeners
         Array.from(inst.eventListeners.entries())
             .forEach(([cb, { eventType }]) => {
-            off(eventType, cb);
+            eventHandler.off(eventType, cb);
         });
         // Attempt to reset the DOM back to how it was
         el[El.Container].parentNode.replaceChild(targetElem, el[El.Container]);
@@ -417,8 +441,8 @@ function priorityPlus(targetElem, userOptions = {}) {
     return {
         destroy,
         getNavElements,
-        off,
-        on,
+        off: eventHandler.off,
+        on: eventHandler.on,
         setOverflowNavOpen,
         toggleOverflowNav,
     };

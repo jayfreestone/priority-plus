@@ -5,10 +5,10 @@ import {
   Events,
   ItemsChangedEvent,
 } from './events/createEvent';
-import eventTarget from './events/eventTarget';
-import validateAndThrow from './validation';
+import createEventHandler from './events/eventHandler';
 import createMirror from './utils/createMirror';
 import processTemplate from './utils/processTemplate';
+import validateAndThrow from './validation';
 
 enum El {
   Container = 'container',
@@ -58,7 +58,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   /**
    * The instance's event emitter.
    */
-  const eventChannel = eventTarget();
+  const eventHandler = createEventHandler();
 
   /**
    * A map of navigation list items to their current designation (either the
@@ -69,12 +69,10 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
       eventType: Events,
       wrappedCallback: (eventDetail: object) => void,
     }>,
-    eventReady: boolean,
     itemMap: WeakMap<HTMLElement|Element, NavType>,
     observer: IntersectionObserver,
   } = {
     eventListeners: new Map(),
-    eventReady: false,
     itemMap: new WeakMap(),
     observer: undefined,
   };
@@ -291,7 +289,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     // Update the navs to reflect the new changes
     [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
 
-    eventChannel.dispatchEvent(createItemsChangedEvent({
+    eventHandler.trigger(createItemsChangedEvent({
       overflowCount: el.primary[El.OverflowNav].children.length,
     }));
 
@@ -301,7 +299,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
      * the first itemsChanged and showOverflow events) will be sent to user-defined
      * listeners.
      */
-    inst.eventReady = true;
+    eventHandler.setEventReady(true);
   }
 
   /**
@@ -313,7 +311,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     el.primary[El.OverflowNav].setAttribute('aria-hidden', open ? 'false' : 'true');
     el.primary[El.ToggleBtn].setAttribute('aria-expanded', open ? 'true' : 'false');
 
-    eventChannel.dispatchEvent(
+    eventHandler.trigger(
       open ? createShowOverflowEvent() : createHideOverflowEvent(),
     );
 
@@ -362,33 +360,6 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   }
 
   /**
-   * Registers an an event listener for the instance.
-   * By default the callback will only be run after the first-load of the library.
-   * However this can be overridden by setting 'afterReady' to 'false'.
-   */
-  function on(eventType: Events, cb: (eventDetail: object) => void, afterReady = true) {
-    function wrappedCallback(event) {
-      if (!afterReady || inst.eventReady) cb(event);
-    }
-
-    // Store it so we can remove it later
-    inst.eventListeners.set(cb, { eventType, wrappedCallback });
-    eventChannel.addEventListener(eventType, wrappedCallback);
-
-    return this;
-  }
-
-  /**
-   * Removes an event listener.
-   */
-  function off(eventType: Events, cb: (eventDetail: object) => void) {
-    const { wrappedCallback } = inst.eventListeners.get(cb);
-    eventChannel.removeEventListener(eventType, wrappedCallback);
-
-    return this;
-  }
-
-  /**
    * Retrieves an index of the primary nav elements.
    */
   function getNavElements() {
@@ -411,7 +382,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
 
     el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
 
-    on(Events.ItemsChanged, onItemsChanged, false);
+    eventHandler.on(Events.ItemsChanged, onItemsChanged, false);
   }
 
   /**
@@ -425,7 +396,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     // Unhook instance based event listeners
     Array.from(inst.eventListeners.entries())
       .forEach(([cb, { eventType }]) => {
-        off(eventType, cb);
+        eventHandler.off(eventType, cb);
       });
 
     // Attempt to reset the DOM back to how it was
@@ -442,8 +413,8 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
   return {
     destroy,
     getNavElements,
-    off,
-    on,
+    off: eventHandler.off,
+    on: eventHandler.on,
     setOverflowNavOpen,
     toggleOverflowNav,
   };

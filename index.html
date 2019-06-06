@@ -68,9 +68,11 @@
       },
     });
 
-    inst.on('hideOverflow', () => console.log('running hideOverflow'));
-
     window.$inst = inst;
+
+    inst.on('hideOverflow', () => console.log('running hideOverflow'))
+      .on('showOverflow', () => console.log('running showOverflow'))
+      .on('itemsChanged', () => console.log('running itemsChanged'));
 
 /**
     inst.on('itemsChanged', () => {
