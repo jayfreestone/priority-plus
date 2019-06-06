@@ -143,7 +143,6 @@ function validateInput(targetElem, userOptions, defaultOptions) {
 function validateAndThrow(targetElem, userOptions, defaultOptions) {
     throwValidation(validateInput(targetElem, userOptions, defaultOptions));
 }
-//# sourceMappingURL=validation.js.map
 
 var El;
 (function (El) {
@@ -449,5 +448,6 @@ function priorityPlus(targetElem, userOptions = {}) {
         toggleOverflowNav,
     };
 }
+//# sourceMappingURL=priorityPlus.js.map
 
 module.exports = priorityPlus;
