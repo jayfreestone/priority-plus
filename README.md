@@ -85,7 +85,7 @@ You can create a new instance by passing in an `HTMLElement` that is the direct 
 
 ```css
 // Doesn't have to be SASS, just ensure the CSS is included.
-@import "../node_modules/priority-nav/css/main";
+@import "../node_modules/priority-nav/css/priority-plus";
 ```
 
 ```javascript
