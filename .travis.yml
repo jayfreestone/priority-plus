@@ -4,7 +4,6 @@ node_js:
 cache: npm
 jobs:
   include:
-    - stage: Building
-      script: npm run build
     - stage: Running tests
+      before_script: npm run build
       script: npm run test:ci
