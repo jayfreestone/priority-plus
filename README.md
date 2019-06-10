@@ -1,5 +1,7 @@
 # priorityPlus
 
+![Travis Build status](https://travis-ci.com/jayfreestone/priority-plus.svg?branch=master)
+
 A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
 ![Animation showing nav items moving to and from the overflow nav.](docs/img/nav-demo.gif)
