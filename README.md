@@ -164,13 +164,13 @@ priorityPlus(document.querySelector('.js-p-target'), {
 Each class override must be passed as an array.
 
 | Option | Default  | Explanation |
-|--------|----------|-------------|
-| `container` | `p-plus-container` | This is the wrapper that collects both 'clones' of the navigation. Its purpose is to provide a way to obscure the clone.
-| `main` | `p-plus` | The class applied to each of the top-level navigation wrappers. Be aware it applies to both the clone and the visible copy.
-| `primary-nav-wrapper` | `p-plus__primary-wrapper` | Outer wrapper for the 'primary' (non-overflow) navigation.
-| `primary-nav` | `p-plus__primary` | Inner wrapper for the 'primary' (non-overflow) navigation.
-| `overflow-nav` | `p-plus__overflow` | Wrapper for the overflow navigation.
-| `toggle-btn` | `p-plus__toggle-btn` | Applied to the dropdown menu toggle button.
+|:--------|:----------|:-------------|
+| <pre>`container`</pre> | <pre>`p-plus-container`</pre> | This is the wrapper that collects both 'clones' of the navigation. Its purpose is to provide a way to obscure the clone.
+| <pre>`main`</pre> | <pre>`p-plus`</pre> | The class applied to each of the top-level navigation wrappers. Be aware it applies to both the clone and the visible copy.
+| <pre>`primary-nav-wrapper`</pre> | <pre>`p-plus__primary-wrapper`</pre> | Outer wrapper for the 'primary' (non-overflow) navigation.
+| <pre>`primary-nav`</pre> | <pre>`p-plus__primary`</pre> | Inner wrapper for the 'primary' (non-overflow) navigation.
+| <pre>`overflow-nav`</pre> | <pre>`p-plus__overflow`</pre> | Wrapper for the overflow navigation.
+| <pre>`toggle-btn`</pre> | <pre>`p-plus__toggle-btn`</pre> | Applied to the dropdown menu toggle button.
 
 ### Templates 
 
@@ -199,7 +199,7 @@ Be aware that if you alter the width of the element by changing its content, you
 Arguments are provided via the `details` property.
 
 | Name | Arguments  | Description |
-|------|----------|----------|
+|:------|:----------|:----------|
 | `showOverflow` | None | Triggered when the overflow nav becomes visible.
 | `hideOverflow` | None | Triggered when the overflow nav becomes invisible.
 | `itemsChanged` | `overflowCount` (The number of items in the overflow nav) | Triggered when the navigation items are updated (either added/removed).
