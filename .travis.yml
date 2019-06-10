@@ -1,0 +1,8 @@
+language: node_js
+node_js:
+  - 10
+cache: npm
+jobs:
+  include:
+    - stage: Running tests
+      script: npm run test:ci
