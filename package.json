@@ -23,9 +23,7 @@
     "url": "https://github.com/jayfreestone/priority-plus/issues"
   },
   "homepage": "https://github.com/jayfreestone/priority-plus#readme",
-  "dependencies": {
-    "rollup": "^1.6.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^4.1.0",
     "@types/chai": "^4.1.7",
@@ -33,6 +31,7 @@
     "concurrently": "^4.1.0",
     "cypress": "^3.3.1",
     "http-server": "^0.11.1",
+    "rollup": "^1.14.6",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-terser": "^5.0.0",
