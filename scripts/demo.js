@@ -1,12 +1,3 @@
-Array.from(document.querySelectorAll('.js-p-target')).forEach((target) => {
-  priorityPlus(target, {
-    innerToggleTemplate: ({ totalCount, toggleCount }) =>
-      toggleCount === totalCount
-        ? 'Menu'
-        : `<span aria-label="More">+ (${toggleCount})</span>`,
-  });
-});
-
 function resizeable(elem) {
   const $control = elem.querySelector('.js-resizeable__control');
   const $target = elem.querySelector('.js-resizeable__target');
@@ -19,20 +10,33 @@ function resizeable(elem) {
     updateTargetWidth();
   }
 
+  function setValue(newValue) {
+    $control.value = newValue;
+    $control.dispatchEvent(new Event('input'));
+  }
+
   $control.addEventListener('input', handleOnControlChange);
+
+  return {
+    setValue,
+  };
 }
 
-Array.from(document.querySelectorAll('.js-resizeable')).forEach((elem) => {
-  resizeable(elem);
+Array.from(document.querySelectorAll('.js-p-target')).forEach((target) => {
+  priorityPlus(target, {
+    innerToggleTemplate: ({ totalCount, toggleCount }) =>
+      toggleCount === totalCount
+        ? 'Menu'
+        : `<span aria-label="More">+ (${toggleCount})</span>`,
+  });
 });
 
+const resizeableInstances = Array.from(document.querySelectorAll('.js-resizeable'))
+  .map(resizeable);
 
-// inst.on('itemsChanged', ({ detail: { overflowCount } }) => {
-//   console.log('We now have this many items in the overflow: ', overflowCount);
-// });
+window.matchMedia('(max-width: 60rem)').addListener(({ matches }) => {
+  if (matches) {
+    resizeableInstances.forEach(inst => inst.setValue(100));
+  }
+});
 
-// const inst = pplus(document.querySelector('.js-p-target'));
-
-// inst.on('itemsChanged', ({ detail: { overflowCount } }) => {
-//   console.log('We now have this many items in the overflow: ', overflowCount);
-// });

@@ -5,49 +5,77 @@
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <title>Priority Plus</title>
-  <meta name="description" content="">
+  <meta name="description" content="A modern implementation of the priority plus navigation pattern.">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <link rel="manifest" href="site.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
 
   <link rel="stylesheet" href="https://use.typekit.net/lub7lxg.css">
   <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/input-range.css">
   <link rel="stylesheet" href="css/pplus.css">
+  <link rel="stylesheet" href="css/pplus-theme.css">
   <link rel="stylesheet" href="css/demo.css">
 </head>
 
 <body>
-<div class="container">
-  <div class="hero">
-    <h1 class="hero__title">Priority Plus</h1>
-    <p>A modern implementation of the <a target="_blank" rel="nofollow noopener" href="https://css-tricks.com/the-priority-navigation-pattern/">priority plus</a> navigation pattern.</p>
-    <p>Instead of measuring the navigation items and calculating if there is enough room to accomodate them, it uses the IntersectionObserver API, making it more performant and generally snazzier ✨</p>
+
+<div class="container container--content">
+  <div class="author">
+    Made by <a target="_blank" rel="nofollow noopener" href="https://www.jayfreestone.com/">Jay Freestone</a>
   </div>
 
+  <div class="hero">
+    <h1 class="hero__title"><span>Priority</span>&thinsp;<span>Plus</span></h1>
+    <p class="hero__desc">A modern implementation of the <a target="_blank" rel="nofollow noopener" href="https://css-tricks.com/the-priority-navigation-pattern/">priority plus</a> navigation pattern.</p>
+    <a class="btn" href="https://github.com/jayfreestone/priority-plus">
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs></defs><path class="cls-1" d="M256,10.67C117.1,10.67,4.46,123.28,4.46,262.21c0,111.14,72.07,205.42,172,238.68,12.57,2.33,17.19-5.45,17.19-12.1,0-6-.24-25.81-.35-46.83-70,15.22-84.74-29.68-84.74-29.68-11.44-29.07-27.93-36.8-27.93-36.8-22.82-15.61,1.72-15.29,1.72-15.29,25.26,1.77,38.56,25.92,38.56,25.92,22.43,38.45,58.84,27.34,73.2,20.91,2.26-16.26,8.77-27.36,16-33.64C154.23,367,95.49,345.45,95.49,249.07c0-27.46,9.83-49.9,25.92-67.51-2.61-6.34-11.22-31.92,2.44-66.57,0,0,21.12-6.76,69.19,25.78a238.69,238.69,0,0,1,126,0C367,108.23,388.12,115,388.12,115c13.69,34.65,5.08,60.23,2.47,66.57,16.13,17.61,25.88,40.05,25.88,67.51,0,96.62-58.84,117.89-114.85,124.11,9,7.81,17.06,23.12,17.06,46.58,0,33.66-.29,60.75-.29,69,0,6.7,4.52,14.54,17.27,12.07,99.9-33.3,171.88-127.55,171.88-238.65C507.54,123.28,394.92,10.67,256,10.67Z"/><path class="cls-2" d="M99.73,371.82c-.55,1.26-2.52,1.63-4.31.77s-2.85-2.52-2.26-3.78,2.51-1.64,4.34-.78,2.86,2.54,2.23,3.79Zm-3.09-2.29"/><path class="cls-2" d="M109.92,383.19c-1.2,1.11-3.54.59-5.13-1.16s-2-4.1-.74-5.23,3.51-.59,5.16,1.16,2,4.1.71,5.23Zm-2.4-2.57"/><path class="cls-2" d="M119.84,397.68c-1.54,1.07-4.06.06-5.62-2.17s-1.54-4.92,0-6,4-.1,5.63,2.11,1.53,5,0,6.06Zm0,0"/><path class="cls-2" d="M133.43,411.67c-1.38,1.52-4.32,1.11-6.47-1s-2.81-4.91-1.43-6.43,4.35-1.09,6.52,1,2.84,4.92,1.38,6.42Zm0,0"/><path class="cls-2" d="M152.17,419.8c-.61,2-3.44,2.86-6.28,2s-4.71-3.17-4.14-5.16,3.44-2.92,6.3-2,4.71,3.14,4.12,5.15Zm0,0"/><path class="cls-2" d="M172.76,421.31c.07,2.07-2.35,3.79-5.34,3.83s-5.44-1.61-5.47-3.66,2.36-3.79,5.36-3.84,5.45,1.61,5.45,3.67Zm0,0"/><path class="cls-2" d="M191.91,418.05c.36,2-1.72,4.1-4.69,4.65s-5.62-.72-6-2.72,1.75-4.15,4.67-4.69,5.63.7,6,2.76Zm0,0"/></svg>
+      View on Github
+    </a>
+  </div>
+</div>
+
+<div class="demo">
   <div class="js-resizeable resizeable">
-    <label class="resizeable__control">
-      Width
-      <input
-        class="js-resizeable__control"
-        type="range"
-        min="20"
-        max="100"
-        value="100"
-        step="10"
-      />
-    </label>
-    <div class="js-resizeable__target resizeable__target">
-      <div class="demo-menu">
-        <ul class="js-p-target">
-          <li><a href="#">Home</a></li>
-          <li><a href="#">About</a></li>
-          <li><a href="#">Work</a></li>
-          <li><a href="#">Services longer nav title</a></li>
-          <li><a href="#">Contact</a></li>
-        </ul>
+    <div class="container container--content">
+      <label class="resizeable__control">
+        Change width
+        <input
+          class="js-resizeable__control"
+          type="range"
+          min="20"
+          max="100"
+          value="100"
+          step="10"
+        />
+      </label>
+    </div>
+    <div class="container">
+      <div class="js-resizeable__target resizeable__target">
+        <div class="demo-menu">
+          <ul class="js-p-target">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Work</a></li>
+            <li><a href="#">Services longer nav title</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="container container--content">
+  <div class="description prose">
+    <h2>The short stuff</h2>
+    <ul>
+      <li>Vanilla JS, dependency free. Available as an ES6 module, CJS module, or a UMD bundle.</li>
+      <li>Uses the <a target="_blank" rel="nofollow noopener" href="https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API"><code>IntersectionObserver</code> API</a> instead of width-based calculations.</li>
+      <li>Toggles the appropriate <a target="_blank" rel="nofollow noopener" href="https://www.w3.org/WAI/standards-guidelines/aria/">WAI-ARIA</a> attributes to remain accessible.</li>
+      <li>Provides a class hook to style the menu differently when all items are in the overflow/hidden.</li>
+      <li>Provides a way to update the overflow toggle button with the hidden item count.</li>
+    </ul>
   </div>
 </div>
 
