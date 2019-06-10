@@ -1,4 +1,4 @@
-# Priority Plus
+# priorityPlus
 
 A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
