@@ -1,6 +1,5 @@
 {
   "name": "priority-plus",
-  "version": "1.0.0",
   "description": "A modern implementation of the priority plus navigation pattern.",
   "main": "dist/priority-plus.cjs.js",
   "module": "dist/priority-plus.esm.js",
