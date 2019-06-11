@@ -8,6 +8,7 @@ cache:
   directories:
     # we also need to cache folder with Cypress binary
     - ~/.cache
+if: tag IS blank
 jobs:
   include:
     - stage: test
