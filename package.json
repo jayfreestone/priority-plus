@@ -42,5 +42,11 @@
     "typescript": "^3.3.3333",
     "wait-on": "^3.2.0",
     "webpack": "^4.33.0"
-  }
+  },
+  "bundlesize": [
+    {
+      "path": "./dist/priority-plus.*.js",
+      "maxSize": "2.5 kB"
+    }
+  ]
 }

@@ -9,6 +9,8 @@ jobs:
     - stage: test
       before_script: npm run build
       script: npm run test:ci
+    - before_script: npm run build
+      script: npm run bundlesize
     - stage: release
       before_script: npm run build
       script: skip
