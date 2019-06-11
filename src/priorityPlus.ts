@@ -6,6 +6,7 @@ import {
   ItemsChangedEvent,
 } from './events/createEvent';
 import createEventHandler from './events/eventHandler';
+import DeepPartial from './types/DeepPartial';
 import createMirror from './utils/createMirror';
 import processTemplate from './utils/processTemplate';
 import validateAndThrow from './validation';
@@ -28,17 +29,43 @@ enum StateModifiers {
   PrimaryHidden = 'is-hiding-primary',
 }
 
-interface Options {
-  classNames?: {
-    [El.Container]: string[],
-    [El.Main]: string[],
-    [El.PrimaryNavWrapper]: string[],
-    [El.PrimaryNav]: string[],
-    [El.OverflowNav]: string[],
-    [El.ToggleBtn]: string[],
+interface ElementRefs {
+  [El.Container]: HTMLElement;
+  clone: {
+    [El.Main]: HTMLElement;
+    [El.NavItems]: HTMLElement[];
+    [El.ToggleBtn]: HTMLElement;
   };
-  defaultOverflowVisible?: boolean;
-  innerToggleTemplate?: string|((args: object) => string);
+  primary: {
+    [El.Main]: HTMLElement;
+    [El.PrimaryNav]: HTMLElement;
+    [El.NavItems]: HTMLElement[];
+    [El.OverflowNav]: HTMLElement;
+    [El.ToggleBtn]: HTMLElement;
+  };
+}
+
+interface Instance {
+  eventListeners: Map<((eventDetail: object) => void), {
+    eventType: Events;
+    wrappedCallback: (eventDetail: object) => void;
+  }>;
+  itemMap: WeakMap<HTMLElement|Element, NavType>;
+  observer: IntersectionObserver;
+}
+
+interface Options {
+  classNames: {
+    [El.Container]: string[];
+    [El.Main]: string[];
+    [El.PrimaryNavWrapper]: string[];
+    [El.PrimaryNav]: string[];
+    [El.OverflowNav]: string[];
+    [El.ToggleBtn]: string[];
+    [El.NavItems]: string[];
+  };
+  defaultOverflowVisible: boolean;
+  innerToggleTemplate: string|((args: object) => string);
 }
 
 const defaultOptions: Options = {
@@ -49,74 +76,47 @@ const defaultOptions: Options = {
     [El.PrimaryNav]: ['p-plus__primary'],
     [El.OverflowNav]: ['p-plus__overflow'],
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
+    [El.NavItems]: ['p-plus__primary-nav-item'],
   },
   defaultOverflowVisible: false,
   innerToggleTemplate: 'More',
 };
 
-function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
+function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options> = {}) {
+  /**
+   * @todo: We shouldn't have to cast this as Options, however DeepPartial creates
+   * breaks the type of innerToggleTemplate (?).
+   */
+  const options = {
+    ...defaultOptions,
+    ...userOptions,
+    classNames: { ...defaultOptions.classNames, ...userOptions.classNames },
+  } as Options;
+
+  const { classNames } = options;
+
   /**
    * The instance's event emitter.
    */
   const eventHandler = createEventHandler();
 
   /**
-   * A map of navigation list items to their current designation (either the
-   * primary nav or the overflow nav), based on if they 'fit'.
+   * 'Instance' state variables and misc references.
+   * Force a cast as we know we will initialise these.
    */
-  const inst: {
-    eventListeners: Map<((eventDetail: object) => void), {
-      eventType: Events,
-      wrappedCallback: (eventDetail: object) => void,
-    }>,
-    itemMap: WeakMap<HTMLElement|Element, NavType>,
-    observer: IntersectionObserver,
-  } = {
+  const inst: Instance = {
     eventListeners: new Map(),
     itemMap: new WeakMap(),
-    observer: undefined,
-  };
-
-  const options: Options = {
-    ...defaultOptions,
-    ...userOptions,
-    classNames: { ...defaultOptions.classNames, ...userOptions.classNames },
-  };
-
-  const { classNames } = options;
+  } as Instance;
 
   /**
    * References to DOM elements so we can easily retrieve them.
+   * Force a cast as we know we will initialise these.
    */
-  const el: {
-    [El.Container]: HTMLElement,
-    clone: {
-      [El.Main]: HTMLElement,
-      [El.NavItems]: HTMLElement[],
-      [El.ToggleBtn]: HTMLElement,
-    },
-    primary: {
-      [El.Main]: HTMLElement,
-      [El.PrimaryNav]: HTMLElement,
-      [El.NavItems]: HTMLElement[],
-      [El.OverflowNav]: HTMLElement,
-      [El.ToggleBtn]: HTMLElement,
-    },
-  } = {
-    [El.Container]: undefined,
-    clone: {
-      [El.Main]: undefined,
-      [El.NavItems]: undefined,
-      [El.ToggleBtn]: undefined,
-    },
-    primary: {
-      [El.Main]: undefined,
-      [El.PrimaryNav]: undefined,
-      [El.NavItems]: undefined,
-      [El.OverflowNav]: undefined,
-      [El.ToggleBtn]: undefined,
-    },
-  };
+  const el: ElementRefs = {
+    clone: {},
+    primary: {},
+  } as ElementRefs;
 
   /**
    * Gets an element's 'mirror' Map for the clone/primary navigation - e.g.
@@ -150,7 +150,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
             ${dv(El.PrimaryNav)}
             class="${cn(El.PrimaryNav)}"
           >
-            ${Array.from(targetElem.children).map((elem: HTMLElement) => (
+            ${Array.from(targetElem.children).map((elem: Element) => (
               `<li ${dv(El.NavItems)}>${elem.innerHTML}</li>`
             )).join('')}
           </${targetElem.tagName}>
@@ -184,15 +184,15 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     const original = document.createRange().createContextualFragment(markup);
     const cloned = original.cloneNode(true) as Element;
 
-    el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`);
-    el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`);
-    el.primary[El.NavItems] = Array.from(original.querySelectorAll(`[${dv(El.NavItems)}]`));
-    el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`);
-    el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`);
+    el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`) as HTMLElement;
+    el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`) as HTMLElement;
+    el.primary[El.NavItems] = Array.from(original.querySelectorAll(`[${dv(El.NavItems)}]`)) as HTMLElement[];
+    el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`) as HTMLElement;
+    el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`) as HTMLElement;
 
-    el.clone[El.Main] = cloned.querySelector(`[${dv(El.Main)}]`);
-    el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`));
-    el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`);
+    el.clone[El.Main] = cloned.querySelector(`[${dv(El.Main)}]`) as HTMLElement;
+    el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`)) as HTMLElement[];
+    el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`) as HTMLElement;
 
     el.clone[El.Main].setAttribute('aria-hidden', 'true');
     el.clone[El.Main].setAttribute('data-clone', 'true');
@@ -207,7 +207,8 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     // observer will run on-load anyway.
     el.clone[El.NavItems].forEach(item => itemMap.set(item, El.PrimaryNav));
 
-    targetElem.parentNode.replaceChild(container, targetElem);
+    const parent = targetElem.parentNode as HTMLElement;
+    parent.replaceChild(container, targetElem);
   }
 
   /**
@@ -244,12 +245,12 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
     el.clone[El.NavItems]
       .filter(item => itemMap.get(item) === navType)
       .forEach(item => {
-        newNav.appendChild(
-          getElemMirror(
-            el.clone[El.NavItems],
-            el.primary[El.NavItems],
-          ).get(item),
-        );
+        const elem = getElemMirror(
+          el.clone[El.NavItems],
+          el.primary[El.NavItems],
+        ).get(item) as HTMLElement;
+
+        newNav.appendChild(elem);
       });
 
     return newNav as HTMLElement;
@@ -260,9 +261,10 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    */
   function updateNav(navType: NavType) {
     const newNav = generateNav(navType);
+    const parent = el.primary[navType].parentNode as HTMLElement;
 
     // Replace the existing nav element in the DOM
-    el.primary[navType].parentNode.replaceChild(
+    parent.replaceChild(
       newNav,
       el.primary[navType],
     );
@@ -389,7 +391,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
    * Remove listeners and attempt to reset the DOM.
    */
   function destroy() {
-    inst.observer.disconnect();
+    if (inst.observer) inst.observer.disconnect();
 
     el.primary[El.ToggleBtn].removeEventListener('click', onToggleClick);
 
@@ -400,7 +402,8 @@ function priorityPlus(targetElem: HTMLElement, userOptions: Options = {}) {
       });
 
     // Attempt to reset the DOM back to how it was
-    el[El.Container].parentNode.replaceChild(targetElem, el[El.Container]);
+    const parent = el[El.Container].parentNode as HTMLElement;
+    parent.replaceChild(targetElem, el[El.Container]);
   }
 
   (function init() {
