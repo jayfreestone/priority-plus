@@ -69,6 +69,12 @@ However, provided you bring-your-own support for the `IntersectionObserver` API 
 
 ## Getting started
 
+Install from [NPM](https://www.npmjs.com/package/priority-plus):
+
+```
+npm install priority-plus
+```
+
 You can create a new instance by passing in an `HTMLElement` that is the direct parent of the navigation items:
 
 ```html
