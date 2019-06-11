@@ -39,6 +39,7 @@ export default [
       typescript({
         target: 'ES6',
       }),
+      terser(),
     ]
   }
 ];
