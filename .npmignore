@@ -1,2 +1,5 @@
-.idea/
-cypress/
+# blacklist all
+**
+# include whitelist
+!dist/*.js
+!css/*.css
