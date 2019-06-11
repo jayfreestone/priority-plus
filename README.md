@@ -16,7 +16,7 @@ A modern implementation of the [priority plus](https://css-tricks.com/the-priori
 - Provides a class hook to style the menu differently when all items are in the overflow/hidden.
 - Provides a way to update the overflow toggle button with the hidden item count.
 
-The UMD build comes in at roughly 7kb, 2kb after `gzip`.
+Comes in at under 2.5kb after `gzip`.
 
 ## What is it
 
