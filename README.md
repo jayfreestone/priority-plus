@@ -1,6 +1,7 @@
 # priorityPlus
 
 ![Travis Build status](https://travis-ci.com/jayfreestone/priority-plus.svg?branch=master)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 A modern implementation of the [priority plus](https://css-tricks.com/the-priority-navigation-pattern/) navigation pattern.
 
@@ -67,13 +68,23 @@ This library is designed to work with modern browsers, and as such makes no prom
 
 However, provided you bring-your-own support for the `IntersectionObserver` API and include the library in a transpiled bundle, there's no (obvious) reason it wouldn't work in anything that supports `Map`/`WeakMap`.
 
-## Getting started
+## Installation
 
 Install from [NPM](https://www.npmjs.com/package/priority-plus):
 
 ```
 npm install priority-plus
 ```
+
+Or use a CDN if you're feeling old-school:
+
+```
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/priority-plus/css/priority-plus.css">
+<!-- Will be available globally as priorityPlus -->
+<script defer src="https://cdn.jsdelivr.net/npm/priority-plus/dist/priority-plus.umd.js"></script>
+```
+
+## Setup
 
 You can create a new instance by passing in an `HTMLElement` that is the direct parent of the navigation items:
 
@@ -103,10 +114,11 @@ It's important that the element is the *immediate* parent, since internally the 
 
 ## Methods
 
-The methods available on a new instance, e.g.:
+The following methods are available on a new instance, e.g.:
 
 ```javascript
 const inst = priorityPlus(document.querySelector('.js-p-target'));
+console.log(inst.getNavElements());
 ```
 
 ### `getNavElements(): { [key: string]?: HTMLElement|HTMLElement[] }`
@@ -210,13 +222,11 @@ Arguments are provided via the `details` property.
 | `hideOverflow` | None | Triggered when the overflow nav becomes invisible.
 | `itemsChanged` | `overflowCount` (The number of items in the overflow nav) | Triggered when the navigation items are updated (either added/removed).
 
-## Recipes
+## Defining a 'mobile' breakpoint
 
-## Defined 'mobile' breakpoint
+You should never have to base the amount of visible navigation items visible on the viewport size.
 
-The great thing is you never have to (or arguably even should)  base the amount of navigation items visible on the viewport size.
-
-However, if you would like to break to the 'mobile' view at a pre-defined point (placing all the navigation items into the overflow), you can do so with just CSS.
+However, if you would like to break (early) to the 'mobile' view at a pre-defined point, you can do so with just CSS.
 
 Simply add a rule that causes the first item in the navigation to expand beyond the viewport, like so:
 
