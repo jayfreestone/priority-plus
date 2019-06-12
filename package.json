@@ -20,7 +20,11 @@
     "type": "git",
     "url": "git+https://github.com/jayfreestone/priority-plus.git"
   },
-  "author": "",
+  "author": {
+    "name": "Jay Freestone",
+    "email": "mail@jayfreestone.com",
+    "url": "https://www.jayfreestone.com/"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/jayfreestone/priority-plus/issues"
