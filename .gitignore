@@ -1,6 +1,5 @@
 .idea/
 node_modules/
-.rpt2_cache/
 cypress/videos/
 dist/*
 !dist/.gitkeep
