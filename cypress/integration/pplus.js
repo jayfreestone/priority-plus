@@ -29,7 +29,7 @@ describe('Events', () => {
         // I believe we need the wait as otherwise the event is fired before
         // the eventReady flag is set (i.e. before the first listener is
         // established).
-        .wait(1)
+        .wait(100)
         .viewport(320, 660)
         .get('@toggle-btn')
         .should('be.visible')
