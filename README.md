@@ -78,7 +78,7 @@ npm install priority-plus
 
 Or use a CDN if you're feeling old-school:
 
-```
+```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/priority-plus/css/priority-plus.css">
 <!-- Will be available globally as priorityPlus -->
 <script defer src="https://cdn.jsdelivr.net/npm/priority-plus/dist/priority-plus.umd.js"></script>
