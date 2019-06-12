@@ -46,9 +46,9 @@ interface ElementRefs {
 }
 
 interface Instance {
-  eventListeners: Map<((eventDetail: object) => void), {
+  eventListeners: Map<((eventDetail: CustomEvent<{}>) => void), {
     eventType: Events;
-    wrappedCallback: (eventDetail: object) => void;
+    wrappedCallback: (eventDetail: CustomEvent<{}>) => void;
   }>;
   itemMap: WeakMap<HTMLElement|Element, NavType>;
   observer: IntersectionObserver;
@@ -289,7 +289,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
     events.forEach(onIntersect);
 
     // Update the navs to reflect the new changes
-    [El.PrimaryNav, El.OverflowNav].forEach(updateNav);
+    ([El.PrimaryNav, El.OverflowNav] as NavType[]).forEach(updateNav);
 
     eventHandler.trigger(createItemsChangedEvent({
       overflowCount: el.primary[El.OverflowNav].children.length,
@@ -351,7 +351,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
   /**
    * Callback for when either nav is updated.
    */
-  function onItemsChanged({ detail: { overflowCount } }: ItemsChangedEvent) {
+  function onItemsChanged({ detail: { overflowCount } = {} }: CustomEvent<{[x: string]: any}>) {
     updateBtnDisplay(overflowCount > 0);
 
     if (overflowCount === 0) {

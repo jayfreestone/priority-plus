@@ -14,16 +14,16 @@ export function validateTarget(targetElem: HTMLElement) {
       && 'Target must be an HTMLElement.',
     (!targetElem.children || !targetElem.children.length)
       && 'Target must be the direct parent of the individual nav items.',
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
 }
 
 /**
  * Confirms that the top-level options keys are valid. Does not check type.
  */
-export function validateOptions(userOptions: object, defaultOptions: object) {
+export function validateOptions(userOptions: object, defaultOptions: { [x: string]: any }) {
   return Object.keys(userOptions)
     .map(key => typeof defaultOptions[key] === 'undefined' ? `Unrecognised option: ${key}` : undefined)
-    .filter(Boolean);
+    .filter(Boolean) as string[];
 }
 
 /**
