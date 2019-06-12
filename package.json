@@ -5,6 +5,7 @@
   "main": "dist/priority-plus.cjs.js",
   "module": "dist/priority-plus.esm.js",
   "browser": "dist/priority-plus.umd.js",
+  "types": "dist/types/priorityPlus.d.ts",
   "scripts": {
     "build": "concurrently \"npm:build:lib\" \"npm:build:types\"",
     "build:lib": "rollup -c",
