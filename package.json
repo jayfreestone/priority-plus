@@ -35,7 +35,7 @@
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-terser": "^5.0.0",
-    "rollup-plugin-typescript": "^1.0.0",
+    "rollup-plugin-typescript2": "^0.21.1",
     "ts-loader": "^6.0.2",
     "tslib": "^1.9.3",
     "tslint": "^5.17.0",
