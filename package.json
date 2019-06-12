@@ -14,7 +14,7 @@
     "test": "concurrently \"npm:serve\" \"cypress run\"",
     "test:ci": "npm run serve & wait-on http://localhost:8080 && cypress run",
     "test:open": "concurrently \"npm:serve\" \"cypress open\"",
-    "serve": "http-server"
+    "serve": "http-server -c-1"
   },
   "repository": {
     "type": "git",
