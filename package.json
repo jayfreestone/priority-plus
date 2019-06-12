@@ -13,6 +13,7 @@
     "dev": "rollup -c -w",
     "test": "concurrently \"npm:serve\" \"cypress run\"",
     "test:ci": "npm run serve & wait-on http://localhost:8080 && cypress run",
+    "test:lint": "tslint -c tslint.json 'src/**/*.ts'",
     "test:open": "concurrently \"npm:serve\" \"cypress open\"",
     "serve": "http-server -c-1"
   },
