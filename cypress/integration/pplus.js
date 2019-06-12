@@ -1,5 +1,3 @@
-import priorityPlus from '../../dist/priority-plus.cjs';
-
 function registerContext() {
   cy.window()
     .then(({ $inst }) => $inst)
@@ -17,19 +15,28 @@ describe('Events', () => {
     it('itemsChanged', () => {
       const itemsChangedCB = cy.spy();
 
-      cy.visit('/');
+      /**
+       * We set up an event listener on the test page that will update the
+       * document title once it runs, giving us something to listen to here
+       * so we know when the first run has happened. If we set up a listener here
+       * it is too late a percentage of the time (race condition).
+       */
+
+      const titleCallback = {
+        title: 'Items Changed',
+        event: 'itemsChanged',
+      };
+
+      cy.visit(`/?titleCB=${encodeURI(JSON.stringify(titleCallback))}`);
       registerContext();
 
-      // We need this get to ensure we have fully initialized
-      cy.get('@toggle-btn')
-        .should('not.be.visible')
-        .get('@instance')
+      cy.get('@instance')
+        // This only should run on post-first run itemsChanged events
         .invoke('on', 'itemsChanged', itemsChangedCB)
-        // @todo: This is rubbish and should be re-thought.
-        // I believe we need the wait as otherwise the event is fired before
-        // the eventReady flag is set (i.e. before the first listener is
-        // established).
-        .wait(100)
+        // First run has happened
+        .title().should('eq', titleCallback.title)
+        // Viewport size change should alter items (change should be batched
+        // into one event regardless of items changed).
         .viewport(320, 660)
         .get('@toggle-btn')
         .should('be.visible')
@@ -64,7 +71,7 @@ describe('Events', () => {
       cy.visit('/?showOverflow=true');
       registerContext();
 
-        // We need this get to ensure we have fully initialized
+      // We need this get to ensure we have fully initialized
       cy.get('@overflow-nav')
         .should('be.visible')
         .get('@instance')

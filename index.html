@@ -61,8 +61,6 @@
   <script>
     const queryParams = new URLSearchParams(window.location.search);
 
-    console.log(priorityPlus);
-
     const inst = priorityPlus(document.querySelector('.js-p-target'), {
       defaultOverflowVisible: Boolean(queryParams.get('showOverflow')),
       classNames: {
@@ -70,17 +68,18 @@
       },
     });
 
+    /**
+     * Provides a way to trigger a document title change on an event, e.g:
+     * ?{title: "Items Changed", event: "itemsChanged"}
+     */
+    const titleCB = queryParams.get('titleCB');
+
+    if (titleCB) {
+      const { title, event } = JSON.parse(titleCB);
+      inst.on(event, () => document.title = title, false);
+    }
+
     window.$inst = inst;
-
-    inst.on('hideOverflow', () => console.log('running hideOverflow'))
-      .on('showOverflow', () => console.log('running showOverflow'))
-      .on('itemsChanged', () => console.log('running itemsChanged'));
-
-/**
-    inst.on('itemsChanged', () => {
-      console.log('itemsChanged');
-    });
-    */
   </script>
 </body>
 </html>
