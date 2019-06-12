@@ -2,12 +2,16 @@
   "compilerOptions": {
     "strict": true,
     "sourceMap": true,
-    "module": "commonjs",
+    "declaration": true,
+    "module": "ES2015",
     "target": "es6",
     "lib": [
       "dom",
       "es6"
     ]
   },
-  "compileOnSave": false
+  "compileOnSave": false,
+  "files": [
+    "src/priorityPlus.ts"
+  ]
 }

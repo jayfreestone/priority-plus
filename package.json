@@ -6,7 +6,9 @@
   "module": "dist/priority-plus.esm.js",
   "browser": "dist/priority-plus.umd.js",
   "scripts": {
-    "build": "rollup -c",
+    "build": "concurrently \"npm:build:lib\" \"npm:build:types\"",
+    "build:lib": "rollup -c",
+    "build:types": "tsc --emitDeclarationOnly --declarationDir dist/types",
     "dev": "rollup -c -w",
     "test": "concurrently \"npm:serve\" \"cypress run\"",
     "test:ci": "npm run serve & wait-on http://localhost:8080 && cypress run",
