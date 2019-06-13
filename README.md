@@ -9,7 +9,9 @@ A modern implementation of the [priority plus](https://css-tricks.com/the-priori
 
 ![Animation showing nav items moving to and from the overflow nav.](docs/img/nav-demo.gif)
 
-[Demo](https://jayfreestone.github.io/priority-plus/)
+You can see a demo on the [landing page](https://jayfreestone.github.io/priority-plus/).
+
+There's also a Glitch pen [available here](https://priority-plus-demo.glitch.me/#) with a different, alternatively styled example. Check out the [source](https://glitch.com/edit/#!/priority-plus-demo).
 
 **The short stuff**:
 
