@@ -242,7 +242,7 @@ Simply add a rule that causes the first item in the navigation to expand beyond 
 
 ## Troubleshooting
 
-## Flex nav collapsing
+### Flex nav collapsing
 
 If your menu is part of an auto-sized flex-child, it will probably need a positive `flex-grow` value to prevent it reverting to its smallest form. For instance:
 
@@ -250,25 +250,25 @@ If your menu is part of an auto-sized flex-child, it will probably need a positi
 <header class="site-header">
   <h1 class="site-header__title">My great site title</h1>
   <nav class="site-header__nav">
-		<ul class="site-nav js-site-nav">
-		  <li><a href="#">Services</a></li>
-		  <li><a href="#">Thinking</a></li>
-		  <li><a href="#">Events</a></li>
-		</ul>
+    <ul class="site-nav js-site-nav">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Thinking</a></li>
+      <li><a href="#">Events</a></li>
+    </ul>
   </nav>
 </header>
 ```
 
 ```css
 .site-header {
-	display: flex;
-	align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 /**
  * Prevents nav from collapsing.
  */
 .site-header__nav {
-	flex-grow: 1;
+  flex-grow: 1;
 }
 ```
