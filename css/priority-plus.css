@@ -23,7 +23,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  /* Provides a slight buffer to prevent overflow issues with flex parents. */
+  width: calc(100% - 5px);
   pointer-events: none;
   visibility: hidden;
 }
