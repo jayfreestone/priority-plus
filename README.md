@@ -168,6 +168,18 @@ inst.toggleOverflowNav();
 
 ## Options
 
+### `collapseAtCount`
+
+If you'd like to collapse into the overflow when the primary navigation becomes depleted, you can do with the `collapseAtCount` option:
+
+```javascript
+priorityPlus(document.querySelector('.js-p-target'), {
+  collapseAtCount: 2,
+});
+```
+
+The above will move all menu items into the overflow if only two can 'fit' into the primary. This is essentially a way to avoid orphan nav items.
+
 ### Classes
 If you'd like to override the default classes, you can pass in a `classNames` object like so:
 
