@@ -64,6 +64,7 @@ interface Options {
     [El.ToggleBtn]: string[];
     [El.NavItems]: string[];
   };
+  collapseAtCount: number;
   defaultOverflowVisible: boolean;
   innerToggleTemplate: string|((args: object) => string);
 }
@@ -78,6 +79,7 @@ const defaultOptions: Options = {
     [El.ToggleBtn]: ['p-plus__toggle-btn'],
     [El.NavItems]: ['p-plus__primary-nav-item'],
   },
+  collapseAtCount: -1,
   defaultOverflowVisible: false,
   innerToggleTemplate: 'More',
 };
@@ -231,19 +233,45 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
   }
 
   /**
+   * Get array of cloned navItems from primary/overflow.
+   */
+  function getCloneItemsByType(navType: NavType) {
+    const { itemMap } = inst;
+    // Always use the clone as the base for our new nav,
+    // since the order is canonical and it is never filtered.
+    return el.clone[El.NavItems].filter(item => itemMap.get(item) === navType);
+  }
+
+  /**
+   * Get a list of cloned elements that we need to
+   * render for our navType.
+   */
+  function getRenderableItems(navType: NavType) {
+    const { collapseAtCount } = options;
+
+    if (navType === El.PrimaryNav || collapseAtCount < 0) {
+      return getCloneItemsByType(navType);
+    }
+
+    const primaryCount = getCloneItemsByType(El.PrimaryNav).length;
+
+    if (primaryCount > 0 && primaryCount <= collapseAtCount) {
+      return el.clone[El.NavItems];
+    }
+
+    return getCloneItemsByType(navType);
+  }
+
+  /**
    * (Re) generate the navigation list for either the visible or the overflow nav.
    * We use this to completely recreate the nav each time we update it,
    * avoiding ordering complexity and having to run append multiple times on
    * the mounted nav.
    */
   function generateNav(navType: NavType): HTMLElement {
-    const { itemMap } = inst;
     const newNav = el.primary[navType].cloneNode();
 
-    // Always use the clone as the base for our new nav,
-    // since the order is canonical and it is never filtered.
-    el.clone[El.NavItems]
-      .filter(item => itemMap.get(item) === navType)
+    getRenderableItems(navType)
       .forEach(item => {
         const elem = getElemMirror(
           el.clone[El.NavItems],
