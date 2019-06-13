@@ -151,7 +151,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
             class="${cn(El.PrimaryNav)}"
           >
             ${Array.from(targetElem.children).map((elem: Element) => (
-              `<li ${dv(El.NavItems)}>${elem.innerHTML}</li>`
+              `<li ${dv(El.NavItems)} class="${cn(El.NavItems)}">${elem.innerHTML}</li>`
             )).join('')}
           </${targetElem.tagName}>
         </div>
