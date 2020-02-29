@@ -11,6 +11,7 @@
     "arrow-parens": [true, "ban-single-arg-parens"],
     "curly": [true, "ignore-same-line"],
     "interface-name" : [true, "never-prefix"],
+    "array-type": false,
     "no-console": false
   }
 }
