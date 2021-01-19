@@ -62,6 +62,7 @@
     const queryParams = new URLSearchParams(window.location.search);
 
     const inst = priorityPlus(document.querySelector('.js-p-target'), {
+      openOnToggle: queryParams.get('openOnToggle') !== "false",
       defaultOverflowVisible: Boolean(queryParams.get('showOverflow')),
       classNames: {
         main: ['p-plus'],

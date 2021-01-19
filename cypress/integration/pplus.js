@@ -27,7 +27,9 @@ describe('Events', () => {
         event: 'itemsChanged',
       };
 
-      cy.visit(`/?titleCB=${encodeURI(JSON.stringify(titleCallback))}`);
+      cy.visit('/', {
+        qs: { titleCB: JSON.stringify(titleCallback) },
+      });
       registerContext();
 
       cy.get('@instance')
@@ -68,7 +70,7 @@ describe('Events', () => {
       // Force overflow so we can see the dropdown
       cy.viewport(768, 660);
       // Show dropdown by default
-      cy.visit('/?showOverflow=true');
+      cy.visit('/', { qs: { showOverflow: true } });
       registerContext();
 
       // We need this get to ensure we have fully initialized
@@ -81,6 +83,30 @@ describe('Events', () => {
         .click()
         .then(() => {
           expect(hideOverflowCB).to.be.calledOnce;
+        });
+    });
+
+    it('toggleClicked', () => {
+      const toggleClickedCB = cy.spy();
+
+      // Force overflow
+      cy.viewport(320, 660);
+      // Disable default behaviour (opening overflow)
+      cy.visit('/', {
+        qs: { openOnToggle: 'false' }
+      })
+      registerContext();
+
+      cy
+        .get('@instance')
+        .invoke('on', 'toggleClicked', toggleClickedCB)
+        .get('@toggle-btn')
+        .click()
+        // Confirm default behaviour doesn't occur
+        .get('@overflow-nav')
+        .should('not.be.visible')
+        .then(() => {
+          expect(toggleClickedCB).to.be.calledOnce;
         });
     });
   });

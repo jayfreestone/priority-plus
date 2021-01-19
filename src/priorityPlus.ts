@@ -2,8 +2,8 @@ import {
   createHideOverflowEvent,
   createItemsChangedEvent,
   createShowOverflowEvent,
+  createToggleClickedEvent,
   Events,
-  ItemsChangedEvent,
 } from './events/createEvent';
 import createEventHandler from './events/eventHandler';
 import DeepPartial from './types/DeepPartial';
@@ -66,6 +66,7 @@ interface Options {
   };
   collapseAtCount: number;
   defaultOverflowVisible: boolean;
+  openOnToggle: boolean;
   innerToggleTemplate: string|((args: object) => string);
 }
 
@@ -80,6 +81,7 @@ const defaultOptions: Options = {
     [El.NavItems]: ['p-plus__primary-nav-item'],
   },
   collapseAtCount: -1,
+  openOnToggle: true,
   defaultOverflowVisible: false,
   innerToggleTemplate: 'More',
 };
@@ -373,7 +375,9 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
    */
   function onToggleClick(e: Event) {
     e.preventDefault();
-    toggleOverflowNav();
+    eventHandler.trigger(
+      createToggleClickedEvent({ original: e })
+    );
   }
 
   /**
@@ -413,6 +417,10 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
     el.primary[El.ToggleBtn].addEventListener('click', onToggleClick);
 
     eventHandler.on(Events.ItemsChanged, onItemsChanged, false);
+
+    if (options.openOnToggle) {
+      eventHandler.on(Events.ToggleClicked, toggleOverflowNav, false)
+    }
   }
 
   /**
@@ -435,7 +443,7 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
   }
 
   (function init() {
-    validateAndThrow(targetElem, userOptions, defaultOptions),
+    validateAndThrow(targetElem, userOptions, defaultOptions);
     setupEl();
     bindListeners();
     if (options.defaultOverflowVisible) setOverflowNavOpen(true);
