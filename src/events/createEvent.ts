@@ -2,11 +2,18 @@ export enum Events {
   ShowOverflow = 'showOverflow',
   HideOverflow = 'hideOverflow',
   ItemsChanged = 'itemsChanged',
+  ToggleClicked = 'toggleClicked',
 }
 
 export interface ItemsChangedEvent {
   detail: {
     overflowCount: number,
+  };
+}
+
+export interface ToggleClickedEvent {
+  detail: {
+    original: Event,
   };
 }
 
@@ -26,6 +33,10 @@ export function createHideOverflowEvent() {
 
 export function createItemsChangedEvent({ overflowCount }: ItemsChangedEvent['detail']) {
   return createEvent(Events.ItemsChanged, { overflowCount });
+}
+
+export function createToggleClickedEvent({ original }: ToggleClickedEvent['detail']) {
+  return createEvent(Events.ToggleClicked, { original });
 }
 
 export default createEvent;

@@ -170,6 +170,21 @@ inst.toggleOverflowNav();
 
 ## Options
 
+### `openOnToggle`
+
+You can disable the default behaviour of automatically opening the overflow when the toggle is clicked by passing `false`. If you wanted to re-implement your own toggle behaviour, you could do so by listening for the `toggleClicked` event:
+
+```javascript
+const inst = priorityPlus(document.querySelector('.js-p-target'), {
+  openOnToggle: false,
+})
+
+inst.on('toggleClicked', () => {
+  // Re-implement existing behaviour
+  inst.toggleOverflowNav();
+})
+```
+
 ### `collapseAtCount`
 
 If you'd like to collapse into the overflow when the primary navigation becomes depleted, you can do with the `collapseAtCount` option:
@@ -232,11 +247,12 @@ Be aware that if you alter the width of the element by changing its content, you
 
 Arguments are provided via the `details` property.
 
-| Name | Arguments  | Description |
-|:------|:----------|:----------|
-| `showOverflow` | None | Triggered when the overflow nav becomes visible.
-| `hideOverflow` | None | Triggered when the overflow nav becomes invisible.
-| `itemsChanged` | `overflowCount` (The number of items in the overflow nav) | Triggered when the navigation items are updated (either added/removed).
+| Name            | Arguments                                                 | Description                                                             |
+|:----------------|:----------------------------------------------------------|:------------------------------------------------------------------------|
+| `showOverflow`  | None                                                      | Triggered when the overflow nav becomes visible.                        |
+| `hideOverflow`  | None                                                      | Triggered when the overflow nav becomes invisible.                      |
+| `itemsChanged`  | `overflowCount` (The number of items in the overflow nav) | Triggered when the navigation items are updated (either added/removed). |
+| `toggleClicked` | `original` (The original click event)                     | Triggered when the overflow toggle button is clicked.                   |
 
 ## Defining a 'mobile' breakpoint
 
