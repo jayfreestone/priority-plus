@@ -38,8 +38,9 @@ interface ElementRefs {
   };
   primary: {
     [El.Main]: HTMLElement;
+    [El.PrimaryNavWrapper]: HTMLElement;
     [El.PrimaryNav]: HTMLElement;
-    [El.NavItems]: HTMLElement[];
+    [El.NavItems]: HTMLLIElement[];
     [El.OverflowNav]: HTMLElement;
     [El.ToggleBtn]: HTMLElement;
   };
@@ -144,21 +145,12 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
   }
 
   /**
-   * Generates the HTML to use in-place of the user's supplied element.
+   * Generates the HTML wrapper to use in-place of the user's supplied menu.
    */
   function createMarkup(): string {
     return `
       <div ${dv(El.Main)} class="${cn(El.Main)}">
-        <div class="${cn(El.PrimaryNavWrapper)}">
-          <${targetElem.tagName}
-            ${dv(El.PrimaryNav)}
-            class="${cn(El.PrimaryNav)}"
-          >
-            ${Array.from(targetElem.children).map((elem: Element) => (
-              `<li ${dv(El.NavItems)} class="${cn(El.NavItems)}">${elem.innerHTML}</li>`
-            )).join('')}
-          </${targetElem.tagName}>
-        </div>
+        <div class="${cn(El.PrimaryNavWrapper)}" ${dv(El.PrimaryNavWrapper)}></div>
         <button
           ${dv(El.ToggleBtn)}
           class="${cn(El.ToggleBtn)}"
@@ -175,6 +167,36 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
   }
 
   /**
+   * Clones the target menu and enhances it with additional properties, such
+   * as data attributes and classes.
+   */
+  function cloneNav(elem: HTMLElement): HTMLElement {
+    const targetClone = elem.cloneNode(true) as HTMLElement;
+    enhanceOriginalMenu(targetClone);
+
+    const navItems = Array.from(targetClone.children) as HTMLLIElement[];
+    navItems.forEach(enhanceOriginalNavItem)
+
+    return targetClone;
+  }
+
+  /**
+   * Enhance the original list element with classes/attributes.
+   */
+  function enhanceOriginalMenu(elem: HTMLElement) {
+    elem.classList.add(...classNames[El.PrimaryNav])
+    elem.setAttribute(dv(El.PrimaryNav), '');
+  }
+
+  /**
+   * Enhance an original menu list-item with classes/attributes.
+   */
+  function enhanceOriginalNavItem(elem: HTMLLIElement) {
+    elem.classList.add(...classNames[El.NavItems])
+    elem.setAttribute(dv(El.NavItems), '');
+  }
+
+  /**
    * Replaces the navigation with the two clones and populates the 'el' object.
    */
   function setupEl() {
@@ -186,22 +208,26 @@ function priorityPlus(targetElem: HTMLElement, userOptions: DeepPartial<Options>
     el[El.Container] = container;
 
     const original = document.createRange().createContextualFragment(markup);
+
+    // Setup the wrapper and clone/enhance the original menu.
+    el.primary[El.PrimaryNavWrapper] = original.querySelector(`[${dv(El.PrimaryNavWrapper)}]`) as HTMLElement;
+    el.primary[El.PrimaryNavWrapper].appendChild(cloneNav(targetElem))
+
     const cloned = original.cloneNode(true) as Element;
 
+    // Establish references. By this point the menu is fully built.
     el.primary[El.Main] = original.querySelector(`[${dv(El.Main)}]`) as HTMLElement;
     el.primary[El.PrimaryNav] = original.querySelector(`[${dv(El.PrimaryNav)}]`) as HTMLElement;
-    el.primary[El.NavItems] = Array.from(original.querySelectorAll(`[${dv(El.NavItems)}]`)) as HTMLElement[];
+    el.primary[El.NavItems] = Array.from(original.querySelectorAll(`[${dv(El.NavItems)}]`)) as HTMLLIElement[];
     el.primary[El.OverflowNav] = original.querySelector(`[${dv(El.OverflowNav)}]`) as HTMLElement;
     el.primary[El.ToggleBtn] = original.querySelector(`[${dv(El.ToggleBtn)}]`) as HTMLElement;
 
     el.clone[El.Main] = cloned.querySelector(`[${dv(El.Main)}]`) as HTMLElement;
     el.clone[El.NavItems] = Array.from(cloned.querySelectorAll(`[${dv(El.NavItems)}]`)) as HTMLElement[];
     el.clone[El.ToggleBtn] = cloned.querySelector(`[${dv(El.ToggleBtn)}]`) as HTMLElement;
-
     el.clone[El.Main].setAttribute('aria-hidden', 'true');
     el.clone[El.Main].setAttribute('data-clone', 'true');
     el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--clone`);
-
     el.clone[El.Main].classList.add(`${classNames[El.Main][0]}--${StateModifiers.ButtonVisible}`);
 
     container.appendChild(original);
