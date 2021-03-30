@@ -2,9 +2,13 @@
   "name": "priority-plus",
   "version": "0.0.0-semantically-released",
   "description": "A modern implementation of the priority plus navigation pattern.",
-  "main": "dist/priority-plus.cjs.js",
+  "type": "module",
   "module": "dist/priority-plus.esm.js",
   "browser": "dist/priority-plus.umd.js",
+  "exports": {
+    "import": "./dist/priority-plus.esm.js",
+    "default": "./dist/priority-plus.umd.js"
+  },
   "types": "dist/types/priorityPlus.d.ts",
   "scripts": {
     "build": "concurrently \"npm:build:lib\" \"npm:build:types\"",
