@@ -1,22 +1,26 @@
-name: release
+name: Build & release
 on:
   push:
     branches: [master]
 jobs:
   build:
+    name: Build & release
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Use Node.js 14.16.0
         uses: actions/setup-node@v1
         with:
           node-version: 14.16.0
       - name: Install Dependencies
         run: npm ci
+      - name: Test
+        run: npm test
       - name: Build
         run: npm build
       - name: Release
         run: npx semantic-release
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
