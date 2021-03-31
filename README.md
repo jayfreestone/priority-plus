@@ -15,7 +15,7 @@ There's also a Glitch pen [available here](https://priority-plus-demo.glitch.me/
 
 **The short stuff**:
 
-- Vanilla JS, dependency free. Available as an ES6 module, CJS module, or a UMD bundle.
+- Vanilla JS, dependency free. Available as an ES6 module, or a drop-in IIFE assigned to the global `priorityPlus`.
 - Uses the [`IntersectionObserver` API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API) instead of width-based calculations.
 - Toggles the appropriate [WAI-ARIA](https://www.w3.org/WAI/standards-guidelines/aria/) attributes to remain accessible.
 - Provides a class hook to style the menu differently when all items are in the overflow/hidden.
@@ -83,9 +83,9 @@ npm install priority-plus
 Or use a CDN if you're feeling old-school:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/priority-plus/css/priority-plus.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/priority-plus/dist/priority-plus.css">
 <!-- Will be available globally as priorityPlus -->
-<script defer src="https://cdn.jsdelivr.net/npm/priority-plus/dist/priority-plus.umd.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/priority-plus/dist/priority-plus.js"></script>
 ```
 
 ## Setup
@@ -106,7 +106,7 @@ You can create a new instance by passing in an `HTMLElement` that is the direct 
 
 ```css
 // Doesn't have to be SASS, just ensure the CSS is included.
-@import "node_modules/priority-nav/css/priority-plus";
+@import "node_modules/priority-plus/dist/priority-plus";
 ```
 
 ```javascript
