@@ -2,4 +2,3 @@
 node_modules/
 cypress/videos/
 dist/*
-!dist/.gitkeep

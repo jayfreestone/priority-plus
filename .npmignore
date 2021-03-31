@@ -3,4 +3,4 @@
 # include whitelist
 !dist/*.js
 !dist/types/**/*.d.ts
-!css/*.css
+!dist/*.css

@@ -13,9 +13,7 @@ jobs:
   include:
     - stage: test
       before_script: npm run build
-      script: npm run test:ci
-    - before_script: npm run build
-      script: npm run test:lint
+      script: npm run test
     - before_script: npm run build
       script: npx bundlesize
     - stage: release
