@@ -302,3 +302,15 @@ If your menu is part of an auto-sized flex-child, it will probably need a positi
   flex-grow: 1;
 }
 ```
+
+### Navigation event listeners
+
+priorityPlus makes a copy of your menu, rather than reusing the original. Classes and attributes are carried over, but not event listeners. This means that any additional libraries or JavaScript which operate on the menu and its children needs to be run (or re-run) after initialization:
+
+```javascript
+priorityPlus(document.querySelector('.js-p-target'));
+// .js-p-target is *not* the same element, but has been cloned and replaced
+loadLibrary(document.querySelector('.js-p-target'));
+```
+
+If your use-case is not covered by this, please raise an issue.
