@@ -68,9 +68,13 @@ Once we detect a collision, we store which navigation it should now belong to (p
 
 ## Browser support
 
-This library is designed to work with modern browsers, and as such makes no promises when it comes to the likes of InternetExplorer.
+This library is designed to work with modern browsers. Both JavaScript bundles are transpiled down to ES6, and include syntax such as template-literals and the spread operator. If you'd like priorityPlus to work in (for instance) Internet Explorer, you'll need to bring your own transpilation down to ES5. When using Webpack, this would usually involve changing your `exclude` to be non-inclusive of the library:
 
-However, provided you bring-your-own support for the `IntersectionObserver` API and include the library in a transpiled bundle, there's no (obvious) reason it wouldn't work in anything that supports `Map`/`WeakMap`.
+```
+exclude: /node_modules\/(?!priority-plus)/,
+```
+
+You will need to bring your own support for the `IntersectionObserver` API through a polyfill.
 
 ## Installation
 
