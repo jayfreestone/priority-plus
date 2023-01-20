@@ -6,8 +6,11 @@
   "module": "dist/priority-plus.esm.js",
   "browser": "dist/priority-plus.js",
   "exports": {
-    "import": "./dist/priority-plus.esm.js",
-    "default": "./dist/priority-plus.js"
+    "./dist/priority-plus.css": "./dist/priority-plus.css",
+    ".": {
+      "import": "./dist/priority-plus.esm.js",
+      "default": "./dist/priority-plus.js"
+    }
   },
   "types": "dist/types/priorityPlus.d.ts",
   "scripts": {
