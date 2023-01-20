@@ -1,6 +1,6 @@
-const wp = require('@cypress/webpack-preprocessor');
+import wp from '@cypress/webpack-preprocessor';
 
-module.exports = (on) => {
+const plugin = (on) => {
   const options = {
     webpackOptions: {
       resolve: {
@@ -20,3 +20,5 @@ module.exports = (on) => {
 
   on('file:preprocessor', wp(options))
 };
+
+export default plugin;

@@ -32,19 +32,19 @@ describe('Events', () => {
       });
       registerContext();
 
-      cy.get('@instance')
-        // This only should run on post-first run itemsChanged events
-        .invoke('on', 'itemsChanged', itemsChangedCB)
-        // First run has happened
-        .title().should('eq', titleCallback.title)
-        // Viewport size change should alter items (change should be batched
-        // into one event regardless of items changed).
-        .viewport(320, 660)
-        .get('@toggle-btn')
-        .should('be.visible')
-        .then(() => {
-          expect(itemsChangedCB).to.be.calledOnce;
-        });
+      // First run has happened
+    cy.title().should('eq', titleCallback.title)
+      .get('@instance')
+      // This only should run on post-first run itemsChanged events
+      .invoke('on', 'itemsChanged', itemsChangedCB)
+      // Viewport size change should alter items (change should be batched
+      // into one event regardless of items changed).
+      .viewport(320, 660)
+      .get('@toggle-btn')
+      .should('be.visible')
+      .then(() => {
+        expect(itemsChangedCB).to.be.calledOnce;
+      });
     });
 
     it('showOverflow', () => {
@@ -70,15 +70,18 @@ describe('Events', () => {
       // Force overflow so we can see the dropdown
       cy.viewport(768, 660);
       // Show dropdown by default
-      cy.visit('/', { qs: { showOverflow: true } });
+      cy.visit('/', { qs: { showOverflow: true, } });
       registerContext();
 
       // We need this get to ensure we have fully initialized
-      cy.get('@overflow-nav')
-        .should('be.visible')
-        .get('@instance')
-        .invoke('on', 'hideOverflow', hideOverflowCB)
-        .get('@toggle-btn')
+      cy
+        .get('@overflow-nav')
+        .should('be.visible');
+
+      cy.get('@instance')
+        .invoke('on', 'hideOverflow', hideOverflowCB);
+
+      cy.get('@toggle-btn')
         // Close
         .click()
         .then(() => {
@@ -99,8 +102,9 @@ describe('Events', () => {
 
       cy
         .get('@instance')
-        .invoke('on', 'toggleClicked', toggleClickedCB)
-        .get('@toggle-btn')
+        .invoke('on', 'toggleClicked', toggleClickedCB);
+
+      cy.get('@toggle-btn')
         .click()
         // Confirm default behaviour doesn't occur
         .get('@overflow-nav')
