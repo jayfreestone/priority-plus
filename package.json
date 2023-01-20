@@ -23,7 +23,7 @@
     "test": "npm run test:types && npm run test:lint && npm run test:e2e",
     "test:types": "tsc --noEmit",
     "test:lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "test:e2e": "concurrently -k -s last \"npm:dev\" \"cypress run\""
+    "test:e2e": "concurrently -k -s first \"npm:dev\" \"cypress run\""
   },
   "repository": {
     "type": "git",
