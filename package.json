@@ -3,27 +3,22 @@
   "version": "0.0.0-semantically-released",
   "description": "A modern implementation of the priority plus navigation pattern.",
   "type": "module",
-  "module": "dist/priority-plus.esm.js",
-  "browser": "dist/priority-plus.js",
   "exports": {
-    "./dist/priority-plus.css": "./dist/priority-plus.css",
     ".": {
-      "import": "./dist/priority-plus.esm.js",
-      "default": "./dist/priority-plus.js"
+      "types": "./dist/priority-plus.d.ts",
+      "import": "./dist/priority-plus.js"
     }
   },
-  "types": "dist/types/priorityPlus.d.ts",
+  "types": "./dist/priority-plus.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "dev": "esbuild src/browser.ts --bundle --sourcemap --format=iife --servedir=www --outdir=www/assets",
-    "prebuild": "rimraf dist",
-    "build": "concurrently \"npm:build:*\"",
-    "build:esm": "esbuild src/priorityPlus.ts --bundle --minify --format=esm --outfile=dist/priority-plus.esm.js",
-    "build:iife": "esbuild src/browser.ts --bundle --minify --format=iife --outfile=dist/priority-plus.js",
-    "build:types": "tsc --emitDeclarationOnly --declarationDir dist/types",
-    "test": "npm run test:types && npm run test:lint && npm run test:e2e",
-    "test:types": "tsc --noEmit",
-    "test:lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "test:e2e": "concurrently -k -s first \"npm:dev\" \"cypress run\""
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "dev": "vite playground",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -39,24 +34,10 @@
     "url": "https://github.com/jayfreestone/priority-plus/issues"
   },
   "homepage": "https://github.com/jayfreestone/priority-plus#readme",
-  "dependencies": {},
   "devDependencies": {
-    "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2",
-    "@cypress/webpack-preprocessor": "^5.16.1",
-    "@types/chai": "^4.3.4",
-    "@types/mocha": "^10.0.1",
-    "babel-loader": "^9.1.2",
-    "concurrently": "^7.6.0",
-    "cypress": "^12.3.0",
-    "esbuild": "^0.17.3",
-    "rimraf": "^4.1.1",
-    "ts-loader": "^9.4.2",
-    "tslib": "^2.4.1",
-    "tslint": "^6.1.2",
-    "typescript": "^4.9.4",
-    "wait-on": "^7.0.1",
-    "webpack": "^5.75.0"
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.11"
   },
   "keywords": [
     "navigation",
@@ -64,14 +45,10 @@
     "responsive",
     "priority"
   ],
-  "bundlesize": [
-    {
-      "path": "./dist/priority-plus.*.js",
-      "maxSize": "2.5 kB"
-    }
-  ],
   "release": {
-    "branches": ["master"],
+    "branches": [
+      "master"
+    ],
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
