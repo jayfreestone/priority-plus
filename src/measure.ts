@@ -18,3 +18,16 @@ export const contentInlineSize = (element: HTMLElement): number => {
     toPx(styles.paddingRight)
   );
 };
+
+/** Resolved inline space around the content box, in px. */
+export const nonContentInlineSize = (element: HTMLElement): number => {
+  const styles = getComputedStyle(element);
+  return (
+    toPx(styles.marginLeft) +
+    toPx(styles.borderLeftWidth) +
+    toPx(styles.paddingLeft) +
+    toPx(styles.paddingRight) +
+    toPx(styles.borderRightWidth) +
+    toPx(styles.marginRight)
+  );
+};

@@ -1,5 +1,9 @@
 import { calculateVisibleCount } from "./calculate";
-import { contentInlineSize, inlineGap } from "./measure";
+import {
+  contentInlineSize,
+  inlineGap,
+  nonContentInlineSize,
+} from "./measure";
 
 interface ElementLookup {
   primary: HTMLElement;
@@ -73,7 +77,7 @@ class PriorityPlus extends HTMLElement {
       itemGap: inlineGap(primary),
       containerGap: inlineGap(container),
       toggleWidth: toggle.getBoundingClientRect().width,
-      available: contentInlineSize(container),
+      available: contentInlineSize(container) - nonContentInlineSize(primary),
     });
 
     const primaryFragment = document.createDocumentFragment();
