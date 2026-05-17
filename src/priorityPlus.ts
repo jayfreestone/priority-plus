@@ -15,7 +15,7 @@ interface ElementLookup {
 class PriorityPlus extends HTMLElement {
   #elements!: ElementLookup;
   #items: HTMLElement[] = [];
-  #frame = 0;
+  #containerInlineSize = 0;
   #resizeObserver?: ResizeObserver;
   #initialized = false;
 
@@ -37,22 +37,25 @@ class PriorityPlus extends HTMLElement {
     );
 
     this.#layout();
+    this.#containerInlineSize = contentInlineSize(container);
 
-    this.#resizeObserver = new ResizeObserver(() => this.#scheduleLayout());
+    this.#resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const inlineSize = entry?.contentRect.width ?? contentInlineSize(container);
+
+      if (inlineSize === this.#containerInlineSize) return;
+
+      this.#containerInlineSize = inlineSize;
+      this.#layout();
+    });
     this.#resizeObserver.observe(container);
 
-    document.fonts?.ready.then(() => this.#scheduleLayout());
+    document.fonts?.ready.then(() => this.#layout());
   }
 
   disconnectedCallback() {
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
-    cancelAnimationFrame(this.#frame);
-  }
-
-  #scheduleLayout() {
-    cancelAnimationFrame(this.#frame);
-    this.#frame = requestAnimationFrame(() => this.#layout());
   }
 
   #layout() {
