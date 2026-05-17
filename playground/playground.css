@@ -47,10 +47,19 @@ nav ul {
   padding: 0;
   margin: 0;
   list-style: none;
+  width: 100%;
+}
+
+nav li {
+  flex-grow: 1;
+  /*display: flex;
+  align-items: center;
+  width: 100%;*/
 }
 
 nav a {
   display: block;
+  text-align: center;
   padding: 10px 14px;
   border: 1px solid #cfd7e2;
   border-radius: 999px;
