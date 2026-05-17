@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>priority-plus playground</title>
+    <script type="module" blocking="render">(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),e.crossOrigin===`use-credentials`?t.credentials=`include`:e.crossOrigin===`anonymous`?t.credentials=`omit`:t.credentials=`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();function e({itemWidths:e,itemGap:t,containerGap:n,toggleWidth:r,available:i}){let a=e.length;if(a===0)return 0;let o=[0];for(let n=0;n<a;n+=1){let r=o[n]??0,i=e[n]??0,a=n===0?0:t;o.push(r+a+i)}if((o[a]??0)<=i)return a;let s=0,c=a,l=0;for(;s<=c;){let e=s+c>>1;(o[e]??0)+(e>0?n:0)+r<=i?(l=e,s=e+1):c=e-1}return l}var t=e=>{let t=Number.parseFloat(e);return Number.isFinite(t)?t:0},n=e=>{let n=getComputedStyle(e);return t(n.columnGap||n.gap)},r=e=>{let n=getComputedStyle(e);return e.clientWidth-t(n.paddingLeft)-t(n.paddingRight)},i=class extends HTMLElement{#e;#t=[];#n=0;#r;#i=!1;connectedCallback(){if(this.#i)return;this.#i=!0;let e=this.#s(`[data-priority-plus-primary]`),t=this.#s(`[data-priority-plus-overflow]`),n=this.#s(`[data-priority-plus-toggle]`),r=e.parentElement;if(!(r instanceof HTMLElement))throw Error(`priority-plus: primary list must have a parent element`);this.#e={primary:e,overflow:t,toggle:n,container:r},this.#t=Array.from(e.children).filter(e=>e instanceof HTMLElement),this.#o(),this.#r=new ResizeObserver(()=>this.#a()),this.#r.observe(r),document.fonts?.ready.then(()=>this.#a())}disconnectedCallback(){this.#r?.disconnect(),this.#r=void 0,cancelAnimationFrame(this.#n)}#a(){cancelAnimationFrame(this.#n),this.#n=requestAnimationFrame(()=>this.#o())}#o(){let{primary:t,overflow:i,toggle:a,container:o}=this.#e;i.matches(`:popover-open`)&&i.hidePopover();for(let e of this.#t)t.appendChild(e);a.hidden=!1;let s=e({itemWidths:this.#t.map(e=>e.getBoundingClientRect().width),itemGap:n(t),containerGap:n(o),toggleWidth:a.getBoundingClientRect().width,available:r(o)}),c=document.createDocumentFragment(),l=document.createDocumentFragment();this.#t.forEach((e,t)=>{(t<s?c:l).appendChild(e)}),t.appendChild(c),i.appendChild(l),a.hidden=s===this.#t.length}#s(e){let t=this.querySelector(e);if(!(t instanceof HTMLElement))throw Error(`priority-plus: element not found: ${e}`);return t}};customElements.define(`priority-plus`,i);</script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BHG_WJxu.css">
+  </head>
+  <body>
+    <main>
+      <h1>priority-plus playground</h1>
+
+      <priority-plus>
+        <nav class="priority-nav">
+          <ul class="priority-nav__primary" data-priority-plus-primary>
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Projects</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Customers</a></li>
+            <li><a href="#">Analytics</a></li>
+            <li><a href="#">Automation</a></li>
+            <li><a href="#">Reports</a></li>
+            <li><a href="#">Integrations</a></li>
+          </ul>
+
+          <button
+            hidden
+            data-priority-plus-toggle
+            class="priority-nav__more"
+            type="button"
+            popovertarget="primary-nav-overflow"
+            aria-expanded="false"
+          >
+            More
+          </button>
+
+          <ul
+            hidden
+            popover
+            data-priority-plus-overflow
+            id="primary-nav-overflow"
+            class="priority-nav__overflow"
+          ></ul>
+        </nav>
+      </priority-plus>
+    </main>
+  </body>
+</html>

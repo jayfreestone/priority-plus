@@ -36,6 +36,10 @@ priority-plus {
   box-shadow: 0 12px 32px rgb(15 23 42 / 0.08);
 }
 
+/*priority-plus:not(:defined) {
+  visibility: hidden;
+}*/
+
 nav ul {
   display: flex;
   flex-wrap: wrap;
@@ -61,8 +65,18 @@ nav a:focus-visible {
   outline: none;
 }
 
+.priority-nav {
+  display: flex;
+  align-items: center;
+}
+
 .priority-nav__more {
   anchor-name: --more-btn;
+}
+
+.priority-nav__primary {
+  padding-right: 1rem;
+  margin-right: auto;
 }
 
 .priority-nav__overflow {
@@ -73,6 +87,7 @@ nav a:focus-visible {
   top: anchor(bottom);
   right: anchor(right);
   position-try-fallbacks: flip-block, flip-inline;
+  width: 50%;
 
   &:popover-open {
     display: block;

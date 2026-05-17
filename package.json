@@ -17,6 +17,8 @@
     "build": "tsdown",
     "build:watch": "tsdown --watch",
     "dev": "vite playground",
+    "dev-build": "vite build playground",
+    "dev-preview": "vite preview --outDir playground/dist",
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit"
   },
