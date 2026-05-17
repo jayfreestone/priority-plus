@@ -1,9 +1,6 @@
 import { calculateVisibleCount } from "./calculate";
-import {
-  contentInlineSize,
-  inlineGap,
-  nonContentInlineSize,
-} from "./measure";
+import { contentInlineSize, inlineGap, nonContentInlineSize } from "./measure";
+import { throttle } from "./throttle";
 
 interface ElementLookup {
   primary: HTMLElement;
@@ -39,15 +36,19 @@ class PriorityPlus extends HTMLElement {
     this.#layout();
     this.#containerInlineSize = contentInlineSize(container);
 
-    this.#resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      const inlineSize = entry?.contentRect.width ?? contentInlineSize(container);
+    this.#resizeObserver = new ResizeObserver(
+      throttle((entries) => {
+        console.log("resize");
+        const entry = entries[0];
+        const inlineSize =
+          entry?.contentRect.width ?? contentInlineSize(container);
 
-      if (inlineSize === this.#containerInlineSize) return;
+        if (inlineSize === this.#containerInlineSize) return;
 
-      this.#containerInlineSize = inlineSize;
-      this.#layout();
-    });
+        this.#containerInlineSize = inlineSize;
+        this.#layout();
+      }, 50),
+    );
     this.#resizeObserver.observe(container);
 
     document.fonts?.ready.then(() => this.#layout());

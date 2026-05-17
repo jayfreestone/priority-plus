@@ -34,6 +34,7 @@ priority-plus {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 12px 32px rgb(15 23 42 / 0.08);
+  overflow: clip;
 }
 
 /*priority-plus:not(:defined) {
@@ -42,7 +43,6 @@ priority-plus {
 
 nav ul {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
   padding: 0;
   margin: 0;
