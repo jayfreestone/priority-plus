@@ -7,45 +7,49 @@
     <link rel="stylesheet" href="playground.css" />
     <script type="module">
       import "../src/priorityPlus.ts";
+      import "./components/ContainerResizer.ts";
     </script>
   </head>
   <body>
     <main>
       <h1>priority-plus playground</h1>
 
-      <priority-plus>
-        <nav class="priority-nav">
-          <ul class="priority-nav__primary" data-priority-plus-primary>
-            <li><a href="#">Dashboard</a></li>
-            <li><a href="#">Projects</a></li>
-            <li><a href="#">Roadmap</a></li>
-            <li><a href="#">Customers</a></li>
-            <li><a href="#">Analytics</a></li>
-            <li><a href="#">Automation</a></li>
-            <li><a href="#">Reports</a></li>
-            <li><a href="#">Integrations</a></li>
-          </ul>
+      <container-resizer>
+        <container-resizer-range></container-resizer-range>
+        <priority-plus>
+          <nav class="priority-nav">
+            <ul class="priority-nav__primary" data-priority-plus-primary>
+              <li><a href="#">Dashboard</a></li>
+              <li><a href="#">Projects</a></li>
+              <li><a href="#">Roadmap</a></li>
+              <li><a href="#">Customers</a></li>
+              <li><a href="#">Analytics</a></li>
+              <li><a href="#">Automation</a></li>
+              <li><a href="#">Reports</a></li>
+              <li><a href="#">Integrations</a></li>
+            </ul>
 
-          <button
-            hidden
-            data-priority-plus-toggle
-            class="priority-nav__more"
-            type="button"
-            popovertarget="primary-nav-overflow"
-            aria-expanded="false"
-          >
-            More
-          </button>
+            <button
+              hidden
+              data-priority-plus-toggle
+              class="priority-nav__more"
+              type="button"
+              popovertarget="primary-nav-overflow"
+              aria-expanded="false"
+            >
+              More
+            </button>
 
-          <ul
-            hidden
-            popover
-            data-priority-plus-overflow
-            id="primary-nav-overflow"
-            class="priority-nav__overflow"
-          ></ul>
-        </nav>
-      </priority-plus>
+            <ul
+              hidden
+              popover
+              data-priority-plus-overflow
+              id="primary-nav-overflow"
+              class="priority-nav__overflow"
+            ></ul>
+          </nav>
+        </priority-plus>
+      </container-resizer>
     </main>
   </body>
 </html>
