@@ -13,6 +13,7 @@ import {
   type Dispatch,
   type HTMLAttributes,
   type ReactNode,
+  type RefCallback,
   type RefObject,
   type SetStateAction,
 } from "react";
@@ -123,7 +124,7 @@ export interface PriorityPlusRootRenderState extends PriorityPlusState {
 
 export interface PriorityPlusRootRenderProps
   extends HTMLAttributes<HTMLElement> {
-  ref: RefObject<HTMLElement | null>;
+  ref: RefCallback<HTMLElement>;
 }
 
 export interface PriorityPlusRootProps
@@ -145,7 +146,7 @@ export interface PriorityPlusPrimaryRenderState extends PriorityPlusState {
 
 export interface PriorityPlusPrimaryRenderProps
   extends HTMLAttributes<HTMLUListElement> {
-  ref: RefObject<HTMLUListElement | null>;
+  ref: RefCallback<HTMLUListElement>;
 }
 
 export interface PriorityPlusPrimaryProps
@@ -166,7 +167,9 @@ export interface PriorityPlusItemRenderState extends PriorityPlusState {
   visible: boolean;
 }
 
-export type PriorityPlusItemRenderProps = HTMLAttributes<HTMLLIElement>;
+export type PriorityPlusItemRenderProps = HTMLAttributes<HTMLLIElement> & {
+  ref?: RefCallback<HTMLLIElement>;
+};
 
 export interface PriorityPlusItemProps {
   children?: RenderChildren<PriorityPlusItemRenderState>;
@@ -186,7 +189,7 @@ export interface PriorityPlusTriggerRenderState extends PriorityPlusState {
 
 export interface PriorityPlusTriggerRenderProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
-  ref: RefObject<HTMLButtonElement | null>;
+  ref: RefCallback<HTMLButtonElement>;
 }
 
 export interface PriorityPlusTriggerProps
@@ -464,7 +467,7 @@ export function PriorityPlusTrigger({
   const context = usePriorityPlusContext("PriorityPlus.Trigger");
   const { registerTrigger } = context;
   const id = useId();
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useCallback<RefCallback<HTMLButtonElement>>(() => {}, []);
   const descriptorRef = useRef<PriorityPlusTriggerDescriptor>({
     children,
     props,
@@ -597,6 +600,7 @@ function renderItem(
   };
   const props: PriorityPlusItemRenderProps = {
     children: resolveChildren(descriptor.children, state),
+    ref: placement === "measure" ? context.priority.measureItemRef : undefined,
   };
 
   return descriptor.render === undefined ? (
@@ -610,7 +614,7 @@ function renderTrigger(
   descriptor: PriorityPlusTriggerDescriptor | undefined,
   context: PriorityPlusContextValue,
   placement: PriorityPlusTriggerRenderState["placement"],
-  ref: RefObject<HTMLButtonElement | null>,
+  ref: RefCallback<HTMLButtonElement>,
   onClick?: PriorityPlusTriggerProps["onClick"],
 ) {
   const state = getTriggerRenderState(context, placement);

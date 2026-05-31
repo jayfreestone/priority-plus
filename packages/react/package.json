@@ -21,8 +21,8 @@
     "@priority-plus/core": "0.0.0-semantically-released"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": ">=19",
+    "react-dom": ">=19"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",
