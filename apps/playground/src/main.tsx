@@ -1,7 +1,10 @@
 import { PriorityPlus as ReactPriorityPlus } from "@priority-plus/react";
 import { mount } from "svelte";
 import { createRoot } from "react-dom/client";
-import "priority-plus";
+import {
+  PriorityPlusElement,
+  PriorityPlusOverflowCountChangeEvent,
+} from "priority-plus";
 
 import SvelteDemo from "./SvelteDemo.svelte";
 import "./playground.css";
@@ -57,3 +60,33 @@ mount(SvelteDemo, {
   props: { items },
   target: document.querySelector("#svelte-root")!,
 });
+
+renderElementOverflowCount();
+
+function renderElementOverflowCount(): void {
+  const priorityPlus = document.querySelector("priority-plus");
+  const count = priorityPlus?.querySelector(
+    "[data-priority-plus-overflow-count]",
+  );
+
+  if (
+    !(priorityPlus instanceof PriorityPlusElement) ||
+    !(count instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  const render = (overflowCount = priorityPlus.overflowCount) => {
+    count.textContent = overflowCount > 0 ? `(${overflowCount})` : "";
+  };
+
+  priorityPlus.addEventListener(
+    PriorityPlusOverflowCountChangeEvent.eventName,
+    (event) => {
+      if (event instanceof PriorityPlusOverflowCountChangeEvent) {
+        render(event.overflowCount);
+      }
+    },
+  );
+  render();
+}

@@ -109,10 +109,6 @@ markup control.
 ## Custom Element
 
 ```html
-<script type="module">
-  import "priority-plus";
-</script>
-
 <priority-plus>
   <nav>
     <ul data-priority-plus-primary>
@@ -120,13 +116,36 @@ markup control.
       <li><a href="/projects">Projects</a></li>
       <li><a href="/reports">Reports</a></li>
     </ul>
-    <button hidden data-priority-plus-toggle type="button">More</button>
+    <button hidden data-priority-plus-toggle type="button">
+      More <span data-overflow-count></span>
+    </button>
     <ul hidden data-priority-plus-overflow></ul>
   </nav>
 </priority-plus>
+
+<script type="module">
+  import { PriorityPlusOverflowCountChangeEvent } from "priority-plus";
+
+  const priorityPlus = document.querySelector("priority-plus");
+  const count = priorityPlus.querySelector("[data-overflow-count]");
+
+  function renderCount(overflowCount = priorityPlus.overflowCount) {
+    count.textContent = overflowCount > 0 ? `(${overflowCount})` : "";
+  }
+
+  priorityPlus.addEventListener(
+    PriorityPlusOverflowCountChangeEvent.eventName,
+    (event) => renderCount(event.overflowCount),
+  );
+  renderCount();
+</script>
 ```
 
 Call `refresh()` on the element after changing item content or styles that affect
-intrinsic widths. Add `data-priority-plus-performance` while profiling to emit
-`priority-plus:layout` and `priority-plus:measure` entries through the browser
-Performance API.
+intrinsic widths. The element exposes readonly `itemCount`, `visibleCount`,
+`overflowCount`, `allVisible`, and `state` accessors, and emits
+`priority-plus:overflow-count-change` when `overflowCount` changes. If custom
+count rendering changes the toggle's intrinsic width, give the toggle a stable
+width or call `refresh()` after rendering the count. Add
+`data-priority-plus-performance` while profiling to emit `priority-plus:layout`
+and `priority-plus:measure` entries through the browser Performance API.

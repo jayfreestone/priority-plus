@@ -103,6 +103,10 @@ priority-plus {
   flex: 0 0 auto;
 }
 
+.priority-nav__toggle-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .priority-nav__overflow {
   background: #fff;
   border: 1px solid #d7dde5;

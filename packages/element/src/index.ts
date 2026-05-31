@@ -4,6 +4,7 @@ import {
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
+  type PriorityPlusState,
 } from "@priority-plus/core";
 import {
   contentInlineSize,
@@ -16,6 +17,41 @@ interface ElementLookup {
   overflow: HTMLElement;
   toggle: HTMLElement;
   container: HTMLElement;
+}
+
+export interface PriorityPlusOverflowCountChangeEventInit extends EventInit {
+  overflowCount: number;
+  previousOverflowCount: number;
+  previousState: PriorityPlusState;
+  state: PriorityPlusState;
+}
+
+export class PriorityPlusOverflowCountChangeEvent extends Event {
+  static readonly eventName = "priority-plus:overflow-count-change";
+
+  readonly overflowCount: number;
+  readonly previousOverflowCount: number;
+  readonly previousState: Readonly<PriorityPlusState>;
+  readonly state: Readonly<PriorityPlusState>;
+
+  constructor({
+    overflowCount,
+    previousOverflowCount,
+    previousState,
+    state,
+    ...eventInit
+  }: PriorityPlusOverflowCountChangeEventInit) {
+    super(PriorityPlusOverflowCountChangeEvent.eventName, {
+      bubbles: true,
+      composed: true,
+      ...eventInit,
+    });
+
+    this.overflowCount = overflowCount;
+    this.previousOverflowCount = previousOverflowCount;
+    this.previousState = { ...previousState };
+    this.state = { ...state };
+  }
 }
 
 export class PriorityPlusElement extends HTMLElement {
@@ -87,6 +123,30 @@ export class PriorityPlusElement extends HTMLElement {
     this.refresh();
   }
 
+  get allVisible(): boolean {
+    return this.#controller.getState().allVisible;
+  }
+
+  get itemCount(): number {
+    return this.#controller.getState().itemCount;
+  }
+
+  get open(): boolean {
+    return this.#open;
+  }
+
+  get overflowCount(): number {
+    return this.#controller.getState().overflowCount;
+  }
+
+  get state(): Readonly<PriorityPlusState> {
+    return { ...this.#controller.getState() };
+  }
+
+  get visibleCount(): number {
+    return this.#controller.getState().visibleCount;
+  }
+
   #initialize() {
     this.#initialized = true;
     this.#options = this.#readOptions();
@@ -156,7 +216,6 @@ export class PriorityPlusElement extends HTMLElement {
     return this.#measurePerformance("priority-plus:measure", () => {
       this.#moveAllItemsToPrimary();
       setHidden(toggle, false);
-      setText(toggle, getToggleLabel(Math.max(1, this.#items.length)));
 
       const measurements: PriorityPlusCachedMeasurements = {
         itemWidths: this.#items.map((item) => item.getBoundingClientRect().width),
@@ -193,8 +252,8 @@ export class PriorityPlusElement extends HTMLElement {
 
     setHidden(toggle, !hasOverflow);
     setHidden(overflow, !hasOverflow || !this.#open);
-    setText(toggle, getToggleLabel(result.state.overflowCount));
     setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
+    this.#dispatchOverflowCountChange(result);
   }
 
   #partitionItems(
@@ -259,6 +318,19 @@ export class PriorityPlusElement extends HTMLElement {
     this.#elements.primary.appendChild(fragment);
   }
 
+  #dispatchOverflowCountChange(result: PriorityPlusLayoutResult) {
+    if (!result.overflowCountChanged) return;
+
+    this.dispatchEvent(
+      new PriorityPlusOverflowCountChangeEvent({
+        overflowCount: result.state.overflowCount,
+        previousOverflowCount: result.previousState.overflowCount,
+        previousState: result.previousState,
+        state: result.state,
+      }),
+    );
+  }
+
   #handleToggleClick = () => {
     this.#setOpen(!this.#open);
   };
@@ -320,10 +392,6 @@ export class PriorityPlusElement extends HTMLElement {
   }
 }
 
-function getToggleLabel(overflowCount: number): string {
-  return `More${overflowCount > 0 ? ` (${overflowCount})` : ""}`;
-}
-
 function getObservedInlineSize(
   entry: ResizeObserverEntry | undefined,
 ): number | undefined {
@@ -352,12 +420,6 @@ function setAttribute(
 function setHidden(element: HTMLElement, hidden: boolean): void {
   if (element.hidden !== hidden) {
     element.hidden = hidden;
-  }
-}
-
-function setText(element: HTMLElement, text: string): void {
-  if (element.textContent !== text) {
-    element.textContent = text;
   }
 }
 
