@@ -92,7 +92,7 @@ function PriorityPlusComponent<T>({
       </ul>
 
       <button
-        aria-expanded={open}
+        aria-expanded={overflowOpen}
         className={classNames?.toggle}
         hidden={priority.allVisible}
         onClick={() => setOpen((value) => !value)}
@@ -100,7 +100,7 @@ function PriorityPlusComponent<T>({
       >
         {renderToggle({
           overflowCount: priority.overflowCount,
-          open,
+          open: overflowOpen,
         })}
       </button>
 

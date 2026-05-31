@@ -21,9 +21,6 @@ import {
   type RefObject,
 } from "react";
 
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
-
 export interface UsePriorityPlusOptions extends PriorityPlusOptions {
   throttleMs?: number;
 }
@@ -88,33 +85,59 @@ export function usePriorityPlus<T>(
         ? currentState
         : nextState,
     );
-  }, [coreOptions, items.length]);
+  }, [coreOptions]);
 
-  useIsomorphicLayoutEffect(() => {
+  useLayoutEffect(() => {
     const nextState = createPriorityPlusState(items.length);
     setState((currentState) =>
       priorityPlusStatesEqual(currentState, nextState)
         ? currentState
         : nextState,
     );
+  }, [items.length]);
+
+  useLayoutEffect(() => {
     update();
-  }, [items.length, update]);
+  }, [items, update]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (container === null || typeof ResizeObserver === "undefined") return;
+    if (typeof ResizeObserver === "undefined") return;
 
+    let disposed = false;
     const onResize = throttle(update, throttleMs);
-    const resizeObserver = new ResizeObserver(() => onResize());
-    resizeObserver.observe(container);
+    const resizeObserver = new ResizeObserver(() => {
+      if (!disposed) onResize();
+    });
+    const observe = (element: Element | null): void => {
+      if (element !== null) resizeObserver.observe(element);
+    };
+    const observeMeasuredElements = (): void => {
+      resizeObserver.disconnect();
+      observe(containerRef.current);
+      observe(primaryRef.current);
+      observe(measureListRef.current);
+      observe(measureToggleRef.current);
 
-    document.fonts?.ready.then(update);
+      const measureList = measureListRef.current;
+      if (measureList === null) return;
+
+      for (const child of measureList.children) {
+        observe(child);
+      }
+    };
+
+    observeMeasuredElements();
+
+    document.fonts?.ready.then(() => {
+      if (!disposed) update();
+    });
 
     return () => {
+      disposed = true;
       onResize.cancel();
       resizeObserver.disconnect();
     };
-  }, [throttleMs, update]);
+  }, [items.length, throttleMs, update]);
 
   const { visibleItems, overflowItems } = useMemo(
     () => partitionItems(items, state.visibleCount),

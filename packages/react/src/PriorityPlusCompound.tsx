@@ -10,9 +10,11 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type Dispatch,
   type HTMLAttributes,
   type ReactNode,
   type RefObject,
+  type SetStateAction,
 } from "react";
 import type { PriorityPlusState } from "@priority-plus/core";
 
@@ -21,9 +23,6 @@ import {
   type UsePriorityPlusOptions,
   type UsePriorityPlusResult,
 } from "./usePriorityPlus";
-
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const measurerStyle: HTMLAttributes<HTMLDivElement>["style"] = {
   contain: "layout",
@@ -36,8 +35,6 @@ const measurerStyle: HTMLAttributes<HTMLDivElement>["style"] = {
   visibility: "hidden",
   width: "max-content",
 };
-
-let nextFallbackItemOrder = 0;
 
 export type PriorityPlusRender<Props, State> = (
   props: Props,
@@ -52,6 +49,11 @@ interface RegisteredPriorityPlusItem {
   descriptorRef: RefObject<PriorityPlusItemDescriptor>;
   id: string;
   order: number;
+}
+
+interface PriorityPlusItemRegistration
+  extends Omit<RegisteredPriorityPlusItem, "order"> {
+  order?: number;
 }
 
 interface RegisteredPriorityPlusPrimary {
@@ -100,7 +102,7 @@ interface PriorityPlusCompoundContextValue {
   primary: RegisteredPriorityPlusPrimary | null;
   priority: UsePriorityPlusResult<RegisteredPriorityPlusItem>;
   registerItem: (
-    item: RegisteredPriorityPlusItem,
+    item: PriorityPlusItemRegistration,
   ) => () => void;
   registerPrimary: (
     primary: RegisteredPriorityPlusPrimary,
@@ -108,7 +110,7 @@ interface PriorityPlusCompoundContextValue {
   registerTrigger: (
     trigger: RegisteredPriorityPlusTrigger,
   ) => () => void;
-  setOpen: (open: boolean) => void;
+  setOpen: Dispatch<SetStateAction<boolean>>;
   trigger: RegisteredPriorityPlusTrigger | null;
   visibleItemIds: Set<string>;
 }
@@ -239,15 +241,35 @@ export function PriorityPlusRoot({
   const [trigger, setTrigger] =
     useState<RegisteredPriorityPlusTrigger | null>(null);
   const [open, setOpen] = useState(false);
+  const fallbackItemOrdersRef = useRef(new Map<string, number>());
+  const nextFallbackItemOrderRef = useRef(0);
   const priority = usePriorityPlus(items, { collapseAtCount, throttleMs });
   const overflowOpen = open && !priority.allVisible;
 
-  const registerItem = useCallback((item: RegisteredPriorityPlusItem) => {
+  const registerItem = useCallback((item: PriorityPlusItemRegistration) => {
+    const fallbackItemOrders = fallbackItemOrdersRef.current;
+    let order = item.order;
+
+    if (order === undefined) {
+      order = fallbackItemOrders.get(item.id);
+
+      if (order === undefined) {
+        order = nextFallbackItemOrderRef.current;
+        nextFallbackItemOrderRef.current += 1;
+        fallbackItemOrders.set(item.id, order);
+      }
+    }
+
+    const registeredItem: RegisteredPriorityPlusItem = {
+      ...item,
+      order,
+    };
+
     setItems((currentItems) => {
       const nextItems = currentItems.filter(
-        (currentItem) => currentItem.id !== item.id,
+        (currentItem) => currentItem.id !== registeredItem.id,
       );
-      nextItems.push(item);
+      nextItems.push(registeredItem);
       nextItems.sort((a, b) => a.order - b.order);
 
       if (registeredItemsEqual(currentItems, nextItems)) {
@@ -261,8 +283,8 @@ export function PriorityPlusRoot({
       setItems((currentItems) =>
         currentItems.filter(
           (currentItem) =>
-            currentItem.id !== item.id ||
-            currentItem.descriptorRef !== item.descriptorRef,
+            currentItem.id !== registeredItem.id ||
+            currentItem.descriptorRef !== registeredItem.descriptorRef,
         ),
       );
     };
@@ -297,10 +319,6 @@ export function PriorityPlusRoot({
   useEffect(() => {
     if (priority.allVisible) setOpen(false);
   }, [priority.allVisible]);
-
-  useIsomorphicLayoutEffect(() => {
-    priority.update();
-  });
 
   const visibleItemIds = useMemo(
     () => new Set(priority.visibleItems.map((item) => item.id)),
@@ -384,7 +402,7 @@ export function PriorityPlusPrimary({
   });
   descriptorRef.current = { children, props, render };
 
-  useIsomorphicLayoutEffect(
+  useLayoutEffect(
     () => registerPrimary({ descriptorRef, id }),
     [id, registerPrimary],
   );
@@ -408,26 +426,20 @@ export function PriorityPlusItem({
   const context = usePriorityPlusCompoundContext("PriorityPlus.Item");
   const { registerItem } = context;
   const generatedId = useId();
-  const fallbackOrderRef = useRef<number | null>(null);
   const descriptorRef = useRef<PriorityPlusItemDescriptor>({
     children,
     render,
   });
   const itemId = id ?? generatedId;
 
-  if (fallbackOrderRef.current === null) {
-    fallbackOrderRef.current = nextFallbackItemOrder;
-    nextFallbackItemOrder += 1;
-  }
-
   descriptorRef.current = { children, render };
 
-  useIsomorphicLayoutEffect(
+  useLayoutEffect(
     () =>
       registerItem({
         descriptorRef,
         id: itemId,
-        order: order ?? fallbackOrderRef.current ?? 0,
+        order,
       }),
     [itemId, order, registerItem],
   );
@@ -461,7 +473,7 @@ export function PriorityPlusTrigger({
   });
   descriptorRef.current = { children, props, render };
 
-  useIsomorphicLayoutEffect(
+  useLayoutEffect(
     () => registerTrigger({ descriptorRef, id }),
     [id, registerTrigger],
   );
@@ -597,7 +609,7 @@ function renderTrigger(
       onClick?.(event);
 
       if (placement === "trigger" && !event.defaultPrevented) {
-        context.setOpen(!context.open);
+        context.setOpen((open) => !open);
       }
     },
     ref,
