@@ -164,6 +164,95 @@ test("emits subclassed overflow count change events", async () => {
   expect(priorityPlus.overflowCount).toBe(2);
 });
 
+test("waits for light DOM parts before enhancing", async () => {
+  installPriorityPlusBrowserStyles();
+  await page.viewport(260, 400);
+  document.body.innerHTML = "<priority-plus></priority-plus>";
+  await customElements.whenDefined("priority-plus");
+
+  const priorityPlus = document.querySelector("priority-plus");
+  if (!(priorityPlus instanceof PriorityPlusElement)) {
+    throw new Error("priority-plus element was not defined");
+  }
+
+  expect(priorityPlus.itemCount).toBe(0);
+
+  priorityPlus.innerHTML = `
+    <nav class="test-nav" aria-label="Main">
+      <ul class="test-list" data-priority-plus-primary>
+        ${priorityPlusBrowserItems
+          .map(
+            (item) =>
+              `<li><a class="test-link" href="${item.href}">${item.label}</a></li>`,
+          )
+          .join("")}
+      </ul>
+      <ul
+        hidden
+        class="test-overflow"
+        data-priority-plus-overflow
+        id="test-overflow"
+      ></ul>
+    </nav>
+  `;
+  await nextFrame();
+  expect(priorityPlus.itemCount).toBe(0);
+
+  const overflow = priorityPlus.querySelector("[data-priority-plus-overflow]");
+  if (!(overflow instanceof HTMLElement)) {
+    throw new Error("overflow element was not found");
+  }
+
+  const toggle = document.createElement("button");
+  toggle.hidden = true;
+  toggle.className = "test-toggle";
+  toggle.dataset.priorityPlusToggle = "";
+  toggle.type = "button";
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.innerHTML = "More<span data-test-overflow-count></span>";
+  overflow.before(toggle);
+
+  renderOverflowCount();
+
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard"]);
+  await expect
+    .element(page.getByRole("button", { name: "More (3)" }))
+    .toBeVisible();
+  expect(priorityPlus.itemCount).toBe(4);
+});
+
+test("refreshes its item cache when light DOM items change", async () => {
+  installPriorityPlusBrowserStyles();
+  await page.viewport(360, 400);
+  await mountPriorityPlus();
+
+  await expect
+    .element(page.getByRole("button", { name: "More (2)" }))
+    .toBeVisible();
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard", "Projects"]);
+
+  const primary = document.querySelector("[data-priority-plus-primary]");
+  if (!(primary instanceof HTMLElement)) {
+    throw new Error("primary element was not found");
+  }
+
+  const billing = document.createElement("li");
+  billing.innerHTML = `<a class="test-link" href="#billing">Billing</a>`;
+  primary.append(billing);
+
+  await expect
+    .element(page.getByRole("button", { name: "More (3)" }))
+    .toBeVisible();
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard", "Projects"]);
+
+  billing.remove();
+
+  await expect
+    .element(page.getByRole("button", { name: "More (2)" }))
+    .toBeVisible();
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard", "Projects"]);
+});
+
 async function settleLayout(): Promise<void> {
   await document.fonts?.ready;
   await nextFrame();

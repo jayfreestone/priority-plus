@@ -57,12 +57,13 @@ export class PriorityPlusOverflowCountChangeEvent extends Event {
 export class PriorityPlusElement extends HTMLElement {
   static observedAttributes = ["collapse-at-count"];
 
-  #elements!: ElementLookup;
+  #elements?: ElementLookup;
   #items: HTMLElement[] = [];
   #controller = new PriorityPlusLayoutController();
   #containerInlineSize = 0;
+  #mutationObserver?: MutationObserver;
   #resizeObserver?: ResizeObserver;
-  #initialized = false;
+  #toggle?: HTMLElement;
   #connected = false;
   #open = false;
   #options: PriorityPlusOptions = {};
@@ -72,16 +73,12 @@ export class PriorityPlusElement extends HTMLElement {
   });
 
   connectedCallback() {
-    if (!this.#initialized) {
-      this.#initialize();
-    }
-
     if (this.#connected) return;
     this.#connected = true;
+    this.#options = this.#readOptions();
 
-    this.#elements.toggle.addEventListener("click", this.#handleToggleClick);
-    this.#layout({ refreshMeasurements: true });
-    this.#observeContainer();
+    this.#observeMutations();
+    this.#syncStructure({ layoutNow: true });
 
     document.fonts?.ready.then(() => {
       if (this.#connected) {
@@ -92,7 +89,9 @@ export class PriorityPlusElement extends HTMLElement {
 
   disconnectedCallback() {
     this.#connected = false;
-    this.#elements?.toggle.removeEventListener("click", this.#handleToggleClick);
+    this.#setToggle(undefined);
+    this.#mutationObserver?.disconnect();
+    this.#mutationObserver = undefined;
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
     this.#cancelScheduledLayout();
@@ -107,15 +106,20 @@ export class PriorityPlusElement extends HTMLElement {
 
     if (name === "collapse-at-count") {
       this.#options = this.#readOptions();
+      const result = this.#controller.setOptions(this.#options);
 
-      if (this.#connected) {
-        this.#applyLayoutResult(this.#controller.setOptions(this.#options));
+      if (this.#connected && this.#elements !== undefined) {
+        this.#applyLayoutResult(result);
       }
     }
   }
 
   refresh() {
     if (!this.#connected) return;
+
+    this.#syncStructure();
+
+    if (this.#elements === undefined) return;
     this.#scheduleLayout({ refreshMeasurements: true });
   }
 
@@ -147,33 +151,99 @@ export class PriorityPlusElement extends HTMLElement {
     return this.#controller.getState().visibleCount;
   }
 
-  #initialize() {
-    this.#initialized = true;
-    this.#options = this.#readOptions();
+  #syncStructure({ layoutNow = false } = {}) {
+    const nextElements = this.#findElements();
 
-    const primary = this.#getElement("[data-priority-plus-primary]");
-    const overflow = this.#getElement("[data-priority-plus-overflow]");
-    const toggle = this.#getElement("[data-priority-plus-toggle]");
-    const container = primary.parentElement;
-
-    if (!(container instanceof HTMLElement)) {
-      throw new Error("priority-plus: primary list must have a parent element");
+    if (nextElements === undefined) {
+      this.#elements = undefined;
+      this.#items = [];
+      this.#open = false;
+      this.#setToggle(undefined);
+      this.#resizeObserver?.disconnect();
+      this.#resizeObserver = undefined;
+      this.#containerInlineSize = 0;
+      this.#controller = new PriorityPlusLayoutController(this.#options, 0);
+      return;
     }
 
-    this.#elements = { primary, overflow, toggle, container };
-    this.#items = Array.from(primary.children).filter(
-      (child): child is HTMLElement => child instanceof HTMLElement,
-    );
-    this.#controller = new PriorityPlusLayoutController(
-      this.#options,
-      this.#items.length,
+    const nextItems = getCurrentItems(nextElements);
+    const elementsChanged = !elementsEqual(this.#elements, nextElements);
+    const itemsChanged = !itemsEqual(this.#items, nextItems);
+
+    this.#elements = nextElements;
+    this.#items = nextItems;
+    this.#setToggle(nextElements.toggle);
+
+    if (elementsChanged || this.#resizeObserver === undefined) {
+      this.#observeContainer();
+    }
+
+    if (!elementsChanged && !itemsChanged) return;
+
+    this.#open = false;
+
+    if (layoutNow) {
+      this.#layout({ refreshMeasurements: true });
+    } else {
+      this.#scheduleLayout({ refreshMeasurements: true });
+    }
+  }
+
+  #findElements(): ElementLookup | undefined {
+    const primary = this.#queryElement("[data-priority-plus-primary]");
+    const overflow = this.#queryElement("[data-priority-plus-overflow]");
+    const toggle = this.#queryElement("[data-priority-plus-toggle]");
+    const container = primary?.parentElement;
+
+    if (
+      primary === undefined ||
+      overflow === undefined ||
+      toggle === undefined ||
+      !(container instanceof HTMLElement)
+    ) {
+      return undefined;
+    }
+
+    return { primary, overflow, toggle, container };
+  }
+
+  #queryElement(selector: string): HTMLElement | undefined {
+    const elements = Array.from(this.querySelectorAll(selector));
+
+    return elements.find(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement &&
+        element.closest(this.localName) === this,
     );
   }
 
+  #observeMutations() {
+    if (
+      this.#mutationObserver !== undefined ||
+      typeof MutationObserver === "undefined"
+    ) {
+      return;
+    }
+
+    this.#mutationObserver = new MutationObserver(() => {
+      if (this.#connected) {
+        this.#syncStructure({ layoutNow: true });
+      }
+    });
+    this.#mutationObserver.observe(this, { childList: true, subtree: true });
+  }
+
   #observeContainer() {
-    if (typeof ResizeObserver === "undefined") return;
+    if (this.#elements === undefined || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = undefined;
 
     this.#resizeObserver = new ResizeObserver((entries) => {
+      if (this.#elements === undefined) return;
+
       const entry = entries[0];
       const observedInlineSize = getObservedInlineSize(entry);
       const inlineSize =
@@ -197,21 +267,36 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #layout({ refreshMeasurements = false } = {}) {
+    if (this.#elements === undefined) return;
+
     this.#measurePerformance("priority-plus:layout", () => {
-      const result =
-        refreshMeasurements || !this.#controller.hasMeasurements
-          ? this.#controller.setMeasurements(
-              this.#readMeasurements(),
-              this.#containerInlineSize,
-            )
-          : this.#controller.setContainerInlineSize(this.#containerInlineSize);
+      const result = (() => {
+        if (refreshMeasurements || !this.#controller.hasMeasurements) {
+          const measurements = this.#readMeasurements();
+          return measurements === undefined
+            ? undefined
+            : this.#controller.setMeasurements(
+                measurements,
+                this.#containerInlineSize,
+              );
+        }
+
+        return this.#controller.setContainerInlineSize(
+          this.#containerInlineSize,
+        );
+      })();
+
+      if (result === undefined) return;
 
       this.#applyLayoutResult(result);
     });
   }
 
-  #readMeasurements(): PriorityPlusCachedMeasurements {
-    const { primary, overflow, toggle, container } = this.#elements;
+  #readMeasurements(): PriorityPlusCachedMeasurements | undefined {
+    const elements = this.#elements;
+    if (elements === undefined) return undefined;
+
+    const { primary, overflow, toggle, container } = elements;
 
     return this.#measurePerformance("priority-plus:measure", () => {
       this.#moveAllItemsToPrimary();
@@ -233,6 +318,8 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #applyLayoutResult(result: PriorityPlusLayoutResult) {
+    if (this.#elements === undefined) return;
+
     if (result.shouldCloseOverflow) {
       this.#open = false;
     }
@@ -261,6 +348,8 @@ export class PriorityPlusElement extends HTMLElement {
     nextVisibleCount: number,
     { force = false } = {},
   ) {
+    if (this.#elements === undefined) return;
+
     const { primary, overflow } = this.#elements;
     const primaryFragment = document.createDocumentFragment();
     const overflowFragment = document.createDocumentFragment();
@@ -309,6 +398,8 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #moveAllItemsToPrimary() {
+    if (this.#elements === undefined) return;
+
     const fragment = document.createDocumentFragment();
 
     for (const item of this.#items) {
@@ -347,6 +438,17 @@ export class PriorityPlusElement extends HTMLElement {
     setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
   }
 
+  #setToggle(toggle: HTMLElement | undefined) {
+    if (this.#toggle === toggle) return;
+
+    this.#toggle?.removeEventListener("click", this.#handleToggleClick);
+    this.#toggle = toggle;
+
+    if (this.#connected) {
+      this.#toggle?.addEventListener("click", this.#handleToggleClick);
+    }
+  }
+
   #measurePerformance<T>(name: string, callback: () => T): T {
     if (
       !this.hasAttribute("data-priority-plus-performance") ||
@@ -374,14 +476,6 @@ export class PriorityPlusElement extends HTMLElement {
     }
   }
 
-  #getElement(selector: string): HTMLElement {
-    const element = this.querySelector(selector);
-    if (!(element instanceof HTMLElement)) {
-      throw new Error(`priority-plus: element not found: ${selector}`);
-    }
-    return element;
-  }
-
   #readOptions(): PriorityPlusOptions {
     const collapseAtCount = this.getAttribute("collapse-at-count");
 
@@ -390,6 +484,32 @@ export class PriorityPlusElement extends HTMLElement {
         collapseAtCount === null ? undefined : Number(collapseAtCount),
     };
   }
+}
+
+function getCurrentItems({ primary, overflow }: ElementLookup): HTMLElement[] {
+  return [...primary.children, ...overflow.children].filter(
+    (child): child is HTMLElement => child instanceof HTMLElement,
+  );
+}
+
+function elementsEqual(
+  a: ElementLookup | undefined,
+  b: ElementLookup,
+): boolean {
+  if (a === undefined) return false;
+
+  return (
+    a.primary === b.primary &&
+    a.overflow === b.overflow &&
+    a.toggle === b.toggle &&
+    a.container === b.container
+  );
+}
+
+function itemsEqual(a: readonly HTMLElement[], b: readonly HTMLElement[]) {
+  return (
+    a.length === b.length && a.every((item, index) => item === b[index])
+  );
 }
 
 function getObservedInlineSize(
