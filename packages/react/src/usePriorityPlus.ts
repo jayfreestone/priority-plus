@@ -72,22 +72,31 @@ export function usePriorityPlus<T>(
       .filter((child): child is HTMLElement => child instanceof HTMLElement)
       .map((item) => item.getBoundingClientRect().width);
 
-    setState(
-      getPriorityPlusState(
-        {
-          itemWidths,
-          itemGap: inlineGap(measureList),
-          containerGap: inlineGap(container),
-          toggleWidth: measureToggle.getBoundingClientRect().width,
-          available: contentInlineSize(container) - nonContentInlineSize(primary),
-        },
-        coreOptions,
-      ),
+    const nextState = getPriorityPlusState(
+      {
+        itemWidths,
+        itemGap: inlineGap(measureList),
+        containerGap: inlineGap(container),
+        toggleWidth: measureToggle.getBoundingClientRect().width,
+        available: contentInlineSize(container) - nonContentInlineSize(primary),
+      },
+      coreOptions,
+    );
+
+    setState((currentState) =>
+      priorityPlusStatesEqual(currentState, nextState)
+        ? currentState
+        : nextState,
     );
   }, [coreOptions, items.length]);
 
   useIsomorphicLayoutEffect(() => {
-    setState(createPriorityPlusState(items.length));
+    const nextState = createPriorityPlusState(items.length);
+    setState((currentState) =>
+      priorityPlusStatesEqual(currentState, nextState)
+        ? currentState
+        : nextState,
+    );
     update();
   }, [items.length, update]);
 
@@ -122,4 +131,16 @@ export function usePriorityPlus<T>(
     overflowItems,
     update,
   };
+}
+
+function priorityPlusStatesEqual(
+  a: PriorityPlusState,
+  b: PriorityPlusState,
+): boolean {
+  return (
+    a.allVisible === b.allVisible &&
+    a.itemCount === b.itemCount &&
+    a.overflowCount === b.overflowCount &&
+    a.visibleCount === b.visibleCount
+  );
 }

@@ -1,5 +1,31 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
+import {
+  PriorityPlusItem,
+  PriorityPlusOverflow,
+  PriorityPlusOverflowCount,
+  PriorityPlusPrimary,
+  PriorityPlusRoot,
+  PriorityPlusTrigger,
+  type PriorityPlusItemProps,
+  type PriorityPlusItemPlacement,
+  type PriorityPlusItemRenderProps,
+  type PriorityPlusItemRenderState,
+  type PriorityPlusOverflowCountProps,
+  type PriorityPlusOverflowProps,
+  type PriorityPlusOverflowRenderProps,
+  type PriorityPlusOverflowRenderState,
+  type PriorityPlusPrimaryProps,
+  type PriorityPlusPrimaryRenderProps,
+  type PriorityPlusPrimaryRenderState,
+  type PriorityPlusRender,
+  type PriorityPlusRootProps,
+  type PriorityPlusRootRenderProps,
+  type PriorityPlusRootRenderState,
+  type PriorityPlusTriggerProps,
+  type PriorityPlusTriggerRenderProps,
+  type PriorityPlusTriggerRenderState,
+} from "./PriorityPlusCompound";
 import { usePriorityPlus, type UsePriorityPlusOptions } from "./usePriorityPlus";
 
 export interface PriorityPlusClassNames {
@@ -33,7 +59,7 @@ const measurerStyle: CSSProperties = {
   width: "max-content",
 };
 
-export function PriorityPlus<T>({
+function PriorityPlusComponent<T>({
   items,
   "aria-label": ariaLabel = "Priority navigation",
   className,
@@ -113,3 +139,43 @@ export function PriorityPlus<T>({
     </nav>
   );
 }
+
+export interface PriorityPlusNamespace {
+  <T>(props: PriorityPlusProps<T>): ReactNode;
+  Item: typeof PriorityPlusItem;
+  Overflow: typeof PriorityPlusOverflow;
+  OverflowCount: typeof PriorityPlusOverflowCount;
+  Primary: typeof PriorityPlusPrimary;
+  Root: typeof PriorityPlusRoot;
+  Trigger: typeof PriorityPlusTrigger;
+}
+
+export const PriorityPlus = Object.assign(PriorityPlusComponent, {
+  Item: PriorityPlusItem,
+  Overflow: PriorityPlusOverflow,
+  OverflowCount: PriorityPlusOverflowCount,
+  Primary: PriorityPlusPrimary,
+  Root: PriorityPlusRoot,
+  Trigger: PriorityPlusTrigger,
+}) as PriorityPlusNamespace;
+
+export type {
+  PriorityPlusItemProps,
+  PriorityPlusItemPlacement,
+  PriorityPlusItemRenderProps,
+  PriorityPlusItemRenderState,
+  PriorityPlusOverflowCountProps,
+  PriorityPlusOverflowProps,
+  PriorityPlusOverflowRenderProps,
+  PriorityPlusOverflowRenderState,
+  PriorityPlusPrimaryProps,
+  PriorityPlusPrimaryRenderProps,
+  PriorityPlusPrimaryRenderState,
+  PriorityPlusRender,
+  PriorityPlusRootProps,
+  PriorityPlusRootRenderProps,
+  PriorityPlusRootRenderState,
+  PriorityPlusTriggerProps,
+  PriorityPlusTriggerRenderProps,
+  PriorityPlusTriggerRenderState,
+};
