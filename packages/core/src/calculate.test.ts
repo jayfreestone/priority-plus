@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   calculateVisibleCount,
   createPriorityPlusState,
   getPriorityPlusState,
   partitionItems,
-  PriorityPlusController,
   type PriorityPlusMeasurements,
 } from ".";
 
@@ -139,56 +138,5 @@ describe("partitionItems", () => {
       visibleItems: [],
       overflowItems: ["a", "b", "c"],
     });
-  });
-});
-
-describe("PriorityPlusController", () => {
-  it("notifies subscribers only when calculated state changes", () => {
-    const controller = new PriorityPlusController({}, 3);
-    const listener = vi.fn();
-
-    const unsubscribe = controller.subscribe(listener);
-
-    expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener).toHaveBeenLastCalledWith({
-      itemCount: 3,
-      visibleCount: 3,
-      overflowCount: 0,
-      allVisible: true,
-    });
-
-    const measurements = {
-      itemWidths: [96, 96, 96],
-      itemGap: 8,
-      containerGap: 8,
-      toggleWidth: 72,
-      available: 260,
-    };
-
-    controller.setMeasurements(measurements);
-    controller.setMeasurements(measurements);
-
-    expect(listener).toHaveBeenCalledTimes(2);
-    expect(listener).toHaveBeenLastCalledWith({
-      itemCount: 3,
-      visibleCount: 1,
-      overflowCount: 2,
-      allVisible: false,
-    });
-
-    controller.setOptions({ collapseAtCount: 1 });
-
-    expect(listener).toHaveBeenCalledTimes(3);
-    expect(listener).toHaveBeenLastCalledWith({
-      itemCount: 3,
-      visibleCount: 0,
-      overflowCount: 3,
-      allVisible: false,
-    });
-
-    unsubscribe();
-    controller.setOptions({});
-
-    expect(listener).toHaveBeenCalledTimes(3);
   });
 });

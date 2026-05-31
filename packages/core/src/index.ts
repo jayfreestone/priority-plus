@@ -5,6 +5,11 @@ export {
   type PriorityPlusOptions,
 } from "./calculate";
 export {
+  createPriorityPlusEngine,
+  type PriorityPlusEngine,
+  type PriorityPlusEngineOptions,
+} from "./engine";
+export {
   PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
@@ -18,8 +23,5 @@ export {
   createPriorityPlusState,
   getPriorityPlusState,
   partitionItems,
-  PriorityPlusController,
-  type PriorityPlusListener,
   type PriorityPlusState,
 } from "./state";
-export { throttle, type ThrottledCallback } from "./throttle";

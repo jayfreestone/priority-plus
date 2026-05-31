@@ -1,7 +1,7 @@
 <script lang="ts" generics="Item">
   import {
     createPriorityPlusState,
-    createPriorityPlusFrameScheduler,
+    createPriorityPlusEngine,
     partitionItems,
     PriorityPlusLayoutController,
     type PriorityPlusCachedMeasurements,
@@ -14,8 +14,7 @@
 
   import {
     contentInlineSize,
-    inlineGap,
-    nonContentInlineSize,
+    readCachedMeasurements,
   } from "@priority-plus/core/dom";
 
   interface PriorityPlusProps<Item> extends PriorityPlusOptions {
@@ -29,7 +28,6 @@
     itemClass?: string;
     toggleClass?: string;
     measurerClass?: string;
-    throttleMs?: number;
   }
 
   let {
@@ -43,7 +41,6 @@
     itemClass = "",
     toggleClass = "",
     measurerClass = "",
-    throttleMs = 50,
     collapseAtCount,
   }: PriorityPlusProps<Item> = $props();
 
@@ -57,49 +54,34 @@
 
   const coreOptions = $derived({ collapseAtCount });
   const controller = new PriorityPlusLayoutController();
-  const scheduler = createPriorityPlusFrameScheduler((request) => {
-    update(request);
+  const engine = createPriorityPlusEngine({
+    controller,
+    readMeasurements,
+    getContainerInlineSize: () =>
+      container ? contentInlineSize(container) : null,
+    onResult: (result) => {
+      layout = result.state;
+      if (result.shouldCloseOverflow) open = false;
+    },
   });
 
   function readMeasurements(): PriorityPlusCachedMeasurements | null {
     if (!container || !primary || !measureList || !measureToggle) return null;
 
-    return {
-      itemWidths: Array.from(measureList.children)
-        .filter((child): child is HTMLElement => child instanceof HTMLElement)
-        .map((item) => item.getBoundingClientRect().width),
-      itemGap: inlineGap(measureList),
-      containerGap: inlineGap(container),
-      toggleWidth: measureToggle.getBoundingClientRect().width,
-      primaryNonContentInlineSize: nonContentInlineSize(primary),
-    };
+    return readCachedMeasurements({
+      items: measureList.children,
+      itemGapSource: measureList,
+      container,
+      toggle: measureToggle,
+      primary,
+    });
   }
 
-  async function update({
-    refreshMeasurements = true,
-  }: PriorityPlusScheduleOptions = {}) {
+  // Wait for Svelte to flush pending DOM updates before measuring, then defer
+  // the measure/resize decision to the shared engine.
+  async function update(options: PriorityPlusScheduleOptions = {}) {
     await tick();
-
-    if (!container) return;
-
-    const containerInlineSize = contentInlineSize(container);
-    const result =
-      refreshMeasurements || !controller.hasMeasurements
-        ? (() => {
-            const measurements = readMeasurements();
-            return measurements === null
-              ? null
-              : controller.setMeasurements(measurements, containerInlineSize);
-          })()
-        : controller.setContainerInlineSize(containerInlineSize);
-
-    if (result === null) return;
-
-    layout = result.state;
-
-    if (result.shouldCloseOverflow) {
-      open = false;
-    }
+    engine.layout({ refreshMeasurements: options.refreshMeasurements ?? true });
   }
 
   $effect(() => {
@@ -116,12 +98,12 @@
   onMount(() => {
     if (typeof ResizeObserver === "undefined") return;
 
-    const observer = new ResizeObserver(() => scheduler.schedule());
+    const observer = new ResizeObserver(() => engine.schedule());
     observer.observe(container);
-    document.fonts?.ready.then(() => update({ refreshMeasurements: true }));
+    document.fonts?.ready.then(() => engine.schedule({ refreshMeasurements: true }));
 
     return () => {
-      scheduler.cancel();
+      engine.cancel();
       observer.disconnect();
     };
   });

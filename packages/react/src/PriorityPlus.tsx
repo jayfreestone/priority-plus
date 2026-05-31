@@ -234,7 +234,6 @@ export function PriorityPlusRoot({
   children,
   collapseAtCount,
   render,
-  throttleMs,
   ...props
 }: PriorityPlusRootProps) {
   const [items, setItems] = useState<RegisteredPriorityPlusItem[]>([]);
@@ -245,7 +244,7 @@ export function PriorityPlusRoot({
   const [open, setOpen] = useState(false);
   const fallbackItemOrdersRef = useRef(new Map<string, number>());
   const nextFallbackItemOrderRef = useRef(0);
-  const priority = usePriorityPlus(items, { collapseAtCount, throttleMs });
+  const priority = usePriorityPlus(items, { collapseAtCount });
   const overflowOpen = open && !priority.allVisible;
 
   const registerItem = useCallback((item: PriorityPlusItemRegistration) => {

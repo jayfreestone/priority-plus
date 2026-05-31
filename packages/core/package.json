@@ -21,8 +21,7 @@
     "src/index.ts",
     "src/layout.ts",
     "src/scheduler.ts",
-    "src/state.ts",
-    "src/throttle.ts"
+    "src/state.ts"
   ],
   "scripts": {
     "build": "tsdown",

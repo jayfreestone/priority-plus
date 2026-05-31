@@ -1,5 +1,5 @@
 import {
-  createPriorityPlusFrameScheduler,
+  createPriorityPlusEngine,
   PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
@@ -8,8 +8,7 @@ import {
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  inlineGap,
-  nonContentInlineSize,
+  readCachedMeasurements,
 } from "@priority-plus/core/dom";
 
 interface ElementLookup {
@@ -68,8 +67,14 @@ export class PriorityPlusElement extends HTMLElement {
   #open = false;
   #options: PriorityPlusOptions = {};
   #performanceMeasureId = 0;
-  #scheduler = createPriorityPlusFrameScheduler((options) => {
-    this.#layout(options);
+  #engine = createPriorityPlusEngine({
+    controller: this.#controller,
+    readMeasurements: () => this.#readMeasurements(),
+    getContainerInlineSize: () =>
+      this.#elements === undefined ? null : this.#containerInlineSize,
+    onResult: (result) => this.#applyLayoutResult(result),
+    instrument: (run) =>
+      this.#measurePerformance("priority-plus:layout", run),
   });
 
   connectedCallback() {
@@ -94,7 +99,7 @@ export class PriorityPlusElement extends HTMLElement {
     this.#mutationObserver = undefined;
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
-    this.#cancelScheduledLayout();
+    this.#engine.cancel();
   }
 
   attributeChangedCallback(
@@ -121,10 +126,6 @@ export class PriorityPlusElement extends HTMLElement {
 
     if (this.#elements === undefined) return;
     this.#scheduleLayout({ refreshMeasurements: true });
-  }
-
-  update() {
-    this.refresh();
   }
 
   get allVisible(): boolean {
@@ -162,7 +163,7 @@ export class PriorityPlusElement extends HTMLElement {
       this.#resizeObserver?.disconnect();
       this.#resizeObserver = undefined;
       this.#containerInlineSize = 0;
-      this.#controller = new PriorityPlusLayoutController(this.#options, 0);
+      this.#controller.reset(0);
       return;
     }
 
@@ -183,7 +184,7 @@ export class PriorityPlusElement extends HTMLElement {
     this.#open = false;
 
     if (layoutNow) {
-      this.#layout({ refreshMeasurements: true });
+      this.#engine.layout({ refreshMeasurements: true });
     } else {
       this.#scheduleLayout({ refreshMeasurements: true });
     }
@@ -252,44 +253,14 @@ export class PriorityPlusElement extends HTMLElement {
       if (inlineSizesEqual(inlineSize, this.#containerInlineSize)) return;
 
       this.#containerInlineSize = inlineSize;
-      this.#scheduler.schedule();
+      this.#engine.schedule();
     });
     this.#resizeObserver.observe(this.#elements.container);
   }
 
   #scheduleLayout({ refreshMeasurements = false } = {}) {
     if (!this.#connected) return;
-    this.#scheduler.schedule({ refreshMeasurements });
-  }
-
-  #cancelScheduledLayout() {
-    this.#scheduler.cancel();
-  }
-
-  #layout({ refreshMeasurements = false } = {}) {
-    if (this.#elements === undefined) return;
-
-    this.#measurePerformance("priority-plus:layout", () => {
-      const result = (() => {
-        if (refreshMeasurements || !this.#controller.hasMeasurements) {
-          const measurements = this.#readMeasurements();
-          return measurements === undefined
-            ? undefined
-            : this.#controller.setMeasurements(
-                measurements,
-                this.#containerInlineSize,
-              );
-        }
-
-        return this.#controller.setContainerInlineSize(
-          this.#containerInlineSize,
-        );
-      })();
-
-      if (result === undefined) return;
-
-      this.#applyLayoutResult(result);
-    });
+    this.#engine.schedule({ refreshMeasurements });
   }
 
   #readMeasurements(): PriorityPlusCachedMeasurements | undefined {
@@ -302,13 +273,13 @@ export class PriorityPlusElement extends HTMLElement {
       this.#moveAllItemsToPrimary();
       setHidden(toggle, false);
 
-      const measurements: PriorityPlusCachedMeasurements = {
-        itemWidths: this.#items.map((item) => item.getBoundingClientRect().width),
-        itemGap: inlineGap(primary),
-        containerGap: inlineGap(container),
-        toggleWidth: toggle.getBoundingClientRect().width,
-        primaryNonContentInlineSize: nonContentInlineSize(primary),
-      };
+      const measurements = readCachedMeasurements({
+        items: this.#items,
+        itemGapSource: primary,
+        container,
+        toggle,
+        primary,
+      });
 
       this.#containerInlineSize = contentInlineSize(container);
       setHidden(overflow, true);
@@ -334,12 +305,8 @@ export class PriorityPlusElement extends HTMLElement {
       });
     }
 
-    const { overflow, toggle } = this.#elements;
-    const hasOverflow = result.state.overflowCount > 0;
-
-    setHidden(toggle, !hasOverflow);
-    setHidden(overflow, !hasOverflow || !this.#open);
-    setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
+    setHidden(this.#elements.toggle, result.state.overflowCount === 0);
+    this.#reflectOpenState();
     this.#dispatchOverflowCountChange(result);
   }
 
@@ -428,7 +395,10 @@ export class PriorityPlusElement extends HTMLElement {
 
   #setOpen(open: boolean) {
     this.#open = open;
+    this.#reflectOpenState();
+  }
 
+  #reflectOpenState() {
     if (this.#elements === undefined) return;
 
     const { overflow, toggle } = this.#elements;

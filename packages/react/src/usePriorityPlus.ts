@@ -1,9 +1,10 @@
 import {
   createPriorityPlusState,
-  createPriorityPlusFrameScheduler,
+  createPriorityPlusEngine,
   partitionItems,
   PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
+  type PriorityPlusEngine,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
   type PriorityPlusScheduleOptions,
@@ -11,8 +12,7 @@ import {
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  inlineGap,
-  nonContentInlineSize,
+  readCachedMeasurements,
 } from "@priority-plus/core/dom";
 import {
   useCallback,
@@ -24,9 +24,7 @@ import {
   type RefCallback,
 } from "react";
 
-export interface UsePriorityPlusOptions extends PriorityPlusOptions {
-  throttleMs?: number;
-}
+export type UsePriorityPlusOptions = PriorityPlusOptions;
 
 export interface UsePriorityPlusResult<T> extends PriorityPlusState {
   containerRef: RefCallback<HTMLElement>;
@@ -81,52 +79,33 @@ export function usePriorityPlus<T>(
       return null;
     }
 
-    return {
-      itemWidths: Array.from(measureList.children)
-        .filter((child): child is HTMLElement => child instanceof HTMLElement)
-        .map((item) => item.getBoundingClientRect().width),
-      itemGap: inlineGap(measureList),
-      containerGap: inlineGap(container),
-      toggleWidth: measureToggle.getBoundingClientRect().width,
-      primaryNonContentInlineSize: nonContentInlineSize(primary),
-    };
+    return readCachedMeasurements({
+      items: measureList.children,
+      itemGapSource: measureList,
+      container,
+      toggle: measureToggle,
+      primary,
+    });
   }, []);
 
-  const update = useCallback(
-    ({ refreshMeasurements = true }: PriorityPlusScheduleOptions = {}) => {
-      const container = containerElementRef.current;
-      if (container === null) return;
+  const engineRef = useRef<PriorityPlusEngine | null>(null);
+  if (engineRef.current === null) {
+    engineRef.current = createPriorityPlusEngine({
+      controller: controllerRef.current,
+      readMeasurements,
+      getContainerInlineSize: () => {
+        const container = containerElementRef.current;
+        return container === null ? null : contentInlineSize(container);
+      },
+      onResult: commitLayoutResult,
+    });
+  }
 
-      const controller = controllerRef.current;
-      const containerInlineSize = contentInlineSize(container);
-
-      if (refreshMeasurements || !controller.hasMeasurements) {
-        const measurements = readMeasurements();
-        if (measurements === null) return;
-
-        commitLayoutResult(
-          controller.setMeasurements(measurements, containerInlineSize),
-        );
-        return;
-      }
-
-      commitLayoutResult(
-        controller.setContainerInlineSize(containerInlineSize),
-      );
-    },
-    [commitLayoutResult, readMeasurements],
-  );
-
-  const updateRef = useRef(update);
-  useLayoutEffect(() => {
-    updateRef.current = update;
-  }, [update]);
-
-  const schedulerRef = useRef(
-    createPriorityPlusFrameScheduler((request) => {
-      updateRef.current(request);
-    }),
-  );
+  const update = useCallback((options?: PriorityPlusScheduleOptions) => {
+    engineRef.current?.layout({
+      refreshMeasurements: options?.refreshMeasurements ?? true,
+    });
+  }, []);
 
   const getResizeObserver = useCallback(() => {
     if (typeof ResizeObserver === "undefined") return null;
@@ -134,7 +113,7 @@ export function usePriorityPlus<T>(
     resizeObserverRef.current ??= new ResizeObserver((entries) => {
       const container = containerElementRef.current;
 
-      schedulerRef.current.schedule({
+      engineRef.current?.schedule({
         refreshMeasurements: entries.some((entry) => entry.target !== container),
       });
     });
@@ -251,7 +230,7 @@ export function usePriorityPlus<T>(
 
   useEffect(() => {
     return () => {
-      schedulerRef.current.cancel();
+      engineRef.current?.cancel();
     };
   }, []);
 
