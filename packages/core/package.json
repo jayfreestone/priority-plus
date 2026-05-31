@@ -19,6 +19,8 @@
     "src/calculate.ts",
     "src/dom.ts",
     "src/index.ts",
+    "src/layout.ts",
+    "src/scheduler.ts",
     "src/state.ts",
     "src/throttle.ts"
   ],

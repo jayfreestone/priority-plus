@@ -1,10 +1,12 @@
 import {
   createPriorityPlusState,
-  getPriorityPlusState,
+  createPriorityPlusFrameScheduler,
   partitionItems,
-  throttle,
-  type ThrottledCallback,
+  PriorityPlusLayoutController,
+  type PriorityPlusCachedMeasurements,
+  type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
+  type PriorityPlusScheduleOptions,
   type PriorityPlusState,
 } from "@priority-plus/core";
 import {
@@ -41,20 +43,30 @@ export function usePriorityPlus<T>(
   items: readonly T[],
   options: UsePriorityPlusOptions = {},
 ): UsePriorityPlusResult<T> {
-  const { collapseAtCount, throttleMs = 50 } = options;
+  const { collapseAtCount } = options;
   const coreOptions = useMemo(
     () => ({ collapseAtCount }),
     [collapseAtCount],
+  );
+  const controllerRef = useRef(
+    new PriorityPlusLayoutController(coreOptions, items.length),
   );
   const containerElementRef = useRef<HTMLElement>(null);
   const primaryElementRef = useRef<HTMLUListElement>(null);
   const measureListElementRef = useRef<HTMLUListElement>(null);
   const measureToggleElementRef = useRef<HTMLButtonElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const onResizeRef = useRef<ThrottledCallback<[]> | null>(null);
   const [state, setState] = useState(() => createPriorityPlusState(items.length));
 
-  const update = useCallback(() => {
+  const commitLayoutResult = useCallback((result: PriorityPlusLayoutResult) => {
+    setState((currentState) =>
+      priorityPlusStatesEqual(currentState, result.state)
+        ? currentState
+        : result.state,
+    );
+  }, []);
+
+  const readMeasurements = useCallback((): PriorityPlusCachedMeasurements | null => {
     const container = containerElementRef.current;
     const primary = primaryElementRef.current;
     const measureList = measureListElementRef.current;
@@ -66,36 +78,65 @@ export function usePriorityPlus<T>(
       measureList === null ||
       measureToggle === null
     ) {
-      return;
+      return null;
     }
 
-    const itemWidths = Array.from(measureList.children)
-      .filter((child): child is HTMLElement => child instanceof HTMLElement)
-      .map((item) => item.getBoundingClientRect().width);
+    return {
+      itemWidths: Array.from(measureList.children)
+        .filter((child): child is HTMLElement => child instanceof HTMLElement)
+        .map((item) => item.getBoundingClientRect().width),
+      itemGap: inlineGap(measureList),
+      containerGap: inlineGap(container),
+      toggleWidth: measureToggle.getBoundingClientRect().width,
+      primaryNonContentInlineSize: nonContentInlineSize(primary),
+    };
+  }, []);
 
-    const nextState = getPriorityPlusState(
-      {
-        itemWidths,
-        itemGap: inlineGap(measureList),
-        containerGap: inlineGap(container),
-        toggleWidth: measureToggle.getBoundingClientRect().width,
-        available: contentInlineSize(container) - nonContentInlineSize(primary),
-      },
-      coreOptions,
-    );
+  const update = useCallback(
+    ({ refreshMeasurements = true }: PriorityPlusScheduleOptions = {}) => {
+      const container = containerElementRef.current;
+      if (container === null) return;
 
-    setState((currentState) =>
-      priorityPlusStatesEqual(currentState, nextState)
-        ? currentState
-        : nextState,
-    );
-  }, [coreOptions]);
+      const controller = controllerRef.current;
+      const containerInlineSize = contentInlineSize(container);
+
+      if (refreshMeasurements || !controller.hasMeasurements) {
+        const measurements = readMeasurements();
+        if (measurements === null) return;
+
+        commitLayoutResult(
+          controller.setMeasurements(measurements, containerInlineSize),
+        );
+        return;
+      }
+
+      commitLayoutResult(
+        controller.setContainerInlineSize(containerInlineSize),
+      );
+    },
+    [commitLayoutResult, readMeasurements],
+  );
+
+  const updateRef = useRef(update);
+  useLayoutEffect(() => {
+    updateRef.current = update;
+  }, [update]);
+
+  const schedulerRef = useRef(
+    createPriorityPlusFrameScheduler((request) => {
+      updateRef.current(request);
+    }),
+  );
 
   const getResizeObserver = useCallback(() => {
     if (typeof ResizeObserver === "undefined") return null;
 
-    resizeObserverRef.current ??= new ResizeObserver(() => {
-      onResizeRef.current?.();
+    resizeObserverRef.current ??= new ResizeObserver((entries) => {
+      const container = containerElementRef.current;
+
+      schedulerRef.current.schedule({
+        refreshMeasurements: entries.some((entry) => entry.target !== container),
+      });
     });
 
     return resizeObserverRef.current;
@@ -130,17 +171,14 @@ export function usePriorityPlus<T>(
       }
 
       primaryElementRef.current = element;
-      const resizeObserver = getResizeObserver();
-      resizeObserver?.observe(element);
 
       return () => {
-        resizeObserver?.unobserve(element);
         if (primaryElementRef.current === element) {
           primaryElementRef.current = null;
         }
       };
     },
-    [getResizeObserver],
+    [],
   );
 
   const measureListRef = useCallback<RefCallback<HTMLUListElement>>(
@@ -200,34 +238,27 @@ export function usePriorityPlus<T>(
   );
 
   useLayoutEffect(() => {
-    const nextState = createPriorityPlusState(items.length);
-    setState((currentState) =>
-      priorityPlusStatesEqual(currentState, nextState)
-        ? currentState
-        : nextState,
-    );
+    commitLayoutResult(controllerRef.current.reset(items.length));
   }, [items.length]);
 
   useLayoutEffect(() => {
-    update();
+    commitLayoutResult(controllerRef.current.setOptions(coreOptions));
+  }, [commitLayoutResult, coreOptions]);
+
+  useLayoutEffect(() => {
+    update({ refreshMeasurements: true });
   }, [items, update]);
 
   useEffect(() => {
-    const onResize = throttle(update, throttleMs);
-    onResizeRef.current = onResize;
-
     return () => {
-      onResize.cancel();
-      if (onResizeRef.current === onResize) {
-        onResizeRef.current = null;
-      }
+      schedulerRef.current.cancel();
     };
-  }, [throttleMs, update]);
+  }, []);
 
   useEffect(() => {
     let disposed = false;
     document.fonts?.ready.then(() => {
-      if (!disposed) update();
+      if (!disposed) update({ refreshMeasurements: true });
     });
 
     return () => {

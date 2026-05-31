@@ -664,12 +664,11 @@ function getTriggerRenderState(
 
   if (
     placement === "measure" &&
-    priorityState.itemCount > 0 &&
-    priorityState.overflowCount === 0
+    priorityState.itemCount > 0
   ) {
     priorityState.allVisible = false;
-    priorityState.overflowCount = 1;
-    priorityState.visibleCount = Math.max(0, priorityState.itemCount - 1);
+    priorityState.overflowCount = priorityState.itemCount;
+    priorityState.visibleCount = 0;
   }
 
   return {

@@ -1,9 +1,9 @@
 import {
-  createPriorityPlusState,
-  getPriorityPlusState,
-  type PriorityPlusMeasurements,
+  createPriorityPlusFrameScheduler,
+  PriorityPlusLayoutController,
+  type PriorityPlusCachedMeasurements,
+  type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
-  type PriorityPlusState,
 } from "@priority-plus/core";
 import {
   contentInlineSize,
@@ -18,27 +18,22 @@ interface ElementLookup {
   container: HTMLElement;
 }
 
-interface CachedMeasurements
-  extends Omit<PriorityPlusMeasurements, "available"> {
-  primaryNonContentInlineSize: number;
-}
-
 export class PriorityPlusElement extends HTMLElement {
   static observedAttributes = ["collapse-at-count"];
 
   #elements!: ElementLookup;
   #items: HTMLElement[] = [];
-  #state: PriorityPlusState = createPriorityPlusState();
-  #measurements?: CachedMeasurements;
+  #controller = new PriorityPlusLayoutController();
   #containerInlineSize = 0;
   #resizeObserver?: ResizeObserver;
   #initialized = false;
   #connected = false;
   #open = false;
   #options: PriorityPlusOptions = {};
-  #scheduledLayoutFrame?: number;
-  #scheduledMeasurementRefresh = false;
   #performanceMeasureId = 0;
+  #scheduler = createPriorityPlusFrameScheduler((options) => {
+    this.#layout(options);
+  });
 
   connectedCallback() {
     if (!this.#initialized) {
@@ -78,7 +73,7 @@ export class PriorityPlusElement extends HTMLElement {
       this.#options = this.#readOptions();
 
       if (this.#connected) {
-        this.#scheduleLayout();
+        this.#applyLayoutResult(this.#controller.setOptions(this.#options));
       }
     }
   }
@@ -109,7 +104,10 @@ export class PriorityPlusElement extends HTMLElement {
     this.#items = Array.from(primary.children).filter(
       (child): child is HTMLElement => child instanceof HTMLElement,
     );
-    this.#state = createPriorityPlusState(this.#items.length);
+    this.#controller = new PriorityPlusLayoutController(
+      this.#options,
+      this.#items.length,
+    );
   }
 
   #observeContainer() {
@@ -124,66 +122,35 @@ export class PriorityPlusElement extends HTMLElement {
       if (inlineSizesEqual(inlineSize, this.#containerInlineSize)) return;
 
       this.#containerInlineSize = inlineSize;
-      this.#scheduleLayout();
+      this.#scheduler.schedule();
     });
     this.#resizeObserver.observe(this.#elements.container);
   }
 
   #scheduleLayout({ refreshMeasurements = false } = {}) {
     if (!this.#connected) return;
-
-    this.#scheduledMeasurementRefresh ||= refreshMeasurements;
-
-    if (this.#scheduledLayoutFrame !== undefined) return;
-
-    this.#scheduledLayoutFrame = requestAnimationFrame(() => {
-      const shouldRefreshMeasurements = this.#scheduledMeasurementRefresh;
-      this.#scheduledLayoutFrame = undefined;
-      this.#scheduledMeasurementRefresh = false;
-
-      this.#layout({ refreshMeasurements: shouldRefreshMeasurements });
-    });
+    this.#scheduler.schedule({ refreshMeasurements });
   }
 
   #cancelScheduledLayout() {
-    if (this.#scheduledLayoutFrame !== undefined) {
-      cancelAnimationFrame(this.#scheduledLayoutFrame);
-    }
-
-    this.#scheduledLayoutFrame = undefined;
-    this.#scheduledMeasurementRefresh = false;
+    this.#scheduler.cancel();
   }
 
   #layout({ refreshMeasurements = false } = {}) {
     this.#measurePerformance("priority-plus:layout", () => {
-      const measurementsRefreshed =
-        refreshMeasurements || this.#measurements === undefined;
+      const result =
+        refreshMeasurements || !this.#controller.hasMeasurements
+          ? this.#controller.setMeasurements(
+              this.#readMeasurements(),
+              this.#containerInlineSize,
+            )
+          : this.#controller.setContainerInlineSize(this.#containerInlineSize);
 
-      if (measurementsRefreshed) {
-        this.#measurements = this.#readMeasurements();
-      }
-
-      const measurements = this.#measurements;
-      if (measurements === undefined) return;
-
-      const state = getPriorityPlusState(
-        {
-          itemWidths: measurements.itemWidths,
-          itemGap: measurements.itemGap,
-          containerGap: measurements.containerGap,
-          toggleWidth: measurements.toggleWidth,
-          available:
-            this.#containerInlineSize -
-            measurements.primaryNonContentInlineSize,
-        },
-        this.#options,
-      );
-
-      this.#applyState(state, { forcePartition: measurementsRefreshed });
+      this.#applyLayoutResult(result);
     });
   }
 
-  #readMeasurements(): CachedMeasurements {
+  #readMeasurements(): PriorityPlusCachedMeasurements {
     const { primary, overflow, toggle, container } = this.#elements;
 
     return this.#measurePerformance("priority-plus:measure", () => {
@@ -191,7 +158,7 @@ export class PriorityPlusElement extends HTMLElement {
       setHidden(toggle, false);
       setText(toggle, getToggleLabel(Math.max(1, this.#items.length)));
 
-      const measurements: CachedMeasurements = {
+      const measurements: PriorityPlusCachedMeasurements = {
         itemWidths: this.#items.map((item) => item.getBoundingClientRect().width),
         itemGap: inlineGap(primary),
         containerGap: inlineGap(container),
@@ -206,34 +173,27 @@ export class PriorityPlusElement extends HTMLElement {
     });
   }
 
-  #applyState(
-    state: PriorityPlusState,
-    { forcePartition = false } = {},
-  ) {
-    const previousState = this.#state;
-
-    if (state.allVisible) {
+  #applyLayoutResult(result: PriorityPlusLayoutResult) {
+    if (result.shouldCloseOverflow) {
       this.#open = false;
     }
 
     if (
-      forcePartition ||
-      previousState.visibleCount !== state.visibleCount ||
-      previousState.itemCount !== state.itemCount
+      result.measurementsChanged ||
+      result.visibleCountChanged ||
+      result.itemCountChanged
     ) {
-      this.#partitionItems(previousState.visibleCount, state.visibleCount, {
-        force: forcePartition,
+      this.#partitionItems(result.previousState.visibleCount, result.state.visibleCount, {
+        force: result.measurementsChanged,
       });
     }
 
-    this.#state = state;
-
     const { overflow, toggle } = this.#elements;
-    const hasOverflow = state.overflowCount > 0;
+    const hasOverflow = result.state.overflowCount > 0;
 
     setHidden(toggle, !hasOverflow);
     setHidden(overflow, !hasOverflow || !this.#open);
-    setText(toggle, getToggleLabel(state.overflowCount));
+    setText(toggle, getToggleLabel(result.state.overflowCount));
     setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
   }
 
@@ -309,7 +269,7 @@ export class PriorityPlusElement extends HTMLElement {
     if (this.#elements === undefined) return;
 
     const { overflow, toggle } = this.#elements;
-    const hasOverflow = this.#state.overflowCount > 0;
+    const hasOverflow = this.#controller.getState().overflowCount > 0;
 
     setHidden(overflow, !hasOverflow || !this.#open);
     setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));

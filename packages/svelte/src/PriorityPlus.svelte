@@ -1,10 +1,12 @@
 <script lang="ts" generics="Item">
   import {
     createPriorityPlusState,
-    getPriorityPlusState,
+    createPriorityPlusFrameScheduler,
     partitionItems,
-    throttle,
+    PriorityPlusLayoutController,
+    type PriorityPlusCachedMeasurements,
     type PriorityPlusOptions,
+    type PriorityPlusScheduleOptions,
     type PriorityPlusState,
   } from "@priority-plus/core";
   import type { Snippet } from "svelte";
@@ -54,49 +56,72 @@
   let partitioned = $derived(partitionItems(items, layout.visibleCount));
 
   const coreOptions = $derived({ collapseAtCount });
+  const controller = new PriorityPlusLayoutController();
+  const scheduler = createPriorityPlusFrameScheduler((request) => {
+    update(request);
+  });
 
-  async function update() {
+  function readMeasurements(): PriorityPlusCachedMeasurements | null {
+    if (!container || !primary || !measureList || !measureToggle) return null;
+
+    return {
+      itemWidths: Array.from(measureList.children)
+        .filter((child): child is HTMLElement => child instanceof HTMLElement)
+        .map((item) => item.getBoundingClientRect().width),
+      itemGap: inlineGap(measureList),
+      containerGap: inlineGap(container),
+      toggleWidth: measureToggle.getBoundingClientRect().width,
+      primaryNonContentInlineSize: nonContentInlineSize(primary),
+    };
+  }
+
+  async function update({
+    refreshMeasurements = true,
+  }: PriorityPlusScheduleOptions = {}) {
     await tick();
 
-    if (!container || !primary || !measureList || !measureToggle) return;
+    if (!container) return;
 
-    const itemWidths = Array.from(measureList.children)
-      .filter((child): child is HTMLElement => child instanceof HTMLElement)
-      .map((item) => item.getBoundingClientRect().width);
+    const containerInlineSize = contentInlineSize(container);
+    const result =
+      refreshMeasurements || !controller.hasMeasurements
+        ? (() => {
+            const measurements = readMeasurements();
+            return measurements === null
+              ? null
+              : controller.setMeasurements(measurements, containerInlineSize);
+          })()
+        : controller.setContainerInlineSize(containerInlineSize);
 
-    layout = getPriorityPlusState(
-      {
-        itemWidths,
-        itemGap: inlineGap(measureList),
-        containerGap: inlineGap(container),
-        toggleWidth: measureToggle.getBoundingClientRect().width,
-        available: contentInlineSize(container) - nonContentInlineSize(primary),
-      },
-      coreOptions,
-    );
+    if (result === null) return;
 
-    if (layout.allVisible) {
+    layout = result.state;
+
+    if (result.shouldCloseOverflow) {
       open = false;
     }
   }
 
   $effect(() => {
     items.length;
+    layout = controller.reset(items.length).state;
+    update({ refreshMeasurements: true });
+  });
+
+  $effect(() => {
     collapseAtCount;
-    layout = createPriorityPlusState(items.length);
-    update();
+    layout = controller.setOptions(coreOptions).state;
   });
 
   onMount(() => {
     if (typeof ResizeObserver === "undefined") return;
 
-    const onResize = throttle(update, throttleMs);
-    const observer = new ResizeObserver(() => onResize());
+    const observer = new ResizeObserver(() => scheduler.schedule());
     observer.observe(container);
-    document.fonts?.ready.then(update);
+    document.fonts?.ready.then(() => update({ refreshMeasurements: true }));
 
     return () => {
-      onResize.cancel();
+      scheduler.cancel();
       observer.disconnect();
     };
   });
@@ -153,7 +178,7 @@
       {#if toggle}
         {@render toggle(layout)}
       {:else}
-        More ({Math.max(1, layout.overflowCount)})
+        More ({Math.max(1, items.length)})
       {/if}
     </button>
   </div>

@@ -5,6 +5,16 @@ export {
   type PriorityPlusOptions,
 } from "./calculate";
 export {
+  PriorityPlusLayoutController,
+  type PriorityPlusCachedMeasurements,
+  type PriorityPlusLayoutResult,
+} from "./layout";
+export {
+  createPriorityPlusFrameScheduler,
+  type PriorityPlusFrameScheduler,
+  type PriorityPlusScheduleOptions,
+} from "./scheduler";
+export {
   createPriorityPlusState,
   getPriorityPlusState,
   partitionItems,
