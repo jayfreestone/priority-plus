@@ -125,3 +125,8 @@ markup control.
   </nav>
 </priority-plus>
 ```
+
+Call `refresh()` on the element after changing item content or styles that affect
+intrinsic widths. Add `data-priority-plus-performance` while profiling to emit
+`priority-plus:layout` and `priority-plus:measure` entries through the browser
+Performance API.
