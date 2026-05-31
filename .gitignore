@@ -2,3 +2,8 @@
 node_modules/
 cypress/videos/
 dist/*
+.turbo/
+coverage/
+apps/*/dist/
+packages/*/dist/
+packages/*/.svelte-kit/

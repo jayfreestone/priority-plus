@@ -1,0 +1,38 @@
+{
+  "name": "priority-plus",
+  "version": "0.0.0-semantically-released",
+  "description": "A custom-element priority plus navigation adapter.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run --config vitest.config.ts --passWithNoTests",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released"
+  },
+  "devDependencies": {
+    "@vitest/browser-playwright": "^4.0.14",
+    "playwright": "^1.57.0",
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  },
+  "keywords": [
+    "navigation",
+    "menu",
+    "responsive",
+    "priority",
+    "web-component"
+  ],
+  "license": "ISC"
+}

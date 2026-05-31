@@ -1,0 +1,46 @@
+{
+  "name": "@priority-plus/svelte",
+  "version": "0.0.0-semantically-released",
+  "description": "Svelte adapter for priority plus navigation.",
+  "type": "module",
+  "svelte": "./dist/index.js",
+  "exports": {
+    ".": {
+      "svelte": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./PriorityPlus.svelte": {
+      "svelte": "./dist/PriorityPlus.svelte",
+      "types": "./dist/PriorityPlus.svelte.d.ts",
+      "import": "./dist/PriorityPlus.svelte"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "svelte-package -i src -o dist",
+    "test": "vitest run --config vitest.config.ts --passWithNoTests",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released"
+  },
+  "peerDependencies": {
+    "svelte": ">=5"
+  },
+  "devDependencies": {
+    "@sveltejs/package": "^2.5.7",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@vitest/browser-playwright": "^4.0.14",
+    "playwright": "^1.57.0",
+    "svelte": "^5.43.14",
+    "svelte-check": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.14",
+    "vitest-browser-svelte": "^1.1.0"
+  },
+  "license": "ISC"
+}

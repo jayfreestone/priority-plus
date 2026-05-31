@@ -1,0 +1,29 @@
+{
+  "name": "@priority-plus/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 0.0.0.0",
+    "preview": "vite preview",
+    "test": "vitest run --passWithNoTests",
+    "test:browser": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@priority-plus/react": "0.0.0-semantically-released",
+    "@priority-plus/svelte": "0.0.0-semantically-released",
+    "priority-plus": "0.0.0-semantically-released",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "svelte": "^5.43.14"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.14"
+  }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>priority-plus playground</title>
+    <script type="module" src="/src/main.tsx"></script>
+  </head>
+  <body>
+    <main>
+      <h1>priority-plus playground</h1>
+      <section>
+        <h2>React adapter</h2>
+        <div id="react-root"></div>
+      </section>
+      <section>
+        <h2>Svelte adapter</h2>
+        <div id="svelte-root"></div>
+      </section>
+      <section>
+        <h2>Custom element adapter</h2>
+        <priority-plus>
+          <nav class="priority-nav" aria-label="Custom element">
+            <ul class="priority-nav__list" data-priority-plus-primary>
+              <li><a href="#dashboard">Dashboard</a></li>
+              <li><a href="#projects">Projects</a></li>
+              <li><a href="#roadmap">Roadmap</a></li>
+              <li><a href="#customers">Customers</a></li>
+              <li><a href="#analytics">Analytics</a></li>
+              <li><a href="#automation">Automation</a></li>
+              <li><a href="#reports">Reports</a></li>
+              <li><a href="#integrations">Integrations</a></li>
+            </ul>
+            <button
+              hidden
+              class="priority-nav__toggle"
+              data-priority-plus-toggle
+              type="button"
+              aria-expanded="false"
+            >
+              More
+            </button>
+            <ul
+              hidden
+              class="priority-nav__overflow"
+              data-priority-plus-overflow
+              id="element-overflow"
+            ></ul>
+          </nav>
+        </priority-plus>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "name": "@priority-plus/react",
+  "version": "0.0.0-semantically-released",
+  "description": "React adapter for priority plus navigation.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run --config vitest.config.ts --passWithNoTests",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "^4.0.14",
+    "playwright": "^1.57.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14",
+    "vitest-browser-react": "^1.0.1"
+  },
+  "license": "ISC"
+}

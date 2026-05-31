@@ -1,0 +1,29 @@
+{
+  "name": "@priority-plus/core",
+  "version": "0.0.0-semantically-released",
+  "description": "Framework-agnostic priority plus layout core.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./dom": {
+      "types": "./dist/dom.d.ts",
+      "import": "./dist/dom.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  }
+}

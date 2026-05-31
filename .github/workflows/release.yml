@@ -11,11 +11,15 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18.13.0
+          node-version: 24
       - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
       - name: Test
         run: npm run test
+      - name: Browser Test
+        run: npm run test:browser
       - name: Build
         run: npm run build
       - name: Release
@@ -23,4 +27,3 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

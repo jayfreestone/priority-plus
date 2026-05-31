@@ -1,26 +1,21 @@
 {
-  "name": "priority-plus",
+  "name": "priority-plus-monorepo",
   "version": "0.0.0-semantically-released",
+  "private": true,
   "description": "A modern implementation of the priority plus navigation pattern.",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/priority-plus.d.ts",
-      "import": "./dist/priority-plus.js"
-    }
-  },
-  "types": "./dist/priority-plus.d.ts",
-  "files": [
-    "dist"
+  "packageManager": "npm@11.11.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsdown",
-    "build:watch": "tsdown --watch",
-    "dev": "vite playground",
-    "dev-build": "vite build playground",
-    "dev-preview": "vite preview --outDir playground/dist",
-    "prepack": "npm run build",
-    "typecheck": "tsc --noEmit"
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter @priority-plus/playground",
+    "test": "turbo run test",
+    "test:browser": "turbo run test:browser",
+    "typecheck": "turbo run typecheck",
+    "verify": "npm run typecheck && npm run test && npm run build"
   },
   "repository": {
     "type": "git",
@@ -37,32 +32,29 @@
   },
   "homepage": "https://github.com/jayfreestone/priority-plus#readme",
   "devDependencies": {
+    "@sveltejs/package": "^2.5.7",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "^4.0.14",
+    "playwright": "^1.57.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "svelte": "^5.43.14",
+    "svelte-check": "^4.3.4",
     "tsdown": "^0.16.8",
+    "turbo": "^2.6.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.11"
+    "vite": "^7.2.7",
+    "vitest": "^4.0.14",
+    "vitest-browser-react": "^1.0.1",
+    "vitest-browser-svelte": "^1.1.0"
   },
   "keywords": [
     "navigation",
     "menu",
     "responsive",
     "priority"
-  ],
-  "release": {
-    "branches": [
-      "master"
-    ],
-    "plugins": [
-      "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
-      "@semantic-release/npm",
-      [
-        "@semantic-release/github",
-        {
-          "assets": [
-            "dist/**/*"
-          ]
-        }
-      ]
-    ]
-  }
+  ]
 }
