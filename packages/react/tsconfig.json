@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
     "types": ["vitest/globals", "@vitest/browser/matchers"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
