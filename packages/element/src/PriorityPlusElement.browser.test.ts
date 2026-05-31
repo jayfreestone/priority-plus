@@ -20,11 +20,8 @@ testPriorityPlusBrowserBehavior(elementPriorityPlusTest);
 
 elementPriorityPlusTest("uses cached measurements during viewport-only resizes", async () => {
   await page.viewport(260, 400);
-  await mountPriorityPlus({ measurePerformance: true });
+  await mountPriorityPlus();
   await settleLayout();
-
-  performance.clearMeasures("priority-plus:layout");
-  performance.clearMeasures("priority-plus:measure");
 
   const originalGetBoundingClientRect =
     HTMLElement.prototype.getBoundingClientRect;
@@ -52,18 +49,14 @@ elementPriorityPlusTest("uses cached measurements during viewport-only resizes",
     HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
   }
 
+  // Viewport-only resizes must reuse cached item widths: no element inside the
+  // component should be re-measured.
   expect(componentRectReads).toBe(0);
-  expect(performance.getEntriesByName("priority-plus:measure")).toHaveLength(0);
-  expect(
-    performance.getEntriesByName("priority-plus:layout").length,
-  ).toBeGreaterThanOrEqual(2);
 });
 
-async function mountPriorityPlus({
-  measurePerformance = false,
-}: { measurePerformance?: boolean } = {}): Promise<void> {
+async function mountPriorityPlus(): Promise<void> {
   document.body.innerHTML = `
-    <priority-plus ${measurePerformance ? "data-priority-plus-performance" : ""}>
+    <priority-plus>
       <nav class="test-nav" aria-label="Main">
         <ul class="test-list" data-priority-plus-primary>
           ${priorityPlusBrowserItems

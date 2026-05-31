@@ -3,10 +3,10 @@ import type {
   PriorityPlusLayoutController,
   PriorityPlusLayoutResult,
 } from "./layout";
-import {
-  createPriorityPlusFrameScheduler,
-  type PriorityPlusScheduleOptions,
-} from "./scheduler";
+
+export interface PriorityPlusScheduleOptions {
+  refreshMeasurements?: boolean;
+}
 
 export interface PriorityPlusEngineOptions {
   /** The layout controller to drive. Must outlive the engine. */
@@ -24,8 +24,7 @@ export interface PriorityPlusEngineOptions {
   getContainerInlineSize: () => number | null | undefined;
   /** Apply a freshly computed layout result. */
   onResult: (result: PriorityPlusLayoutResult) => void;
-  /** Optional wrapper around each synchronous layout pass (e.g. profiling). */
-  instrument?: (run: () => void) => void;
+  /** Override the frame primitives (mainly for tests). */
   requestFrame?: (callback: (time: number) => void) => number;
   cancelFrame?: (handle: number) => void;
 }
@@ -40,19 +39,19 @@ export interface PriorityPlusEngine {
 }
 
 /**
- * Owns the "re-measure vs. reuse cached measurements" decision and the frame
- * scheduler that every adapter would otherwise reimplement. Adapters supply the
- * DOM-facing hooks (`readMeasurements`, `getContainerInlineSize`, `onResult`)
- * and decide whether to apply results imperatively or through their renderer.
+ * Owns the "re-measure vs. reuse cached measurements" decision and frame
+ * coalescing that every adapter would otherwise reimplement. Adapters supply
+ * the DOM-facing hooks (`readMeasurements`, `getContainerInlineSize`,
+ * `onResult`) and decide whether to apply results imperatively or through their
+ * renderer.
  */
 export function createPriorityPlusEngine({
   controller,
   readMeasurements,
   getContainerInlineSize,
   onResult,
-  instrument,
-  requestFrame,
-  cancelFrame,
+  requestFrame = defaultRequestFrame,
+  cancelFrame = defaultCancelFrame,
 }: PriorityPlusEngineOptions): PriorityPlusEngine {
   const run = (refreshMeasurements: boolean): void => {
     if (refreshMeasurements || !controller.hasMeasurements) {
@@ -73,22 +72,45 @@ export function createPriorityPlusEngine({
   };
 
   const layout = (options: PriorityPlusScheduleOptions = {}): void => {
-    const pass = () => run(options.refreshMeasurements === true);
-    if (instrument === undefined) {
-      pass();
-    } else {
-      instrument(pass);
-    }
+    run(options.refreshMeasurements === true);
   };
 
-  const scheduler = createPriorityPlusFrameScheduler(
-    ({ refreshMeasurements }) => layout({ refreshMeasurements }),
-    { requestFrame, cancelFrame },
-  );
+  // Coalesce bursts of schedule() calls (e.g. ResizeObserver firing for several
+  // observed elements) into one layout per frame, remembering whether any
+  // caller asked to re-measure.
+  let frame: number | undefined;
+  let refreshPending = false;
 
-  return {
-    layout,
-    schedule: scheduler.schedule,
-    cancel: scheduler.cancel,
+  const schedule = (options: PriorityPlusScheduleOptions = {}): void => {
+    refreshPending ||= options.refreshMeasurements === true;
+    if (frame !== undefined) return;
+
+    frame = requestFrame(() => {
+      frame = undefined;
+      const refresh = refreshPending;
+      refreshPending = false;
+      run(refresh);
+    });
   };
+
+  const cancel = (): void => {
+    if (frame !== undefined) cancelFrame(frame);
+    frame = undefined;
+    refreshPending = false;
+  };
+
+  return { layout, schedule, cancel };
 }
+
+const defaultRequestFrame = (callback: (time: number) => void): number =>
+  typeof requestAnimationFrame === "function"
+    ? requestAnimationFrame(callback)
+    : setTimeout(() => callback(Date.now()), 0);
+
+const defaultCancelFrame = (handle: number): void => {
+  if (typeof cancelAnimationFrame === "function") {
+    cancelAnimationFrame(handle);
+  } else {
+    clearTimeout(handle);
+  }
+};

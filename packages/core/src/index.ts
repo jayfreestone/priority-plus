@@ -8,17 +8,13 @@ export {
   createPriorityPlusEngine,
   type PriorityPlusEngine,
   type PriorityPlusEngineOptions,
+  type PriorityPlusScheduleOptions,
 } from "./engine";
 export {
   PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
 } from "./layout";
-export {
-  createPriorityPlusFrameScheduler,
-  type PriorityPlusFrameScheduler,
-  type PriorityPlusScheduleOptions,
-} from "./scheduler";
 export {
   createPriorityPlusState,
   getPriorityPlusState,

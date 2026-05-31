@@ -16,13 +16,10 @@ export interface PriorityPlusCachedMeasurements
 export interface PriorityPlusLayoutResult {
   previousState: PriorityPlusState;
   state: PriorityPlusState;
-  changed: boolean;
   visibleCountChanged: boolean;
   overflowCountChanged: boolean;
   itemCountChanged: boolean;
-  allVisibleChanged: boolean;
   measurementsChanged: boolean;
-  shouldCloseOverflow: boolean;
 }
 
 export class PriorityPlusLayoutController {
@@ -111,27 +108,13 @@ export class PriorityPlusLayoutController {
     state: PriorityPlusState,
     { measurementsChanged = false }: { measurementsChanged?: boolean } = {},
   ): PriorityPlusLayoutResult {
-    const visibleCountChanged =
-      previousState.visibleCount !== state.visibleCount;
-    const overflowCountChanged =
-      previousState.overflowCount !== state.overflowCount;
-    const itemCountChanged = previousState.itemCount !== state.itemCount;
-    const allVisibleChanged = previousState.allVisible !== state.allVisible;
-
     return {
       previousState,
       state,
-      changed:
-        visibleCountChanged ||
-        overflowCountChanged ||
-        itemCountChanged ||
-        allVisibleChanged,
-      visibleCountChanged,
-      overflowCountChanged,
-      itemCountChanged,
-      allVisibleChanged,
+      visibleCountChanged: previousState.visibleCount !== state.visibleCount,
+      overflowCountChanged: previousState.overflowCount !== state.overflowCount,
+      itemCountChanged: previousState.itemCount !== state.itemCount,
       measurementsChanged,
-      shouldCloseOverflow: state.allVisible,
     };
   }
 }

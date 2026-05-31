@@ -29,36 +29,25 @@ export function calculateVisibleCount({
   const itemCount = itemWidths.length;
   if (itemCount === 0) return 0;
 
-  const prefix: number[] = [0];
-
+  // If every item fits without the toggle, keep them all visible.
+  let totalWidth = 0;
   for (let index = 0; index < itemCount; index += 1) {
-    const previous = prefix[index] ?? 0;
-    const width = itemWidths[index] ?? 0;
-    const gap = index === 0 ? 0 : itemGap;
-    prefix.push(previous + gap + width);
+    totalWidth += (index === 0 ? 0 : itemGap) + (itemWidths[index] ?? 0);
   }
+  if (totalWidth <= available) return itemCount;
 
-  const total = prefix[itemCount] ?? 0;
-  if (total <= available) return itemCount;
-
-  let low = 0;
-  let high = itemCount;
-  let visibleCount = 0;
-
-  while (low <= high) {
-    const mid = (low + high) >> 1;
-    const itemsWidth = prefix[mid] ?? 0;
-    const required = itemsWidth + (mid > 0 ? containerGap : 0) + toggleWidth;
-
-    if (required <= available) {
-      visibleCount = mid;
-      low = mid + 1;
-    } else {
-      high = mid - 1;
+  // Otherwise reserve room for the toggle and keep the leading items that fit.
+  // Width only grows as items are added, so the first item that overflows ends
+  // the primary list.
+  let usedWidth = 0;
+  for (let index = 0; index < itemCount; index += 1) {
+    usedWidth += (index === 0 ? 0 : itemGap) + (itemWidths[index] ?? 0);
+    if (usedWidth + containerGap + toggleWidth > available) {
+      return index;
     }
   }
 
-  return visibleCount;
+  return itemCount;
 }
 
 export function resolveVisibleCount(

@@ -55,41 +55,23 @@ const reactPriorityPlusTest = priorityPlusBrowserTest.override(
   "mountPriorityPlus",
   async () => async () => {
     render(
-      <PriorityPlus.Root
+      <PriorityPlus
         aria-label="Main"
-        render={(props) => <nav {...props} className="test-nav" />}
+        className="test-nav"
+        primaryClassName="test-list"
+        overflowClassName="test-overflow"
+        itemClassName="test-item"
+        toggleClassName="test-toggle"
+        items={priorityPlusBrowserItems}
+        getItemKey={(item) => item.href}
+        renderToggle={(state) => `More (${state.overflowCount})`}
       >
-        <PriorityPlus.Primary
-          render={(props) => <ul {...props} className="test-list" />}
-        >
-          {priorityPlusBrowserItems.map((item, index) => (
-            <PriorityPlus.Item
-              id={item.href}
-              key={item.href}
-              order={index}
-              render={(props) => (
-                <li {...props} className="test-item">
-                  <a className="test-link" href={item.href}>
-                    {item.label}
-                  </a>
-                </li>
-              )}
-            />
-          ))}
-        </PriorityPlus.Primary>
-
-        <PriorityPlus.Trigger
-          render={(props, state) => (
-            <button {...props} className="test-toggle">
-              More ({state.overflowCount})
-            </button>
-          )}
-        />
-
-        <PriorityPlus.Overflow
-          render={(props) => <ul {...props} className="test-overflow" />}
-        />
-      </PriorityPlus.Root>,
+        {(item) => (
+          <a className="test-link" href={item.href}>
+            {item.label}
+          </a>
+        )}
+      </PriorityPlus>,
     );
   },
 );
@@ -128,49 +110,31 @@ function DynamicPriorityPlus() {
       <button onClick={() => setWide(true)} type="button">
         Widen
       </button>
-      <PriorityPlus.Root
+      <PriorityPlus
         aria-label="Dynamic"
-        render={(props) => <nav {...props} className="dynamic-nav" />}
+        className="dynamic-nav"
+        primaryClassName="dynamic-list"
+        overflowClassName="dynamic-overflow"
+        itemClassName="dynamic-item"
+        toggleClassName="dynamic-toggle"
+        items={items}
+        getItemKey={(item) => item.href}
+        renderToggle={(state) => `More (${state.overflowCount})`}
       >
-        <PriorityPlus.Primary
-          render={(props) => <ul {...props} className="dynamic-list" />}
-        >
-          {items.map((item, index) => (
-            <PriorityPlus.Item
-              id={item.href}
-              key={item.href}
-              order={index}
-              render={(props) => (
-                <li {...props} className="dynamic-item">
-                  <a
-                    className={[
-                      "dynamic-link",
-                      item.wide ? "dynamic-link--wide" : undefined,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    href={item.href}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              )}
-            />
-          ))}
-        </PriorityPlus.Primary>
-
-        <PriorityPlus.Trigger
-          render={(props, state) => (
-            <button {...props} className="dynamic-toggle">
-              More ({state.overflowCount})
-            </button>
-          )}
-        />
-
-        <PriorityPlus.Overflow
-          render={(props) => <ul {...props} className="dynamic-overflow" />}
-        />
-      </PriorityPlus.Root>
+        {(item) => (
+          <a
+            className={[
+              "dynamic-link",
+              item.wide ? "dynamic-link--wide" : undefined,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            href={item.href}
+          >
+            {item.label}
+          </a>
+        )}
+      </PriorityPlus>
     </>
   );
 }

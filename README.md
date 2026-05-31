@@ -47,44 +47,25 @@ const items = [
 
 export function Nav() {
   return (
-    <PriorityPlus.Root
+    <PriorityPlus
       aria-label="Main"
-      render={(props) => <nav {...props} className="nav" />}
+      className="nav"
+      primaryClassName="nav-list"
+      overflowClassName="nav-overflow"
+      items={items}
+      getItemKey={(item) => item.href}
+      renderToggle={(state) => `More (${state.overflowCount})`}
     >
-      <PriorityPlus.Primary
-        render={(props) => <ul {...props} className="nav-list" />}
-      >
-        {items.map((item, index) => (
-          <PriorityPlus.Item
-            id={item.href}
-            key={item.href}
-            order={index}
-            render={(props) => (
-              <li {...props}>
-                <a href={item.href}>{item.label}</a>
-              </li>
-            )}
-          />
-        ))}
-      </PriorityPlus.Primary>
-
-      <PriorityPlus.Trigger
-        render={(props, state) => (
-          <button {...props}>More ({state.overflowCount})</button>
-        )}
-      />
-
-      <PriorityPlus.Overflow
-        render={(props) => <ul {...props} className="nav-overflow" />}
-      />
-    </PriorityPlus.Root>
+      {(item) => <a href={item.href}>{item.label}</a>}
+    </PriorityPlus>
   );
 }
 ```
 
-Items register when they mount, so the root does not need an `items` prop. The
-React package also exports `usePriorityPlus` for teams that want lower-level
-markup control.
+`PriorityPlus` takes the nav items as data and renders each through the child
+function; `className`/`primaryClassName`/`overflowClassName`/`itemClassName`/
+`toggleClassName` style the slots. For full markup control the package also
+exports the lower-level `usePriorityPlus` hook.
 
 ## Svelte
 
@@ -146,6 +127,4 @@ intrinsic widths. The element exposes readonly `itemCount`, `visibleCount`,
 `overflowCount`, `allVisible`, and `state` accessors, and emits
 `priority-plus:overflow-count-change` when `overflowCount` changes. If custom
 count rendering changes the toggle's intrinsic width, give the toggle a stable
-width or call `refresh()` after rendering the count. Add
-`data-priority-plus-performance` while profiling to emit `priority-plus:layout`
-and `priority-plus:measure` entries through the browser Performance API.
+width or call `refresh()` after rendering the count.

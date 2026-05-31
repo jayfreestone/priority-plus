@@ -61,7 +61,7 @@
       container ? contentInlineSize(container) : null,
     onResult: (result) => {
       layout = result.state;
-      if (result.shouldCloseOverflow) open = false;
+      if (result.state.allVisible) open = false;
     },
   });
 

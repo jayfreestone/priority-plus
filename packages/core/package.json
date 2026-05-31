@@ -18,9 +18,9 @@
     "dist",
     "src/calculate.ts",
     "src/dom.ts",
+    "src/engine.ts",
     "src/index.ts",
     "src/layout.ts",
-    "src/scheduler.ts",
     "src/state.ts"
   ],
   "scripts": {

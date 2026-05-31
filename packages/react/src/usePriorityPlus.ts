@@ -22,6 +22,7 @@ import {
   useRef,
   useState,
   type RefCallback,
+  type RefObject,
 } from "react";
 
 export type UsePriorityPlusOptions = PriorityPlusOptions;
@@ -121,100 +122,24 @@ export function usePriorityPlus<T>(
     return resizeObserverRef.current;
   }, []);
 
-  const containerRef = useCallback<RefCallback<HTMLElement>>(
-    (element) => {
-      if (element === null) {
-        containerElementRef.current = null;
-        return;
-      }
-
-      containerElementRef.current = element;
-      const resizeObserver = getResizeObserver();
-      resizeObserver?.observe(element);
-
-      return () => {
-        resizeObserver?.unobserve(element);
-        if (containerElementRef.current === element) {
-          containerElementRef.current = null;
-        }
-      };
-    },
-    [getResizeObserver],
-  );
-
-  const primaryRef = useCallback<RefCallback<HTMLUListElement>>(
-    (element) => {
-      if (element === null) {
-        primaryElementRef.current = null;
-        return;
-      }
-
-      primaryElementRef.current = element;
-
-      return () => {
-        if (primaryElementRef.current === element) {
-          primaryElementRef.current = null;
-        }
-      };
-    },
-    [],
-  );
-
-  const measureListRef = useCallback<RefCallback<HTMLUListElement>>(
-    (element) => {
-      if (element === null) {
-        measureListElementRef.current = null;
-        return;
-      }
-
-      measureListElementRef.current = element;
-      const resizeObserver = getResizeObserver();
-      resizeObserver?.observe(element);
-
-      return () => {
-        resizeObserver?.unobserve(element);
-        if (measureListElementRef.current === element) {
-          measureListElementRef.current = null;
-        }
-      };
-    },
-    [getResizeObserver],
-  );
-
-  const measureItemRef = useCallback<RefCallback<HTMLLIElement>>(
-    (element) => {
-      if (element === null) return;
-
-      const resizeObserver = getResizeObserver();
-      resizeObserver?.observe(element);
-
-      return () => {
-        resizeObserver?.unobserve(element);
-      };
-    },
-    [getResizeObserver],
-  );
-
-  const measureToggleRef = useCallback<RefCallback<HTMLButtonElement>>(
-    (element) => {
-      if (element === null) {
-        measureToggleElementRef.current = null;
-        return;
-      }
-
-      measureToggleElementRef.current = element;
-      const resizeObserver = getResizeObserver();
-      resizeObserver?.observe(element);
-
-      return () => {
-        resizeObserver?.unobserve(element);
-        if (measureToggleElementRef.current === element) {
-          measureToggleElementRef.current = null;
-        }
-      };
-    },
-    [getResizeObserver],
-  );
+  const containerRef = useElementRef(getResizeObserver, {
+    store: containerElementRef,
+    observe: true,
+  });
+  const primaryRef = useElementRef(getResizeObserver, {
+    store: primaryElementRef,
+  });
+  const measureListRef = useElementRef(getResizeObserver, {
+    store: measureListElementRef,
+    observe: true,
+  });
+  const measureItemRef = useElementRef<HTMLLIElement>(getResizeObserver, {
+    observe: true,
+  });
+  const measureToggleRef = useElementRef(getResizeObserver, {
+    store: measureToggleElementRef,
+    observe: true,
+  });
 
   useLayoutEffect(() => {
     commitLayoutResult(controllerRef.current.reset(items.length));
@@ -280,5 +205,33 @@ function priorityPlusStatesEqual(
     a.itemCount === b.itemCount &&
     a.overflowCount === b.overflowCount &&
     a.visibleCount === b.visibleCount
+  );
+}
+
+/**
+ * A stable ref callback that optionally stores the element in `store` and/or
+ * registers it with the shared ResizeObserver, cleaning both up on detach.
+ */
+function useElementRef<E extends HTMLElement>(
+  getObserver: () => ResizeObserver | null,
+  { store, observe }: { store?: RefObject<E | null>; observe?: boolean } = {},
+): RefCallback<E> {
+  return useCallback<RefCallback<E>>(
+    (element) => {
+      if (element === null) {
+        if (store) store.current = null;
+        return;
+      }
+
+      if (store) store.current = element;
+      const observer = observe ? getObserver() : null;
+      observer?.observe(element);
+
+      return () => {
+        observer?.unobserve(element);
+        if (store?.current === element) store.current = null;
+      };
+    },
+    [getObserver, store, observe],
   );
 }

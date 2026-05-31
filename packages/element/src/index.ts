@@ -66,15 +66,12 @@ export class PriorityPlusElement extends HTMLElement {
   #connected = false;
   #open = false;
   #options: PriorityPlusOptions = {};
-  #performanceMeasureId = 0;
   #engine = createPriorityPlusEngine({
     controller: this.#controller,
     readMeasurements: () => this.#readMeasurements(),
     getContainerInlineSize: () =>
       this.#elements === undefined ? null : this.#containerInlineSize,
     onResult: (result) => this.#applyLayoutResult(result),
-    instrument: (run) =>
-      this.#measurePerformance("priority-plus:layout", run),
   });
 
   connectedCallback() {
@@ -269,29 +266,27 @@ export class PriorityPlusElement extends HTMLElement {
 
     const { primary, overflow, toggle, container } = elements;
 
-    return this.#measurePerformance("priority-plus:measure", () => {
-      this.#moveAllItemsToPrimary();
-      setHidden(toggle, false);
+    this.#moveAllItemsToPrimary();
+    setHidden(toggle, false);
 
-      const measurements = readCachedMeasurements({
-        items: this.#items,
-        itemGapSource: primary,
-        container,
-        toggle,
-        primary,
-      });
-
-      this.#containerInlineSize = contentInlineSize(container);
-      setHidden(overflow, true);
-
-      return measurements;
+    const measurements = readCachedMeasurements({
+      items: this.#items,
+      itemGapSource: primary,
+      container,
+      toggle,
+      primary,
     });
+
+    this.#containerInlineSize = contentInlineSize(container);
+    setHidden(overflow, true);
+
+    return measurements;
   }
 
   #applyLayoutResult(result: PriorityPlusLayoutResult) {
     if (this.#elements === undefined) return;
 
-    if (result.shouldCloseOverflow) {
+    if (result.state.allVisible) {
       this.#open = false;
     }
 
@@ -416,33 +411,6 @@ export class PriorityPlusElement extends HTMLElement {
 
     if (this.#connected) {
       this.#toggle?.addEventListener("click", this.#handleToggleClick);
-    }
-  }
-
-  #measurePerformance<T>(name: string, callback: () => T): T {
-    if (
-      !this.hasAttribute("data-priority-plus-performance") ||
-      typeof performance === "undefined" ||
-      typeof performance.mark !== "function" ||
-      typeof performance.measure !== "function"
-    ) {
-      return callback();
-    }
-
-    const id = `${name}:${this.#performanceMeasureId}`;
-    const start = `${id}:start`;
-    const end = `${id}:end`;
-    this.#performanceMeasureId += 1;
-
-    performance.mark(start);
-
-    try {
-      return callback();
-    } finally {
-      performance.mark(end);
-      performance.measure(name, start, end);
-      performance.clearMarks(start);
-      performance.clearMarks(end);
     }
   }
 
