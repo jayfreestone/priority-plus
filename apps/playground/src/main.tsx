@@ -18,19 +18,39 @@ const items = [
 ];
 
 createRoot(document.querySelector("#react-root")!).render(
-  <ReactPriorityPlus
+  <ReactPriorityPlus.Root
     aria-label="React"
-    classNames={{
-      item: "priority-nav__item",
-      overflow: "priority-nav__overflow",
-      primary: "priority-nav__list",
-      root: "priority-nav",
-      toggle: "priority-nav__toggle",
-    }}
-    getKey={(item) => item.href}
-    items={items}
-    renderItem={(item) => <a href={item.href}>{item.label}</a>}
-  />,
+    render={(props) => <nav {...props} className="priority-nav" />}
+  >
+    <ReactPriorityPlus.Primary
+      render={(props) => <ul {...props} className="priority-nav__list" />}
+    >
+      {items.map((item, index) => (
+        <ReactPriorityPlus.Item
+          id={item.href}
+          key={item.href}
+          order={index}
+          render={(props) => (
+            <li {...props} className="priority-nav__item">
+              <a href={item.href}>{item.label}</a>
+            </li>
+          )}
+        />
+      ))}
+    </ReactPriorityPlus.Primary>
+
+    <ReactPriorityPlus.Trigger
+      render={(props, state) => (
+        <button {...props} className="priority-nav__toggle">
+          More ({state.overflowCount})
+        </button>
+      )}
+    />
+
+    <ReactPriorityPlus.Overflow
+      render={(props) => <ul {...props} className="priority-nav__overflow" />}
+    />
+  </ReactPriorityPlus.Root>,
 );
 
 mount(SvelteDemo, {

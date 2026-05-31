@@ -47,32 +47,6 @@ const items = [
 
 export function Nav() {
   return (
-    <PriorityPlus
-      items={items}
-      getKey={(item) => item.href}
-      renderItem={(item) => <a href={item.href}>{item.label}</a>}
-    />
-  );
-}
-```
-
-The React package also exports `usePriorityPlus` for teams that want complete markup control.
-
-For markup control with built-in measurement and state coordination, use the
-compound API. Items register when they mount, so the root does not need an
-`items` prop.
-
-```tsx
-import { PriorityPlus } from "@priority-plus/react";
-
-const items = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/projects", label: "Projects" },
-  { href: "/reports", label: "Reports" },
-];
-
-export function Nav() {
-  return (
     <PriorityPlus.Root
       aria-label="Main"
       render={(props) => <nav {...props} className="nav" />}
@@ -107,6 +81,10 @@ export function Nav() {
   );
 }
 ```
+
+Items register when they mount, so the root does not need an `items` prop. The
+React package also exports `usePriorityPlus` for teams that want lower-level
+markup control.
 
 ## Svelte
 
