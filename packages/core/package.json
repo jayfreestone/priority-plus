@@ -14,7 +14,14 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src/calculate.ts",
+    "src/dom.ts",
+    "src/index.ts",
+    "src/state.ts",
+    "src/throttle.ts"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",

@@ -17,7 +17,7 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "src/index.ts", "src/PriorityPlus.svelte"],
   "scripts": {
     "build": "svelte-package -i src -o dist",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",

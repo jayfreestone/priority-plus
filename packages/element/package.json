@@ -10,7 +10,7 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "src/index.ts"],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",
