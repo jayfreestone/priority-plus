@@ -9,8 +9,23 @@ A modern Priority+ navigation library with a framework-agnostic core and small f
 - `@priority-plus/react`: React hook and component adapter.
 - `@priority-plus/svelte`: Svelte 5 component adapter.
 - `@priority-plus/playground`: local Vite playground consuming the workspace packages.
+- `@priority-plus/docs`: VitePress documentation site.
 
 The package split follows the same broad model used by TanStack projects: shared logic lives in a small core package, while framework packages handle measurement, lifecycle, and rendering idiomatically for their runtime.
+
+## Documentation
+
+Full documentation lives in the `apps/docs` VitePress site — guides, concepts,
+and a page per adapter. Run it locally with:
+
+```sh
+npm run docs:dev      # start the docs dev server
+npm run docs:build    # build the static site to apps/docs/docs/.vitepress/dist
+npm run docs:preview  # preview the built site
+```
+
+The docs scripts are deliberately namespaced (`docs:*`) so they stay out of the
+Turbo `build`/`test` pipeline used for releases.
 
 ## Development
 

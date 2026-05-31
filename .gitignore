@@ -7,3 +7,5 @@ coverage/
 apps/*/dist/
 packages/*/dist/
 packages/*/.svelte-kit/
+apps/docs/docs/.vitepress/cache/
+apps/docs/docs/.vitepress/dist/

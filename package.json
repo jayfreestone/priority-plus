@@ -12,6 +12,9 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --filter @priority-plus/playground",
+    "docs:dev": "npm run docs:dev -w @priority-plus/docs",
+    "docs:build": "npm run docs:build -w @priority-plus/docs",
+    "docs:preview": "npm run docs:preview -w @priority-plus/docs",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
     "typecheck": "turbo run typecheck",
