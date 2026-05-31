@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test as baseTest } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 export interface PriorityPlusBrowserItem {
@@ -6,7 +6,15 @@ export interface PriorityPlusBrowserItem {
   label: string;
 }
 
-type MountPriorityPlus = () => Promise<void> | void;
+type PriorityPlusBrowserCleanup = () => Promise<void> | void;
+
+export type MountPriorityPlus = () =>
+  | PriorityPlusBrowserCleanup
+  | Promise<PriorityPlusBrowserCleanup | void>
+  | void;
+
+type MountAtWidth = (width: number) => Promise<void>;
+type ExpectPriorityPlusLayout = (layout: ExpectedLayout) => Promise<void>;
 
 interface ExpectedLayout {
   buttonName: string | null;
@@ -72,6 +80,56 @@ export const priorityPlusBrowserStyles = `
 const itemLabels = priorityPlusBrowserItems.map((item) => item.label);
 const overflowLabels = itemLabels.slice(1);
 
+export const priorityPlusBrowserTest = baseTest
+  .extend<"priorityPlusBrowserDocument", void>(
+    "priorityPlusBrowserDocument",
+    { auto: true },
+    async ({}) => {
+      installPriorityPlusBrowserStyles();
+    },
+  )
+  .extend<"mountPriorityPlus", MountPriorityPlus>(
+    "mountPriorityPlus",
+    async () => {
+      return () => {
+        throw new Error(
+          "mountPriorityPlus must be provided by the implementation test",
+        );
+      };
+    },
+  )
+  .extend<"mountAtWidth", MountAtWidth>(
+    "mountAtWidth",
+    async ({ mountPriorityPlus }, { onCleanup }) => {
+      let cleanupMount: PriorityPlusBrowserCleanup | undefined;
+
+      const cleanupCurrentMount = async () => {
+        const cleanup = cleanupMount;
+        cleanupMount = undefined;
+
+        await cleanup?.();
+      };
+
+      onCleanup(cleanupCurrentMount);
+
+      return async (width) => {
+        await page.viewport(width, 400);
+        await cleanupCurrentMount();
+        document.body.replaceChildren();
+
+        const cleanup = await mountPriorityPlus();
+
+        if (typeof cleanup === "function") {
+          cleanupMount = cleanup;
+        }
+      };
+    },
+  )
+  .extend<"expectPriorityPlusLayout", ExpectPriorityPlusLayout>(
+    "expectPriorityPlusLayout",
+    async () => expectLayout,
+  );
+
 export function installPriorityPlusBrowserStyles(): void {
   if (document.querySelector("style[data-priority-plus-browser-fixture]")) {
     return;
@@ -83,125 +141,131 @@ export function installPriorityPlusBrowserStyles(): void {
   document.head.append(style);
 }
 
-export function testPriorityPlusBrowserBehavior(mount: MountPriorityPlus): void {
-  test("renders accessible primary and overflow navigation", async () => {
-    await mountAtWidth(mount, 260);
+export function testPriorityPlusBrowserBehavior(
+  test: typeof priorityPlusBrowserTest,
+): void {
+  test(
+    "renders accessible primary and overflow navigation",
+    async ({ expectPriorityPlusLayout, mountAtWidth }) => {
+      await mountAtWidth(260);
 
-    const moreButton = page.getByRole("button", { name: "More (3)" });
+      const moreButton = page.getByRole("button", { name: "More (3)" });
 
-    await expect
-      .element(page.getByRole("navigation", { name: "Main" }))
-      .toBeVisible();
-    await expect.element(moreButton).toHaveAccessibleName("More (3)");
-    await expect.element(moreButton).toHaveAttribute("aria-expanded", "false");
-    await expect
-      .element(page.getByRole("link", { name: "Dashboard" }))
-      .toBeVisible();
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-    });
+      await expect
+        .element(page.getByRole("navigation", { name: "Main" }))
+        .toBeVisible();
+      await expect.element(moreButton).toHaveAccessibleName("More (3)");
+      await expect
+        .element(moreButton)
+        .toHaveAttribute("aria-expanded", "false");
+      await expect
+        .element(page.getByRole("link", { name: "Dashboard" }))
+        .toBeVisible();
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+      });
 
-    moreButton.element().focus();
-    await expect.element(moreButton).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
+      moreButton.element().focus();
+      await expect.element(moreButton).toHaveFocus();
+      await userEvent.keyboard("{Enter}");
 
-    await expect.element(moreButton).toHaveAttribute("aria-expanded", "true");
-    await expect
-      .element(page.getByRole("link", { name: "Integrations" }))
-      .toBeVisible();
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-      visibleOverflowLabels: overflowLabels,
-    });
+      await expect.element(moreButton).toHaveAttribute("aria-expanded", "true");
+      await expect
+        .element(page.getByRole("link", { name: "Integrations" }))
+        .toBeVisible();
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+        visibleOverflowLabels: overflowLabels,
+      });
 
-    await userEvent.keyboard("{Enter}");
+      await userEvent.keyboard("{Enter}");
 
-    await expect.element(moreButton).toHaveAttribute("aria-expanded", "false");
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-    });
-  });
+      await expect
+        .element(moreButton)
+        .toHaveAttribute("aria-expanded", "false");
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+      });
+    },
+  );
 
-  test("moves items into and out of overflow as the viewport resizes", async () => {
-    await mountAtWidth(mount, 260);
+  test(
+    "moves items into and out of overflow as the viewport resizes",
+    async ({ expectPriorityPlusLayout, mountAtWidth }) => {
+      await mountAtWidth(260);
 
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-    });
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+      });
 
-    await page.viewport(360, 400);
+      await page.viewport(360, 400);
 
-    await expectLayout({
-      buttonName: "More (2)",
-      primaryLabels: ["Dashboard", "Projects"],
-    });
+      await expectPriorityPlusLayout({
+        buttonName: "More (2)",
+        primaryLabels: ["Dashboard", "Projects"],
+      });
 
-    await page.viewport(520, 400);
+      await page.viewport(520, 400);
 
-    await expectLayout({
-      buttonName: null,
-      primaryLabels: itemLabels,
-    });
+      await expectPriorityPlusLayout({
+        buttonName: null,
+        primaryLabels: itemLabels,
+      });
 
-    await page.viewport(360, 400);
+      await page.viewport(360, 400);
 
-    await expectLayout({
-      buttonName: "More (2)",
-      primaryLabels: ["Dashboard", "Projects"],
-    });
+      await expectPriorityPlusLayout({
+        buttonName: "More (2)",
+        primaryLabels: ["Dashboard", "Projects"],
+      });
 
-    await page.viewport(260, 400);
+      await page.viewport(260, 400);
 
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-    });
-  });
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+      });
+    },
+  );
 
-  test("closes an open overflow when resizing makes every item fit", async () => {
-    await mountAtWidth(mount, 260);
+  test(
+    "closes an open overflow when resizing makes every item fit",
+    async ({ expectPriorityPlusLayout, mountAtWidth }) => {
+      await mountAtWidth(260);
 
-    const moreButton = page.getByRole("button", { name: "More (3)" });
-    await moreButton.click();
+      const moreButton = page.getByRole("button", { name: "More (3)" });
+      await moreButton.click();
 
-    await expect.element(moreButton).toHaveAttribute("aria-expanded", "true");
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-      visibleOverflowLabels: overflowLabels,
-    });
+      await expect.element(moreButton).toHaveAttribute("aria-expanded", "true");
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+        visibleOverflowLabels: overflowLabels,
+      });
 
-    await page.viewport(520, 400);
+      await page.viewport(520, 400);
 
-    await expectLayout({
-      buttonName: null,
-      primaryLabels: itemLabels,
-    });
-    await expect.poll(getToggleExpanded).toBe("false");
+      await expectPriorityPlusLayout({
+        buttonName: null,
+        primaryLabels: itemLabels,
+      });
+      await expect.poll(getToggleExpanded).toBe("false");
 
-    await page.viewport(260, 400);
+      await page.viewport(260, 400);
 
-    await expectLayout({
-      buttonName: "More (3)",
-      primaryLabels: ["Dashboard"],
-    });
-    await expect
-      .element(page.getByRole("button", { name: "More (3)" }))
-      .toHaveAttribute("aria-expanded", "false");
-  });
-}
-
-async function mountAtWidth(
-  mount: MountPriorityPlus,
-  width: number,
-): Promise<void> {
-  await page.viewport(width, 400);
-  document.body.innerHTML = "";
-  await mount();
+      await expectPriorityPlusLayout({
+        buttonName: "More (3)",
+        primaryLabels: ["Dashboard"],
+      });
+      await expect
+        .element(page.getByRole("button", { name: "More (3)" }))
+        .toHaveAttribute("aria-expanded", "false");
+    },
+  );
 }
 
 async function expectLayout({

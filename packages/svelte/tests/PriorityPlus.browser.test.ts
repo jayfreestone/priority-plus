@@ -1,13 +1,16 @@
 import { render } from "vitest-browser-svelte";
 
 import {
-  installPriorityPlusBrowserStyles,
+  priorityPlusBrowserTest,
   testPriorityPlusBrowserBehavior,
 } from "../../../test/priority-plus-browser-behavior.js";
 import TestPriorityPlus from "./TestPriorityPlus.svelte";
 
-testPriorityPlusBrowserBehavior(async () => {
-  installPriorityPlusBrowserStyles();
+const sveltePriorityPlusTest = priorityPlusBrowserTest.override(
+  "mountPriorityPlus",
+  async () => async () => {
+    render(TestPriorityPlus);
+  },
+);
 
-  await render(TestPriorityPlus);
-});
+testPriorityPlusBrowserBehavior(sveltePriorityPlusTest);

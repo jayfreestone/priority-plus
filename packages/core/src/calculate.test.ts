@@ -6,67 +6,74 @@ import {
   getPriorityPlusState,
   partitionItems,
   PriorityPlusController,
+  type PriorityPlusMeasurements,
 } from ".";
 
 describe("calculateVisibleCount", () => {
-  it("returns zero when there are no items", () => {
-    expect(
-      calculateVisibleCount({
+  const visibleCountCases: Array<{
+    expected: number;
+    measurements: PriorityPlusMeasurements;
+    name: string;
+  }> = [
+    {
+      name: "returns zero when there are no items",
+      measurements: {
         itemWidths: [],
         itemGap: 10,
         containerGap: 8,
         toggleWidth: 72,
         available: 260,
-      }),
-    ).toBe(0);
-  });
-
-  it("keeps every item visible when all items fit without the toggle", () => {
-    expect(
-      calculateVisibleCount({
+      },
+      expected: 0,
+    },
+    {
+      name: "keeps every item visible when all items fit without the toggle",
+      measurements: {
         itemWidths: [80, 90, 100],
         itemGap: 10,
         containerGap: 8,
         toggleWidth: 72,
         available: 290,
-      }),
-    ).toBe(3);
-  });
-
-  it("returns zero when only the overflow toggle can fit", () => {
-    expect(
-      calculateVisibleCount({
+      },
+      expected: 3,
+    },
+    {
+      name: "returns zero when only the overflow toggle can fit",
+      measurements: {
         itemWidths: [96, 96],
         itemGap: 8,
         containerGap: 8,
         toggleWidth: 72,
         available: 72,
-      }),
-    ).toBe(0);
-  });
-
-  it("reserves room for the toggle when items overflow", () => {
-    expect(
-      calculateVisibleCount({
+      },
+      expected: 0,
+    },
+    {
+      name: "reserves room for the toggle when items overflow",
+      measurements: {
         itemWidths: [96, 96, 96, 96],
         itemGap: 8,
         containerGap: 8,
         toggleWidth: 72,
         available: 260,
-      }),
-    ).toBe(1);
-  });
-
-  it("includes another item when the required width exactly matches the available width", () => {
-    expect(
-      calculateVisibleCount({
+      },
+      expected: 1,
+    },
+    {
+      name: "includes another item when the required width exactly matches the available width",
+      measurements: {
         itemWidths: [96, 96, 96, 96],
         itemGap: 8,
         containerGap: 8,
         toggleWidth: 72,
         available: 280,
-      }),
-    ).toBe(2);
+      },
+      expected: 2,
+    },
+  ];
+
+  it.for(visibleCountCases)("$name", ({ measurements, expected }) => {
+    expect(calculateVisibleCount(measurements)).toBe(expected);
   });
 
   it("can collapse orphaned primary items into the overflow", () => {

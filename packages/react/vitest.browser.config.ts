@@ -1,15 +1,9 @@
 import react from "@vitejs/plugin-react";
-import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+
+import { createPriorityPlusBrowserTestConfig } from "../../test/vitest-browser-config";
 
 export default defineConfig({
   plugins: [react()],
-  test: {
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      instances: [{ browser: "chromium" }],
-    },
-    include: ["src/**/*.browser.test.tsx"],
-  },
+  test: createPriorityPlusBrowserTestConfig(["src/**/*.browser.test.tsx"]),
 });

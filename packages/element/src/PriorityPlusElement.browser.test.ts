@@ -1,9 +1,9 @@
 import {
-  installPriorityPlusBrowserStyles,
   priorityPlusBrowserItems,
+  priorityPlusBrowserTest,
   testPriorityPlusBrowserBehavior,
 } from "../../../test/priority-plus-browser-behavior.js";
-import { expect, test } from "vitest";
+import { expect } from "vitest";
 import { page } from "vitest/browser";
 
 import {
@@ -11,9 +11,14 @@ import {
   PriorityPlusOverflowCountChangeEvent,
 } from "./index";
 
-testPriorityPlusBrowserBehavior(mountPriorityPlus);
+const elementPriorityPlusTest = priorityPlusBrowserTest.override(
+  "mountPriorityPlus",
+  async () => mountPriorityPlus,
+);
 
-test("uses cached measurements during viewport-only resizes", async () => {
+testPriorityPlusBrowserBehavior(elementPriorityPlusTest);
+
+elementPriorityPlusTest("uses cached measurements during viewport-only resizes", async () => {
   await page.viewport(260, 400);
   await mountPriorityPlus({ measurePerformance: true });
   await settleLayout();
@@ -57,8 +62,6 @@ test("uses cached measurements during viewport-only resizes", async () => {
 async function mountPriorityPlus({
   measurePerformance = false,
 }: { measurePerformance?: boolean } = {}): Promise<void> {
-  installPriorityPlusBrowserStyles();
-
   document.body.innerHTML = `
     <priority-plus ${measurePerformance ? "data-priority-plus-performance" : ""}>
       <nav class="test-nav" aria-label="Main">
@@ -93,8 +96,7 @@ async function mountPriorityPlus({
   renderOverflowCount();
 }
 
-test("emits subclassed overflow count change events", async () => {
-  installPriorityPlusBrowserStyles();
+elementPriorityPlusTest("emits subclassed overflow count change events", async () => {
   await page.viewport(260, 400);
   document.body.innerHTML = "";
 
@@ -164,8 +166,7 @@ test("emits subclassed overflow count change events", async () => {
   expect(priorityPlus.overflowCount).toBe(2);
 });
 
-test("waits for light DOM parts before enhancing", async () => {
-  installPriorityPlusBrowserStyles();
+elementPriorityPlusTest("waits for light DOM parts before enhancing", async () => {
   await page.viewport(260, 400);
   document.body.innerHTML = "<priority-plus></priority-plus>";
   await customElements.whenDefined("priority-plus");
@@ -221,8 +222,7 @@ test("waits for light DOM parts before enhancing", async () => {
   expect(priorityPlus.itemCount).toBe(4);
 });
 
-test("refreshes its item cache when light DOM items change", async () => {
-  installPriorityPlusBrowserStyles();
+elementPriorityPlusTest("refreshes its item cache when light DOM items change", async () => {
   await page.viewport(360, 400);
   await mountPriorityPlus();
 

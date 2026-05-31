@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["svelte", "vitest/globals", "@vitest/browser/matchers"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "tests/**/*.svelte"]
 }
