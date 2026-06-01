@@ -10,17 +10,15 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src/index.ts"],
+  "files": ["dist"],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@priority-plus/core": "0.0.0-semantically-released"
-  },
   "devDependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released",
     "@vitest/browser-playwright": "^4.0.14",
     "playwright": "^1.57.0",
     "tsdown": "^0.16.8",

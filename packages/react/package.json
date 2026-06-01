@@ -10,26 +10,19 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "src/index.ts",
-    "src/PriorityPlus.tsx",
-    "src/usePriorityPlus.ts"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@priority-plus/core": "0.0.0-semantically-released"
-  },
   "peerDependencies": {
     "react": ">=19",
     "react-dom": ">=19"
   },
   "devDependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

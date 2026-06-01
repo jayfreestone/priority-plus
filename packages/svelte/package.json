@@ -17,26 +17,25 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src/index.ts", "src/PriorityPlus.svelte"],
+  "files": ["dist"],
   "scripts": {
-    "build": "svelte-package -i src -o dist",
+    "build": "svelte-package -i src -o dist && tsdown --config tsdown.config.ts",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
-  },
-  "dependencies": {
-    "@priority-plus/core": "0.0.0-semantically-released"
   },
   "peerDependencies": {
     "svelte": ">=5"
   },
   "devDependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released",
     "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@vitest/browser-playwright": "^4.0.14",
     "playwright": "^1.57.0",
     "svelte": "^5.43.14",
     "svelte-check": "^4.3.4",
+    "tsdown": "^0.16.8",
     "typescript": "^5.9.3",
     "vite": "^7.2.7",
     "vitest": "^4.0.14",

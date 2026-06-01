@@ -1,7 +1,8 @@
 # Getting Started
 
-Pick the package that matches your stack. Each adapter depends on
-`@priority-plus/core`, which is installed automatically.
+Pick the package that matches your stack. Each adapter bundles the shared core
+logic it needs, so install `@priority-plus/core` only when you want to build a
+custom adapter or use the layout engine directly.
 
 ## Install
 

@@ -4,18 +4,15 @@
     createPriorityPlusEngine,
     partitionItems,
     PriorityPlusLayoutController,
+    contentInlineSize,
+    readCachedMeasurements,
     type PriorityPlusCachedMeasurements,
     type PriorityPlusOptions,
     type PriorityPlusScheduleOptions,
     type PriorityPlusState,
-  } from "@priority-plus/core";
+  } from "./internal/runtime.js";
   import type { Snippet } from "svelte";
   import { onMount, tick } from "svelte";
-
-  import {
-    contentInlineSize,
-    readCachedMeasurements,
-  } from "@priority-plus/core/dom";
 
   interface PriorityPlusProps<Item> extends PriorityPlusOptions {
     items: readonly Item[];
