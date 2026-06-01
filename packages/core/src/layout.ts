@@ -4,7 +4,7 @@ import type {
 } from "./calculate";
 import {
   createPriorityPlusState,
-  getPriorityPlusState,
+  getPriorityPlusStateFromParts,
   type PriorityPlusState,
 } from "./state";
 
@@ -43,9 +43,7 @@ export class PriorityPlusLayoutController {
 
   reset(itemCount = this.#state.itemCount): PriorityPlusLayoutResult {
     this.#measurements = undefined;
-    return this.#setState(createPriorityPlusState(itemCount), {
-      measurementsChanged: true,
-    });
+    return this.#setState(createPriorityPlusState(itemCount), true);
   }
 
   setOptions(options: PriorityPlusOptions): PriorityPlusLayoutResult {
@@ -59,7 +57,7 @@ export class PriorityPlusLayoutController {
   ): PriorityPlusLayoutResult {
     this.#measurements = measurements;
     this.#containerInlineSize = containerInlineSize;
-    return this.#recalculate({ measurementsChanged: true });
+    return this.#recalculate(true);
   }
 
   setContainerInlineSize(
@@ -69,45 +67,32 @@ export class PriorityPlusLayoutController {
     return this.#recalculate();
   }
 
-  #recalculate({
-    measurementsChanged = false,
-  }: { measurementsChanged?: boolean } = {}): PriorityPlusLayoutResult {
+  #recalculate(measurementsChanged = false): PriorityPlusLayoutResult {
     if (this.#measurements === undefined) {
-      return this.#result(this.#state, this.#state, { measurementsChanged });
+      return this.#setState(this.#state, measurementsChanged);
     }
 
     return this.#setState(
-      getPriorityPlusState(
-        {
-          itemWidths: this.#measurements.itemWidths,
-          itemGap: this.#measurements.itemGap,
-          containerGap: this.#measurements.containerGap,
-          toggleWidth: this.#measurements.toggleWidth,
-          available:
-            this.#containerInlineSize -
-            this.#measurements.primaryNonContentInlineSize,
-        },
-        this.#options,
+      getPriorityPlusStateFromParts(
+        this.#measurements.itemWidths,
+        this.#measurements.itemGap,
+        this.#measurements.containerGap,
+        this.#measurements.toggleWidth,
+        this.#containerInlineSize -
+          this.#measurements.primaryNonContentInlineSize,
+        this.#options.collapseAtCount,
       ),
-      { measurementsChanged },
+      measurementsChanged,
     );
   }
 
   #setState(
     state: PriorityPlusState,
-    { measurementsChanged = false }: { measurementsChanged?: boolean } = {},
+    measurementsChanged = false,
   ): PriorityPlusLayoutResult {
     const previousState = this.#state;
     this.#state = state;
 
-    return this.#result(previousState, state, { measurementsChanged });
-  }
-
-  #result(
-    previousState: PriorityPlusState,
-    state: PriorityPlusState,
-    { measurementsChanged = false }: { measurementsChanged?: boolean } = {},
-  ): PriorityPlusLayoutResult {
     return {
       previousState,
       state,

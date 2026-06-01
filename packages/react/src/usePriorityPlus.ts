@@ -7,12 +7,11 @@ import {
   type PriorityPlusEngine,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
-  type PriorityPlusScheduleOptions,
   type PriorityPlusState,
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  readCachedMeasurements,
+  readCachedMeasurementsFromParts,
 } from "@priority-plus/core/dom";
 import {
   useCallback,
@@ -80,13 +79,13 @@ export function usePriorityPlus<T>(
       return null;
     }
 
-    return readCachedMeasurements({
-      items: measureList.children,
-      itemGapSource: measureList,
+    return readCachedMeasurementsFromParts(
+      measureList.children,
+      measureList,
       container,
-      toggle: measureToggle,
+      measureToggle,
       primary,
-    });
+    );
   }, []);
 
   const engineRef = useRef<PriorityPlusEngine | null>(null);
@@ -102,9 +101,9 @@ export function usePriorityPlus<T>(
     });
   }
 
-  const update = useCallback((options?: PriorityPlusScheduleOptions) => {
+  const update = useCallback(() => {
     engineRef.current?.layout({
-      refreshMeasurements: options?.refreshMeasurements ?? true,
+      refreshMeasurements: true,
     });
   }, []);
 
@@ -150,7 +149,7 @@ export function usePriorityPlus<T>(
   }, [commitLayoutResult, coreOptions]);
 
   useLayoutEffect(() => {
-    update({ refreshMeasurements: true });
+    update();
   }, [items, update]);
 
   useEffect(() => {
@@ -162,7 +161,7 @@ export function usePriorityPlus<T>(
   useEffect(() => {
     let disposed = false;
     document.fonts?.ready.then(() => {
-      if (!disposed) update({ refreshMeasurements: true });
+      if (!disposed) update();
     });
 
     return () => {

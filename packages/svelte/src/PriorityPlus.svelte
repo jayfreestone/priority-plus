@@ -5,10 +5,9 @@
     partitionItems,
     PriorityPlusLayoutController,
     contentInlineSize,
-    readCachedMeasurements,
+    readCachedMeasurementsFromParts,
     type PriorityPlusCachedMeasurements,
     type PriorityPlusOptions,
-    type PriorityPlusScheduleOptions,
     type PriorityPlusState,
   } from "./internal/runtime.js";
   import type { Snippet } from "svelte";
@@ -65,26 +64,26 @@
   function readMeasurements(): PriorityPlusCachedMeasurements | null {
     if (!container || !primary || !measureList || !measureToggle) return null;
 
-    return readCachedMeasurements({
-      items: measureList.children,
-      itemGapSource: measureList,
+    return readCachedMeasurementsFromParts(
+      measureList.children,
+      measureList,
       container,
-      toggle: measureToggle,
+      measureToggle,
       primary,
-    });
+    );
   }
 
   // Wait for Svelte to flush pending DOM updates before measuring, then defer
   // the measure/resize decision to the shared engine.
-  async function update(options: PriorityPlusScheduleOptions = {}) {
+  async function update() {
     await tick();
-    engine.layout({ refreshMeasurements: options.refreshMeasurements ?? true });
+    engine.layout({ refreshMeasurements: true });
   }
 
   $effect(() => {
     items.length;
     layout = controller.reset(items.length).state;
-    update({ refreshMeasurements: true });
+    update();
   });
 
   $effect(() => {

@@ -1,7 +1,9 @@
 import {
+  calculateVisibleCount,
+  calculateVisibleCountFromParts,
+  resolveFittedVisibleCount,
   type PriorityPlusMeasurements,
   type PriorityPlusOptions,
-  resolveVisibleCount,
 } from "./calculate";
 
 export interface PriorityPlusState {
@@ -24,8 +26,37 @@ export function getPriorityPlusState(
   measurements: PriorityPlusMeasurements,
   options: PriorityPlusOptions = {},
 ): PriorityPlusState {
-  const itemCount = measurements.itemWidths.length;
-  const visibleCount = resolveVisibleCount(measurements, options);
+  return getPriorityPlusStateFromParts(
+    measurements.itemWidths,
+    measurements.itemGap,
+    measurements.containerGap,
+    measurements.toggleWidth,
+    measurements.available,
+    options.collapseAtCount,
+  );
+}
+
+export function getPriorityPlusStateFromParts(
+  itemWidths: number[],
+  itemGap: number,
+  containerGap: number,
+  toggleWidth: number,
+  available: number,
+  collapseAtCount?: number,
+): PriorityPlusState {
+  const itemCount = itemWidths.length;
+  const fittedCount = calculateVisibleCountFromParts(
+    itemWidths,
+    itemGap,
+    containerGap,
+    toggleWidth,
+    available,
+  );
+  const visibleCount = resolveFittedVisibleCount(
+    fittedCount,
+    itemCount,
+    collapseAtCount,
+  );
   const overflowCount = itemCount - visibleCount;
 
   return {

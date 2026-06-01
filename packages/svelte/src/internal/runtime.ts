@@ -5,10 +5,9 @@ export {
   PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusOptions,
-  type PriorityPlusScheduleOptions,
   type PriorityPlusState,
 } from "@priority-plus/core";
 export {
   contentInlineSize,
-  readCachedMeasurements,
+  readCachedMeasurementsFromParts,
 } from "@priority-plus/core/dom";

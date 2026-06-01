@@ -8,7 +8,7 @@ import {
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  readCachedMeasurements,
+  readCachedMeasurementsFromParts,
 } from "@priority-plus/core/dom";
 
 interface ElementLookup {
@@ -65,7 +65,6 @@ export class PriorityPlusElement extends HTMLElement {
   #toggle?: HTMLElement;
   #connected = false;
   #open = false;
-  #options: PriorityPlusOptions = {};
   #engine = createPriorityPlusEngine({
     controller: this.#controller,
     readMeasurements: () => this.#readMeasurements(),
@@ -77,7 +76,7 @@ export class PriorityPlusElement extends HTMLElement {
   connectedCallback() {
     if (this.#connected) return;
     this.#connected = true;
-    this.#options = this.#readOptions();
+    this.#controller.setOptions(this.#readOptions());
 
     this.#observeMutations();
     this.#syncStructure({ layoutNow: true });
@@ -107,8 +106,7 @@ export class PriorityPlusElement extends HTMLElement {
     if (oldValue === newValue) return;
 
     if (name === "collapse-at-count") {
-      this.#options = this.#readOptions();
-      const result = this.#controller.setOptions(this.#options);
+      const result = this.#controller.setOptions(this.#readOptions());
 
       if (this.#connected && this.#elements !== undefined) {
         this.#applyLayoutResult(result);
@@ -269,13 +267,13 @@ export class PriorityPlusElement extends HTMLElement {
     this.#moveAllItemsToPrimary();
     setHidden(toggle, false);
 
-    const measurements = readCachedMeasurements({
-      items: this.#items,
-      itemGapSource: primary,
+    const measurements = readCachedMeasurementsFromParts(
+      this.#items,
+      primary,
       container,
       toggle,
       primary,
-    });
+    );
 
     this.#containerInlineSize = contentInlineSize(container);
     setHidden(overflow, true);

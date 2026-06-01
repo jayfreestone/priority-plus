@@ -53,7 +53,7 @@ export function createPriorityPlusEngine({
   requestFrame = defaultRequestFrame,
   cancelFrame = defaultCancelFrame,
 }: PriorityPlusEngineOptions): PriorityPlusEngine {
-  const run = (refreshMeasurements: boolean): void => {
+  const run = (refreshMeasurements?: boolean): void => {
     if (refreshMeasurements || !controller.hasMeasurements) {
       const measurements = readMeasurements();
       if (measurements == null) return;
@@ -72,17 +72,17 @@ export function createPriorityPlusEngine({
   };
 
   const layout = (options: PriorityPlusScheduleOptions = {}): void => {
-    run(options.refreshMeasurements === true);
+    run(options.refreshMeasurements);
   };
 
   // Coalesce bursts of schedule() calls (e.g. ResizeObserver firing for several
   // observed elements) into one layout per frame, remembering whether any
   // caller asked to re-measure.
   let frame: number | undefined;
-  let refreshPending = false;
+  let refreshPending: boolean | undefined = false;
 
   const schedule = (options: PriorityPlusScheduleOptions = {}): void => {
-    refreshPending ||= options.refreshMeasurements === true;
+    refreshPending ||= options.refreshMeasurements;
     if (frame !== undefined) return;
 
     frame = requestFrame(() => {

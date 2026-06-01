@@ -26,28 +26,40 @@ export function calculateVisibleCount({
   toggleWidth,
   available,
 }: PriorityPlusMeasurements): number {
-  const itemCount = itemWidths.length;
-  if (itemCount === 0) return 0;
+  return calculateVisibleCountFromParts(
+    itemWidths,
+    itemGap,
+    containerGap,
+    toggleWidth,
+    available,
+  );
+}
 
-  // If every item fits without the toggle, keep them all visible.
+export function calculateVisibleCountFromParts(
+  itemWidths: number[],
+  itemGap: number,
+  containerGap: number,
+  toggleWidth: number,
+  available: number,
+): number {
+  const itemCount = itemWidths.length;
   let totalWidth = 0;
+  let visibleCount = itemCount;
+
   for (let index = 0; index < itemCount; index += 1) {
     totalWidth += (index === 0 ? 0 : itemGap) + (itemWidths[index] ?? 0);
-  }
-  if (totalWidth <= available) return itemCount;
 
-  // Otherwise reserve room for the toggle and keep the leading items that fit.
-  // Width only grows as items are added, so the first item that overflows ends
-  // the primary list.
-  let usedWidth = 0;
-  for (let index = 0; index < itemCount; index += 1) {
-    usedWidth += (index === 0 ? 0 : itemGap) + (itemWidths[index] ?? 0);
-    if (usedWidth + containerGap + toggleWidth > available) {
-      return index;
+    if (
+      visibleCount === itemCount &&
+      totalWidth + containerGap + toggleWidth > available
+    ) {
+      visibleCount = index;
     }
   }
 
-  return itemCount;
+  // If every item fits without the toggle, keep them all visible. Otherwise use
+  // the first prefix count that fits with room reserved for the toggle.
+  return totalWidth <= available ? itemCount : visibleCount;
 }
 
 export function resolveVisibleCount(
@@ -57,13 +69,21 @@ export function resolveVisibleCount(
   const visibleCount = calculateVisibleCount(measurements);
   const itemCount = measurements.itemWidths.length;
 
-  if (
-    options.collapseAtCount !== undefined &&
-    visibleCount <= options.collapseAtCount &&
-    visibleCount < itemCount
-  ) {
-    return 0;
-  }
+  return resolveFittedVisibleCount(
+    visibleCount,
+    itemCount,
+    options.collapseAtCount,
+  );
+}
 
-  return visibleCount;
+export function resolveFittedVisibleCount(
+  visibleCount: number,
+  itemCount: number,
+  collapseAtCount?: number,
+): number {
+  return collapseAtCount !== undefined &&
+    visibleCount <= collapseAtCount &&
+    visibleCount < itemCount
+    ? 0
+    : visibleCount;
 }
