@@ -1,14 +1,15 @@
 import {
-  createPriorityPlusEngine,
-  PriorityPlusLayoutController,
+  createPriorityPlusSession,
+  planPartition,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
+  type PriorityPlusSession,
   type PriorityPlusState,
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  readCachedMeasurementsFromParts,
+  readCachedMeasurements,
 } from "@priority-plus/core/dom";
 
 interface ElementLookup {
@@ -58,34 +59,30 @@ export class PriorityPlusElement extends HTMLElement {
 
   #elements?: ElementLookup;
   #items: HTMLElement[] = [];
-  #controller = new PriorityPlusLayoutController();
-  #containerInlineSize = 0;
   #mutationObserver?: MutationObserver;
-  #resizeObserver?: ResizeObserver;
+  #observedContainer?: HTMLElement;
+  #cancelFontReflow?: () => void;
   #toggle?: HTMLElement;
   #connected = false;
   #open = false;
-  #engine = createPriorityPlusEngine({
-    controller: this.#controller,
+  #session: PriorityPlusSession = createPriorityPlusSession({
     readMeasurements: () => this.#readMeasurements(),
     getContainerInlineSize: () =>
-      this.#elements === undefined ? null : this.#containerInlineSize,
+      this.#elements === undefined
+        ? null
+        : contentInlineSize(this.#elements.container),
     onResult: (result) => this.#applyLayoutResult(result),
   });
 
   connectedCallback() {
     if (this.#connected) return;
     this.#connected = true;
-    this.#controller.setOptions(this.#readOptions());
+    this.#session.controller.setOptions(this.#readOptions());
 
     this.#observeMutations();
     this.#syncStructure({ layoutNow: true });
 
-    document.fonts?.ready.then(() => {
-      if (this.#connected) {
-        this.#scheduleLayout({ refreshMeasurements: true });
-      }
-    });
+    this.#cancelFontReflow = this.#session.refreshOnFontLoad();
   }
 
   disconnectedCallback() {
@@ -93,9 +90,10 @@ export class PriorityPlusElement extends HTMLElement {
     this.#setToggle(undefined);
     this.#mutationObserver?.disconnect();
     this.#mutationObserver = undefined;
-    this.#resizeObserver?.disconnect();
-    this.#resizeObserver = undefined;
-    this.#engine.cancel();
+    this.#cancelFontReflow?.();
+    this.#cancelFontReflow = undefined;
+    this.#session.destroy();
+    this.#observedContainer = undefined;
   }
 
   attributeChangedCallback(
@@ -106,7 +104,7 @@ export class PriorityPlusElement extends HTMLElement {
     if (oldValue === newValue) return;
 
     if (name === "collapse-at-count") {
-      const result = this.#controller.setOptions(this.#readOptions());
+      const result = this.#session.controller.setOptions(this.#readOptions());
 
       if (this.#connected && this.#elements !== undefined) {
         this.#applyLayoutResult(result);
@@ -124,11 +122,11 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   get allVisible(): boolean {
-    return this.#controller.getState().allVisible;
+    return this.#session.controller.getState().allVisible;
   }
 
   get itemCount(): number {
-    return this.#controller.getState().itemCount;
+    return this.#session.controller.getState().itemCount;
   }
 
   get open(): boolean {
@@ -136,15 +134,15 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   get overflowCount(): number {
-    return this.#controller.getState().overflowCount;
+    return this.#session.controller.getState().overflowCount;
   }
 
   get state(): Readonly<PriorityPlusState> {
-    return { ...this.#controller.getState() };
+    return { ...this.#session.controller.getState() };
   }
 
   get visibleCount(): number {
-    return this.#controller.getState().visibleCount;
+    return this.#session.controller.getState().visibleCount;
   }
 
   #syncStructure({ layoutNow = false } = {}) {
@@ -155,10 +153,11 @@ export class PriorityPlusElement extends HTMLElement {
       this.#items = [];
       this.#open = false;
       this.#setToggle(undefined);
-      this.#resizeObserver?.disconnect();
-      this.#resizeObserver = undefined;
-      this.#containerInlineSize = 0;
-      this.#controller.reset(0);
+      if (this.#observedContainer !== undefined) {
+        this.#session.unobserve(this.#observedContainer);
+        this.#observedContainer = undefined;
+      }
+      this.#session.controller.reset(0);
       return;
     }
 
@@ -170,7 +169,7 @@ export class PriorityPlusElement extends HTMLElement {
     this.#items = nextItems;
     this.#setToggle(nextElements.toggle);
 
-    if (elementsChanged || this.#resizeObserver === undefined) {
+    if (elementsChanged || this.#observedContainer === undefined) {
       this.#observeContainer();
     }
 
@@ -179,7 +178,7 @@ export class PriorityPlusElement extends HTMLElement {
     this.#open = false;
 
     if (layoutNow) {
-      this.#engine.layout({ refreshMeasurements: true });
+      this.#session.layout({ refreshMeasurements: true });
     } else {
       this.#scheduleLayout({ refreshMeasurements: true });
     }
@@ -230,32 +229,21 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #observeContainer() {
-    if (this.#elements === undefined || typeof ResizeObserver === "undefined") {
-      return;
+    if (this.#elements === undefined) return;
+
+    const { container } = this.#elements;
+    if (this.#observedContainer === container) return;
+
+    if (this.#observedContainer !== undefined) {
+      this.#session.unobserve(this.#observedContainer);
     }
-
-    this.#resizeObserver?.disconnect();
-    this.#resizeObserver = undefined;
-
-    this.#resizeObserver = new ResizeObserver((entries) => {
-      if (this.#elements === undefined) return;
-
-      const entry = entries[0];
-      const observedInlineSize = getObservedInlineSize(entry);
-      const inlineSize =
-        observedInlineSize ?? contentInlineSize(this.#elements.container);
-
-      if (inlineSizesEqual(inlineSize, this.#containerInlineSize)) return;
-
-      this.#containerInlineSize = inlineSize;
-      this.#engine.schedule();
-    });
-    this.#resizeObserver.observe(this.#elements.container);
+    this.#session.observe(container);
+    this.#observedContainer = container;
   }
 
   #scheduleLayout({ refreshMeasurements = false } = {}) {
     if (!this.#connected) return;
-    this.#engine.schedule({ refreshMeasurements });
+    this.#session.schedule({ refreshMeasurements });
   }
 
   #readMeasurements(): PriorityPlusCachedMeasurements | undefined {
@@ -267,15 +255,14 @@ export class PriorityPlusElement extends HTMLElement {
     this.#moveAllItemsToPrimary();
     setHidden(toggle, false);
 
-    const measurements = readCachedMeasurementsFromParts(
-      this.#items,
-      primary,
+    const measurements = readCachedMeasurements({
+      items: this.#items,
+      itemGapSource: primary,
       container,
       toggle,
       primary,
-    );
+    });
 
-    this.#containerInlineSize = contentInlineSize(container);
     setHidden(overflow, true);
 
     return measurements;
@@ -311,50 +298,43 @@ export class PriorityPlusElement extends HTMLElement {
     if (this.#elements === undefined) return;
 
     const { primary, overflow } = this.#elements;
-    const primaryFragment = document.createDocumentFragment();
-    const overflowFragment = document.createDocumentFragment();
+    const plan = planPartition(
+      previousVisibleCount,
+      nextVisibleCount,
+      this.#items.length,
+      { force },
+    );
 
-    if (!force) {
-      if (nextVisibleCount > previousVisibleCount) {
-        for (
-          let index = previousVisibleCount;
-          index < nextVisibleCount;
-          index += 1
-        ) {
-          const item = this.#items[index];
-          if (item !== undefined) {
-            primaryFragment.appendChild(item);
-          }
-        }
+    switch (plan.kind) {
+      case "none":
+        return;
+      case "promote":
+        primary.appendChild(this.#collectItems(plan.indices));
+        return;
+      case "demote":
+        overflow.insertBefore(
+          this.#collectItems(plan.indices),
+          overflow.firstChild,
+        );
+        return;
+      case "rebuild":
+        primary.appendChild(this.#collectItems(plan.primary));
+        overflow.appendChild(this.#collectItems(plan.overflow));
+        return;
+    }
+  }
 
-        primary.appendChild(primaryFragment);
-      } else {
-        for (
-          let index = nextVisibleCount;
-          index < previousVisibleCount;
-          index += 1
-        ) {
-          const item = this.#items[index];
-          if (item !== undefined) {
-            overflowFragment.appendChild(item);
-          }
-        }
+  #collectItems(indices: number[]): DocumentFragment {
+    const fragment = document.createDocumentFragment();
 
-        overflow.insertBefore(overflowFragment, overflow.firstChild);
+    for (const index of indices) {
+      const item = this.#items[index];
+      if (item !== undefined) {
+        fragment.appendChild(item);
       }
-
-      return;
     }
 
-    this.#items.forEach((item, index) => {
-      (index < nextVisibleCount
-        ? primaryFragment
-        : overflowFragment
-      ).appendChild(item);
-    });
-
-    primary.appendChild(primaryFragment);
-    overflow.appendChild(overflowFragment);
+    return fragment;
   }
 
   #moveAllItemsToPrimary() {
@@ -395,7 +375,7 @@ export class PriorityPlusElement extends HTMLElement {
     if (this.#elements === undefined) return;
 
     const { overflow, toggle } = this.#elements;
-    const hasOverflow = this.#controller.getState().overflowCount > 0;
+    const hasOverflow = this.#session.controller.getState().overflowCount > 0;
 
     setHidden(overflow, !hasOverflow || !this.#open);
     setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
@@ -446,21 +426,6 @@ function itemsEqual(a: readonly HTMLElement[], b: readonly HTMLElement[]) {
   return (
     a.length === b.length && a.every((item, index) => item === b[index])
   );
-}
-
-function getObservedInlineSize(
-  entry: ResizeObserverEntry | undefined,
-): number | undefined {
-  const contentBoxSize = entry?.contentBoxSize;
-  const contentBox = Array.isArray(contentBoxSize)
-    ? contentBoxSize[0]
-    : contentBoxSize;
-
-  return contentBox?.inlineSize ?? entry?.contentRect.width;
-}
-
-function inlineSizesEqual(a: number, b: number): boolean {
-  return Math.abs(a - b) < 0.5;
 }
 
 function setAttribute(

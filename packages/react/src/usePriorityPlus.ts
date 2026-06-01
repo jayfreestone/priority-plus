@@ -1,17 +1,16 @@
 import {
+  createPriorityPlusSession,
   createPriorityPlusState,
-  createPriorityPlusEngine,
   partitionItems,
-  PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
-  type PriorityPlusEngine,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
+  type PriorityPlusSession,
   type PriorityPlusState,
 } from "@priority-plus/core";
 import {
   contentInlineSize,
-  readCachedMeasurementsFromParts,
+  readCachedMeasurements,
 } from "@priority-plus/core/dom";
 import {
   useCallback,
@@ -46,14 +45,10 @@ export function usePriorityPlus<T>(
     () => ({ collapseAtCount }),
     [collapseAtCount],
   );
-  const controllerRef = useRef(
-    new PriorityPlusLayoutController(coreOptions, items.length),
-  );
   const containerElementRef = useRef<HTMLElement>(null);
   const primaryElementRef = useRef<HTMLUListElement>(null);
   const measureListElementRef = useRef<HTMLUListElement>(null);
   const measureToggleElementRef = useRef<HTMLButtonElement>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [state, setState] = useState(() => createPriorityPlusState(items.length));
 
   const commitLayoutResult = useCallback((result: PriorityPlusLayoutResult) => {
@@ -79,19 +74,20 @@ export function usePriorityPlus<T>(
       return null;
     }
 
-    return readCachedMeasurementsFromParts(
-      measureList.children,
-      measureList,
+    return readCachedMeasurements({
+      items: measureList.children,
+      itemGapSource: measureList,
       container,
-      measureToggle,
+      toggle: measureToggle,
       primary,
-    );
+    });
   }, []);
 
-  const engineRef = useRef<PriorityPlusEngine | null>(null);
-  if (engineRef.current === null) {
-    engineRef.current = createPriorityPlusEngine({
-      controller: controllerRef.current,
+  const sessionRef = useRef<PriorityPlusSession | null>(null);
+  if (sessionRef.current === null) {
+    sessionRef.current = createPriorityPlusSession({
+      itemCount: items.length,
+      options: coreOptions,
       readMeasurements,
       getContainerInlineSize: () => {
         const container = containerElementRef.current;
@@ -100,53 +96,44 @@ export function usePriorityPlus<T>(
       onResult: commitLayoutResult,
     });
   }
+  const getSession = useCallback(() => sessionRef.current, []);
 
   const update = useCallback(() => {
-    engineRef.current?.layout({
-      refreshMeasurements: true,
-    });
+    sessionRef.current?.layout({ refreshMeasurements: true });
   }, []);
 
-  const getResizeObserver = useCallback(() => {
-    if (typeof ResizeObserver === "undefined") return null;
-
-    resizeObserverRef.current ??= new ResizeObserver((entries) => {
-      const container = containerElementRef.current;
-
-      engineRef.current?.schedule({
-        refreshMeasurements: entries.some((entry) => entry.target !== container),
-      });
-    });
-
-    return resizeObserverRef.current;
-  }, []);
-
-  const containerRef = useElementRef(getResizeObserver, {
+  // The container's resize only changes the available width, so a cached-
+  // measurement layout suffices. The hidden measurer's elements feed the fit
+  // calculation, so their resize must re-measure.
+  const containerRef = useElementRef(getSession, {
     store: containerElementRef,
     observe: true,
   });
-  const primaryRef = useElementRef(getResizeObserver, {
+  const primaryRef = useElementRef(getSession, {
     store: primaryElementRef,
   });
-  const measureListRef = useElementRef(getResizeObserver, {
+  const measureListRef = useElementRef(getSession, {
     store: measureListElementRef,
     observe: true,
+    refreshOnResize: true,
   });
-  const measureItemRef = useElementRef<HTMLLIElement>(getResizeObserver, {
+  const measureItemRef = useElementRef<HTMLLIElement>(getSession, {
     observe: true,
+    refreshOnResize: true,
   });
-  const measureToggleRef = useElementRef(getResizeObserver, {
+  const measureToggleRef = useElementRef(getSession, {
     store: measureToggleElementRef,
     observe: true,
+    refreshOnResize: true,
   });
 
   useLayoutEffect(() => {
-    commitLayoutResult(controllerRef.current.reset(items.length));
+    sessionRef.current?.reset(items.length);
   }, [items.length]);
 
   useLayoutEffect(() => {
-    commitLayoutResult(controllerRef.current.setOptions(coreOptions));
-  }, [commitLayoutResult, coreOptions]);
+    sessionRef.current?.setOptions(coreOptions);
+  }, [coreOptions]);
 
   useLayoutEffect(() => {
     update();
@@ -154,28 +141,11 @@ export function usePriorityPlus<T>(
 
   useEffect(() => {
     return () => {
-      engineRef.current?.cancel();
+      sessionRef.current?.destroy();
     };
   }, []);
 
-  useEffect(() => {
-    let disposed = false;
-    document.fonts?.ready.then(() => {
-      if (!disposed) update();
-    });
-
-    return () => {
-      disposed = true;
-    };
-  }, [update]);
-
-  useEffect(
-    () => () => {
-      resizeObserverRef.current?.disconnect();
-      resizeObserverRef.current = null;
-    },
-    [],
-  );
+  useEffect(() => sessionRef.current?.refreshOnFontLoad(), []);
 
   const { visibleItems, overflowItems } = useMemo(
     () => partitionItems(items, state.visibleCount),
@@ -209,11 +179,19 @@ function priorityPlusStatesEqual(
 
 /**
  * A stable ref callback that optionally stores the element in `store` and/or
- * registers it with the shared ResizeObserver, cleaning both up on detach.
+ * registers it with the session's `ResizeObserver`, cleaning both up on detach.
  */
 function useElementRef<E extends HTMLElement>(
-  getObserver: () => ResizeObserver | null,
-  { store, observe }: { store?: RefObject<E | null>; observe?: boolean } = {},
+  getSession: () => PriorityPlusSession | null,
+  {
+    store,
+    observe,
+    refreshOnResize,
+  }: {
+    store?: RefObject<E | null>;
+    observe?: boolean;
+    refreshOnResize?: boolean;
+  } = {},
 ): RefCallback<E> {
   return useCallback<RefCallback<E>>(
     (element) => {
@@ -223,14 +201,14 @@ function useElementRef<E extends HTMLElement>(
       }
 
       if (store) store.current = element;
-      const observer = observe ? getObserver() : null;
-      observer?.observe(element);
+      const session = observe ? getSession() : null;
+      session?.observe(element, { refreshOnResize });
 
       return () => {
-        observer?.unobserve(element);
+        session?.unobserve(element);
         if (store?.current === element) store.current = null;
       };
     },
-    [getObserver, store, observe],
+    [getSession, store, observe, refreshOnResize],
   );
 }

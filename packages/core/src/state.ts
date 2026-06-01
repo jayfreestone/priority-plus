@@ -1,6 +1,5 @@
 import {
   calculateVisibleCount,
-  calculateVisibleCountFromParts,
   resolveFittedVisibleCount,
   type PriorityPlusMeasurements,
   type PriorityPlusOptions,
@@ -26,36 +25,12 @@ export function getPriorityPlusState(
   measurements: PriorityPlusMeasurements,
   options: PriorityPlusOptions = {},
 ): PriorityPlusState {
-  return getPriorityPlusStateFromParts(
-    measurements.itemWidths,
-    measurements.itemGap,
-    measurements.containerGap,
-    measurements.toggleWidth,
-    measurements.available,
-    options.collapseAtCount,
-  );
-}
-
-export function getPriorityPlusStateFromParts(
-  itemWidths: number[],
-  itemGap: number,
-  containerGap: number,
-  toggleWidth: number,
-  available: number,
-  collapseAtCount?: number,
-): PriorityPlusState {
-  const itemCount = itemWidths.length;
-  const fittedCount = calculateVisibleCountFromParts(
-    itemWidths,
-    itemGap,
-    containerGap,
-    toggleWidth,
-    available,
-  );
+  const itemCount = measurements.itemWidths.length;
+  const fittedCount = calculateVisibleCount(measurements);
   const visibleCount = resolveFittedVisibleCount(
     fittedCount,
     itemCount,
-    collapseAtCount,
+    options.collapseAtCount,
   );
   const overflowCount = itemCount - visibleCount;
 
@@ -75,4 +50,54 @@ export function partitionItems<T>(
     visibleItems: items.slice(0, visibleCount),
     overflowItems: items.slice(visibleCount),
   };
+}
+
+/**
+ * The change in item placement between two visible counts, expressed as item
+ * indices. Adapters that move live DOM nodes (rather than re-rendering) execute
+ * the plan; the index arithmetic stays here where it can be tested without a
+ * DOM.
+ *
+ * - `none` — nothing moves.
+ * - `promote` — these indices move from overflow into the end of primary.
+ * - `demote` — these indices move from the end of primary to the front of overflow.
+ * - `rebuild` — repartition from scratch into the two index lists.
+ */
+export type PriorityPlusPartitionPlan =
+  | { kind: "none" }
+  | { kind: "promote"; indices: number[] }
+  | { kind: "demote"; indices: number[] }
+  | { kind: "rebuild"; primary: number[]; overflow: number[] };
+
+export function planPartition(
+  previousVisibleCount: number,
+  nextVisibleCount: number,
+  itemCount: number,
+  { force = false }: { force?: boolean } = {},
+): PriorityPlusPartitionPlan {
+  if (force) {
+    return {
+      kind: "rebuild",
+      primary: range(0, nextVisibleCount),
+      overflow: range(nextVisibleCount, itemCount),
+    };
+  }
+
+  if (nextVisibleCount > previousVisibleCount) {
+    return { kind: "promote", indices: range(previousVisibleCount, nextVisibleCount) };
+  }
+
+  if (nextVisibleCount < previousVisibleCount) {
+    return { kind: "demote", indices: range(nextVisibleCount, previousVisibleCount) };
+  }
+
+  return { kind: "none" };
+}
+
+function range(start: number, end: number): number[] {
+  const indices: number[] = [];
+  for (let index = start; index < end; index += 1) {
+    indices.push(index);
+  }
+  return indices;
 }

@@ -1,4 +1,4 @@
-import type { PriorityPlusCachedMeasurements } from "./layout";
+import type { PriorityPlusCachedMeasurements } from "./calculate";
 
 const toPx = (value: string): number => {
   const parsed = Number.parseFloat(value);
@@ -55,22 +55,7 @@ export const readCachedMeasurements = ({
   container,
   toggle,
   primary,
-}: MeasurementSources): PriorityPlusCachedMeasurements =>
-  readCachedMeasurementsFromParts(
-    items,
-    itemGapSource,
-    container,
-    toggle,
-    primary,
-  );
-
-export const readCachedMeasurementsFromParts = (
-  items: Iterable<Element> | ArrayLike<Element>,
-  itemGapSource: Element,
-  container: HTMLElement,
-  toggle: Element,
-  primary: HTMLElement,
-): PriorityPlusCachedMeasurements => ({
+}: MeasurementSources): PriorityPlusCachedMeasurements => ({
   itemWidths: Array.from(items, (item) => item.getBoundingClientRect().width),
   itemGap: inlineGap(itemGapSource),
   containerGap: inlineGap(container),

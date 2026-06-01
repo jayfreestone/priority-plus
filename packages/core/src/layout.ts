@@ -1,17 +1,12 @@
 import type {
-  PriorityPlusMeasurements,
+  PriorityPlusCachedMeasurements,
   PriorityPlusOptions,
 } from "./calculate";
 import {
   createPriorityPlusState,
-  getPriorityPlusStateFromParts,
+  getPriorityPlusState,
   type PriorityPlusState,
 } from "./state";
-
-export interface PriorityPlusCachedMeasurements
-  extends Omit<PriorityPlusMeasurements, "available"> {
-  primaryNonContentInlineSize: number;
-}
 
 export interface PriorityPlusLayoutResult {
   previousState: PriorityPlusState;
@@ -73,14 +68,17 @@ export class PriorityPlusLayoutController {
     }
 
     return this.#setState(
-      getPriorityPlusStateFromParts(
-        this.#measurements.itemWidths,
-        this.#measurements.itemGap,
-        this.#measurements.containerGap,
-        this.#measurements.toggleWidth,
-        this.#containerInlineSize -
-          this.#measurements.primaryNonContentInlineSize,
-        this.#options.collapseAtCount,
+      getPriorityPlusState(
+        {
+          itemWidths: this.#measurements.itemWidths,
+          itemGap: this.#measurements.itemGap,
+          containerGap: this.#measurements.containerGap,
+          toggleWidth: this.#measurements.toggleWidth,
+          available:
+            this.#containerInlineSize -
+            this.#measurements.primaryNonContentInlineSize,
+        },
+        this.#options,
       ),
       measurementsChanged,
     );

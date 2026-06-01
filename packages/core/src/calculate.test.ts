@@ -5,6 +5,7 @@ import {
   createPriorityPlusState,
   getPriorityPlusState,
   partitionItems,
+  planPartition,
   type PriorityPlusMeasurements,
 } from ".";
 
@@ -137,6 +138,34 @@ describe("partitionItems", () => {
     expect(partitionItems(["a", "b", "c"], 0)).toEqual({
       visibleItems: [],
       overflowItems: ["a", "b", "c"],
+    });
+  });
+});
+
+describe("planPartition", () => {
+  it("promotes the newly fitting indices into primary", () => {
+    expect(planPartition(1, 3, 4)).toEqual({
+      kind: "promote",
+      indices: [1, 2],
+    });
+  });
+
+  it("demotes the now-overflowing indices into overflow", () => {
+    expect(planPartition(3, 1, 4)).toEqual({
+      kind: "demote",
+      indices: [1, 2],
+    });
+  });
+
+  it("does nothing when the visible count is unchanged", () => {
+    expect(planPartition(2, 2, 4)).toEqual({ kind: "none" });
+  });
+
+  it("rebuilds both lists when forced", () => {
+    expect(planPartition(3, 2, 4, { force: true })).toEqual({
+      kind: "rebuild",
+      primary: [0, 1],
+      overflow: [2, 3],
     });
   });
 });

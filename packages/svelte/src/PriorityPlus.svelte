@@ -1,11 +1,10 @@
 <script lang="ts" generics="Item">
   import {
     createPriorityPlusState,
-    createPriorityPlusEngine,
+    createPriorityPlusSession,
     partitionItems,
-    PriorityPlusLayoutController,
     contentInlineSize,
-    readCachedMeasurementsFromParts,
+    readCachedMeasurements,
     type PriorityPlusCachedMeasurements,
     type PriorityPlusOptions,
     type PriorityPlusState,
@@ -49,9 +48,7 @@
   let partitioned = $derived(partitionItems(items, layout.visibleCount));
 
   const coreOptions = $derived({ collapseAtCount });
-  const controller = new PriorityPlusLayoutController();
-  const engine = createPriorityPlusEngine({
-    controller,
+  const session = createPriorityPlusSession({
     readMeasurements,
     getContainerInlineSize: () =>
       container ? contentInlineSize(container) : null,
@@ -64,44 +61,38 @@
   function readMeasurements(): PriorityPlusCachedMeasurements | null {
     if (!container || !primary || !measureList || !measureToggle) return null;
 
-    return readCachedMeasurementsFromParts(
-      measureList.children,
-      measureList,
+    return readCachedMeasurements({
+      items: measureList.children,
+      itemGapSource: measureList,
       container,
-      measureToggle,
+      toggle: measureToggle,
       primary,
-    );
+    });
   }
 
   // Wait for Svelte to flush pending DOM updates before measuring, then defer
-  // the measure/resize decision to the shared engine.
+  // the measure/resize decision to the shared session.
   async function update() {
     await tick();
-    engine.layout({ refreshMeasurements: true });
+    session.layout({ refreshMeasurements: true });
   }
 
   $effect(() => {
     items.length;
-    layout = controller.reset(items.length).state;
+    layout = session.reset(items.length).state;
     update();
   });
 
   $effect(() => {
     collapseAtCount;
-    layout = controller.setOptions(coreOptions).state;
+    layout = session.setOptions(coreOptions).state;
   });
 
   onMount(() => {
-    if (typeof ResizeObserver === "undefined") return;
+    session.observe(container);
+    session.refreshOnFontLoad();
 
-    const observer = new ResizeObserver(() => engine.schedule());
-    observer.observe(container);
-    document.fonts?.ready.then(() => engine.schedule({ refreshMeasurements: true }));
-
-    return () => {
-      engine.cancel();
-      observer.disconnect();
-    };
+    return () => session.destroy();
   });
 </script>
 

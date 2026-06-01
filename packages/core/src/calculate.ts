@@ -11,6 +11,17 @@ export interface PriorityPlusMeasurements {
   available: number;
 }
 
+/**
+ * Measurements as cached between layouts. The container's available width is
+ * tracked separately (it changes on every resize), so the cache stores the
+ * primary list's own padding/border/margin instead and `available` is derived
+ * from the live container width at recalculation time.
+ */
+export interface PriorityPlusCachedMeasurements
+  extends Omit<PriorityPlusMeasurements, "available"> {
+  primaryNonContentInlineSize: number;
+}
+
 export interface PriorityPlusOptions {
   /**
    * Collapse every item into overflow when the fitted primary count is less
@@ -26,22 +37,6 @@ export function calculateVisibleCount({
   toggleWidth,
   available,
 }: PriorityPlusMeasurements): number {
-  return calculateVisibleCountFromParts(
-    itemWidths,
-    itemGap,
-    containerGap,
-    toggleWidth,
-    available,
-  );
-}
-
-export function calculateVisibleCountFromParts(
-  itemWidths: number[],
-  itemGap: number,
-  containerGap: number,
-  toggleWidth: number,
-  available: number,
-): number {
   const itemCount = itemWidths.length;
   let totalWidth = 0;
   let visibleCount = itemCount;
@@ -60,20 +55,6 @@ export function calculateVisibleCountFromParts(
   // If every item fits without the toggle, keep them all visible. Otherwise use
   // the first prefix count that fits with room reserved for the toggle.
   return totalWidth <= available ? itemCount : visibleCount;
-}
-
-export function resolveVisibleCount(
-  measurements: PriorityPlusMeasurements,
-  options: PriorityPlusOptions = {},
-): number {
-  const visibleCount = calculateVisibleCount(measurements);
-  const itemCount = measurements.itemWidths.length;
-
-  return resolveFittedVisibleCount(
-    visibleCount,
-    itemCount,
-    options.collapseAtCount,
-  );
 }
 
 export function resolveFittedVisibleCount(

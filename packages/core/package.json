@@ -21,6 +21,7 @@
     "src/engine.ts",
     "src/index.ts",
     "src/layout.ts",
+    "src/session.ts",
     "src/state.ts"
   ],
   "scripts": {

@@ -1,5 +1,5 @@
+import type { PriorityPlusCachedMeasurements } from "./calculate";
 import type {
-  PriorityPlusCachedMeasurements,
   PriorityPlusLayoutController,
   PriorityPlusLayoutResult,
 } from "./layout";

@@ -1,13 +1,12 @@
 export {
-  createPriorityPlusEngine,
+  createPriorityPlusSession,
   createPriorityPlusState,
   partitionItems,
-  PriorityPlusLayoutController,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusOptions,
   type PriorityPlusState,
 } from "@priority-plus/core";
 export {
   contentInlineSize,
-  readCachedMeasurementsFromParts,
+  readCachedMeasurements,
 } from "@priority-plus/core/dom";
