@@ -1,6 +1,7 @@
 import {
   createPriorityPlusSession,
   planPartition,
+  presentToggle,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusLayoutResult,
   type PriorityPlusOptions,
@@ -61,7 +62,6 @@ export class PriorityPlusElement extends HTMLElement {
   #items: HTMLElement[] = [];
   #mutationObserver?: MutationObserver;
   #observedContainer?: HTMLElement;
-  #cancelFontReflow?: () => void;
   #toggle?: HTMLElement;
   #connected = false;
   #open = false;
@@ -77,12 +77,12 @@ export class PriorityPlusElement extends HTMLElement {
   connectedCallback() {
     if (this.#connected) return;
     this.#connected = true;
-    this.#session.controller.setOptions(this.#readOptions());
+    this.#session.setOptions(this.#readOptions());
 
     this.#observeMutations();
     this.#syncStructure({ layoutNow: true });
 
-    this.#cancelFontReflow = this.#session.refreshOnFontLoad();
+    this.#session.refreshOnFontLoad();
   }
 
   disconnectedCallback() {
@@ -90,10 +90,12 @@ export class PriorityPlusElement extends HTMLElement {
     this.#setToggle(undefined);
     this.#mutationObserver?.disconnect();
     this.#mutationObserver = undefined;
-    this.#cancelFontReflow?.();
-    this.#cancelFontReflow = undefined;
     this.#session.destroy();
     this.#observedContainer = undefined;
+    // Forget the light DOM so a reconnect re-discovers it (and so layout
+    // results delivered while disconnected have nothing to apply to).
+    this.#elements = undefined;
+    this.#items = [];
   }
 
   attributeChangedCallback(
@@ -104,11 +106,7 @@ export class PriorityPlusElement extends HTMLElement {
     if (oldValue === newValue) return;
 
     if (name === "collapse-at-count") {
-      const result = this.#session.controller.setOptions(this.#readOptions());
-
-      if (this.#connected && this.#elements !== undefined) {
-        this.#applyLayoutResult(result);
-      }
+      this.#session.setOptions(this.#readOptions());
     }
   }
 
@@ -122,11 +120,11 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   get allVisible(): boolean {
-    return this.#session.controller.getState().allVisible;
+    return this.#session.getState().allVisible;
   }
 
   get itemCount(): number {
-    return this.#session.controller.getState().itemCount;
+    return this.#session.getState().itemCount;
   }
 
   get open(): boolean {
@@ -134,15 +132,15 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   get overflowCount(): number {
-    return this.#session.controller.getState().overflowCount;
+    return this.#session.getState().overflowCount;
   }
 
   get state(): Readonly<PriorityPlusState> {
-    return { ...this.#session.controller.getState() };
+    return { ...this.#session.getState() };
   }
 
   get visibleCount(): number {
-    return this.#session.controller.getState().visibleCount;
+    return this.#session.getState().visibleCount;
   }
 
   #syncStructure({ layoutNow = false } = {}) {
@@ -157,7 +155,7 @@ export class PriorityPlusElement extends HTMLElement {
         this.#session.unobserve(this.#observedContainer);
         this.#observedContainer = undefined;
       }
-      this.#session.controller.reset(0);
+      this.#session.reset(0);
       return;
     }
 
@@ -285,7 +283,6 @@ export class PriorityPlusElement extends HTMLElement {
       });
     }
 
-    setHidden(this.#elements.toggle, result.state.overflowCount === 0);
     this.#reflectOpenState();
     this.#dispatchOverflowCountChange(result);
   }
@@ -375,10 +372,11 @@ export class PriorityPlusElement extends HTMLElement {
     if (this.#elements === undefined) return;
 
     const { overflow, toggle } = this.#elements;
-    const hasOverflow = this.#session.controller.getState().overflowCount > 0;
+    const view = presentToggle(this.#open, this.#session.getState());
 
-    setHidden(overflow, !hasOverflow || !this.#open);
-    setAttribute(toggle, "aria-expanded", String(this.#open && hasOverflow));
+    setHidden(toggle, view.toggleHidden);
+    setHidden(overflow, view.overflowHidden);
+    setAttribute(toggle, "aria-expanded", String(view.expanded));
   }
 
   #setToggle(toggle: HTMLElement | undefined) {

@@ -1,6 +1,7 @@
-import type {
-  PriorityPlusCachedMeasurements,
-  PriorityPlusOptions,
+import {
+  inflateMeasurements,
+  type PriorityPlusCachedMeasurements,
+  type PriorityPlusOptions,
 } from "./calculate";
 import {
   createPriorityPlusState,
@@ -69,15 +70,7 @@ export class PriorityPlusLayoutController {
 
     return this.#setState(
       getPriorityPlusState(
-        {
-          itemWidths: this.#measurements.itemWidths,
-          itemGap: this.#measurements.itemGap,
-          containerGap: this.#measurements.containerGap,
-          toggleWidth: this.#measurements.toggleWidth,
-          available:
-            this.#containerInlineSize -
-            this.#measurements.primaryNonContentInlineSize,
-        },
+        inflateMeasurements(this.#measurements, this.#containerInlineSize),
         this.#options,
       ),
       measurementsChanged,

@@ -1,6 +1,6 @@
 # How It Works
 
-Every adapter is a thin shell around the same four pieces of
+Every adapter is a thin shell around the same pieces of
 [`@priority-plus/core`](/adapters/core). Understanding them makes the adapter
 APIs — and their quirks — obvious.
 
@@ -15,58 +15,71 @@ directly would be circular and would thrash the layout.
 the full list (plus the toggle) that always contains every item at its natural
 width. The widths come from there; the visible list is then derived.
 
-## The four pieces
+## The pieces
 
-### 1. `calculateVisibleCount` — the pure maths
+### 1. The fit calculation — the pure maths
 
 Given a set of [measurements](/adapters/core#measurements) — item widths, the
 gaps between them, the toggle width, and the available space — it returns how
 many leading items fit:
 
 - If **every** item fits without the toggle, all of them stay visible.
-- Otherwise it reserves room for the toggle and keeps the leading items that
-  fit. Because width only grows as items are added, the first item that
-  overflows ends the primary list.
+- Otherwise it reserves room for the toggle **at its widest** and keeps the
+  leading items that fit. Because width only grows as items are added, the
+  first item that overflows ends the primary list.
 
 This is a pure function — no DOM, no state — which makes the core trivially
 testable.
 
-### 2. `PriorityPlusLayoutController` — measurement + state
+### 2. The layout controller — measurement + state
 
 The controller caches the last set of measurements and the container width, and
 turns them into a [`PriorityPlusState`](/adapters/core#state)
 (`visibleCount`, `overflowCount`, `allVisible`, …). It draws the important
-distinction between two kinds of change:
+distinction between two kinds of change: *the content changed* (widths must be
+re-read) versus *only the available width changed* (a plain resize, so the
+cached widths can be reused).
 
-- **`setMeasurements(...)`** — the items or their content changed, so widths
-  must be re-read.
-- **`setContainerInlineSize(...)`** — only the available width changed (a plain
-  resize), so the cached widths can be reused.
-
-Each call returns a result describing exactly what changed
+Each recalculation produces a result describing exactly what changed
 (`visibleCountChanged`, `overflowCountChanged`, `measurementsChanged`, …) so
 adapters can do the minimum work to update the DOM.
 
-### 3. `createPriorityPlusEngine` — the "re-measure vs. reuse" decision
+The controller — like the scheduling engine below — is internal to the layout
+session; adapters never touch it directly.
 
-The engine owns the bookkeeping every adapter would otherwise duplicate:
+### 3. The engine — the "re-measure vs. reuse" decision
 
-- **`layout()`** runs a layout synchronously.
-- **`schedule()`** coalesces a burst of calls (e.g. a `ResizeObserver` firing
-  for several observed elements) into **one** layout on the next animation
-  frame, remembering whether any caller asked to re-measure.
-- **`cancel()`** drops a pending scheduled layout.
+The engine owns the scheduling bookkeeping: it coalesces a burst of layout
+requests (e.g. a `ResizeObserver` firing for several observed elements) into
+**one** layout on the next animation frame, remembering whether any caller
+asked to re-measure, and decides whether to read fresh widths or reuse the
+cache.
 
-Adapters hand the engine three DOM-facing hooks — `readMeasurements`,
-`getContainerInlineSize`, and `onResult` — and the engine decides whether to
-re-measure or reuse the cache, then applies the result.
+### 4. The layout session — the adapter interface
 
-### 4. DOM helpers (`@priority-plus/core/dom`)
+[`createPriorityPlusSession`](/adapters/core#the-layout-session) wraps the
+controller and engine behind the one interface adapters use. Adapters supply
+three DOM-facing hooks — `readMeasurements`, `getContainerInlineSize`, and
+`onResult` — and the session handles the rest:
+
+- **`observe(element, { refreshOnResize? })`** — watches sizes; container
+  resizes reuse cached widths, measurer resizes re-measure.
+- **`reset` / `setOptions` / `getState`** — the item set or options changed;
+  read the current state on demand.
+- **`refreshOnFontLoad()`** — re-measures once web fonts load; `destroy()`
+  cancels it if still pending, along with all other pending work.
+
+### 5. DOM helpers and the toggle presenter
 
 `readCachedMeasurements` reads the cached-measurement shape from a set of
 elements in exactly one place, so every adapter builds it identically and only
-decides *which* elements to point it at. Helpers like `contentInlineSize` and
-`inlineGap` normalise the box-model arithmetic.
+decides *which* elements to point it at. `contentInlineSize` normalises the
+box-model arithmetic.
+
+[`presentToggle`](/adapters/core#the-toggle-presenter) derives what the toggle
+and overflow actually render — `aria-expanded`, the hidden flags — from the
+user's open intent plus the current state, so the accessibility contract is
+identical across adapters.
 
 ## Putting it together
 
@@ -74,13 +87,13 @@ decides *which* elements to point it at. Helpers like `contentInlineSize` and
 ResizeObserver / font load / items change
         │
         ▼
-   engine.schedule()        ← coalesced into one frame
+   session.schedule()       ← coalesced into one frame
         │
         ▼
    readMeasurements()       ← only if re-measuring
         │
         ▼
-   LayoutController         ← cached widths + available width → state
+   layout controller        ← cached widths + available width → state
         │
         ▼
    onResult(result)         ← adapter renders visible / overflow split
@@ -99,4 +112,6 @@ when something changes an item's *intrinsic* width:
 
 The React hook exposes `update()`, the Svelte component re-measures when `items`
 changes, and the custom element exposes `refresh()` plus a `MutationObserver`
-for exactly these cases. See each adapter for specifics.
+for exactly these cases. Adapters also observe their hidden measurer with
+`refreshOnResize`, so an item whose content grows re-fits automatically. See
+each adapter for specifics.

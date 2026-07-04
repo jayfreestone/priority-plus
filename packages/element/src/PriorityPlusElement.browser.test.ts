@@ -1,4 +1,6 @@
 import {
+  getLinkLabels,
+  getPrimaryLabels,
   priorityPlusBrowserItems,
   priorityPlusBrowserTest,
   testPriorityPlusBrowserBehavior,
@@ -246,6 +248,25 @@ elementPriorityPlusTest("refreshes its item cache when light DOM items change", 
   await expect.poll(getPrimaryLabels).toEqual(["Dashboard", "Projects"]);
 });
 
+elementPriorityPlusTest("preserves source order in overflow across promote/demote cycles", async () => {
+  await page.viewport(260, 400);
+  await mountPriorityPlus();
+
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard"]);
+
+  // Promote "Projects" into primary, then demote it again: the plan executor
+  // must put it back at the *front* of the overflow list, not append it.
+  await page.viewport(360, 400);
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard", "Projects"]);
+
+  await page.viewport(260, 400);
+  await expect.poll(getPrimaryLabels).toEqual(["Dashboard"]);
+
+  expect(
+    getLinkLabels(document.querySelector(".test-nav > .test-overflow")),
+  ).toEqual(["Projects", "Roadmap", "Integrations"]);
+});
+
 async function settleLayout(): Promise<void> {
   await document.fonts?.ready;
   await nextFrame();
@@ -282,13 +303,4 @@ function renderOverflowCount(): void {
     },
   );
   render();
-}
-
-function getPrimaryLabels(): string[] {
-  const primary = document.querySelector(".test-nav > .test-list");
-  if (primary === null) return [];
-
-  return Array.from(primary.querySelectorAll("a"), (anchor) =>
-    anchor.textContent?.trim(),
-  ).filter((label): label is string => label !== undefined && label.length > 0);
 }

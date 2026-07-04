@@ -44,9 +44,13 @@ all items stay visible regardless of this value.
 ```
 
 ```ts [Core]
-import { getPriorityPlusState } from "@priority-plus/core";
+const session = createPriorityPlusSession({
+  options: { collapseAtCount: 1 },
+  // ...hooks
+});
 
-getPriorityPlusState(measurements, { collapseAtCount: 1 });
+// Or at runtime, against cached measurements:
+session.setOptions({ collapseAtCount: 1 });
 ```
 
 :::

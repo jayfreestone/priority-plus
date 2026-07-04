@@ -233,6 +233,31 @@ export function testPriorityPlusBrowserBehavior(
   );
 
   test(
+    "reserves room for the toggle and never overflows the container",
+    async ({ mountAtWidth }) => {
+      await mountAtWidth(520);
+
+      // 315px is the discriminating width: three 96px items plus gaps fit on
+      // their own (304px), but not alongside the toggle's 80px — a layout that
+      // measured the toggle too narrow would show three items and overflow.
+      const expectedLayouts: Array<[number, string[]]> = [
+        [520, itemLabels],
+        [430, itemLabels], // 408px of items fit without any toggle
+        [360, ["Dashboard", "Projects"]],
+        [315, ["Dashboard", "Projects"]],
+        [260, ["Dashboard"]],
+        [200, ["Dashboard"]],
+      ];
+
+      for (const [width, primaryLabels] of expectedLayouts) {
+        await page.viewport(width, 400);
+        await expect.poll(getPrimaryLabels).toEqual(primaryLabels);
+        await expect.poll(fitsWithinContainer).toBe(true);
+      }
+    },
+  );
+
+  test(
     "closes an open overflow when resizing makes every item fit",
     async ({ expectPriorityPlusLayout, mountAtWidth }) => {
       await mountAtWidth(260);
@@ -288,8 +313,31 @@ async function expectLayout({
   }
 }
 
-function getPrimaryLabels(): string[] {
+export function getPrimaryLabels(): string[] {
   return getLinkLabels(document.querySelector(".test-nav > .test-list"));
+}
+
+/**
+ * Whether every visible primary link and the toggle sit inside the container.
+ * The cross-adapter invariant behind the fit calculation: however an adapter
+ * establishes its measurements, the rendered layout must never overflow.
+ */
+function fitsWithinContainer(): boolean {
+  const nav = document.querySelector(".test-nav");
+  if (!(nav instanceof HTMLElement)) return false;
+
+  const limit = nav.getBoundingClientRect().right + 0.5;
+  const edges = Array.from(
+    nav.querySelectorAll(":scope > .test-list a"),
+    (anchor) => anchor.getBoundingClientRect().right,
+  );
+
+  const toggle = getToggleElement();
+  if (toggle !== null && isVisible(toggle)) {
+    edges.push(toggle.getBoundingClientRect().right);
+  }
+
+  return edges.every((edge) => edge <= limit);
 }
 
 function getOverflowLabels(): string[] {
@@ -316,7 +364,7 @@ function getToggleExpanded(): string | null {
   return getToggleElement()?.getAttribute("aria-expanded") ?? null;
 }
 
-function getLinkLabels(container: Element | null): string[] {
+export function getLinkLabels(container: Element | null): string[] {
   if (container === null) return [];
 
   return Array.from(container.querySelectorAll("a"), (anchor) =>
@@ -330,12 +378,12 @@ function isOverflowVisible(): boolean {
   return overflow instanceof HTMLElement && isVisible(overflow);
 }
 
-function getToggleElement(): HTMLElement | null {
+export function getToggleElement(): HTMLElement | null {
   const toggle = document.querySelector(".test-nav > .test-toggle");
 
   return toggle instanceof HTMLElement ? toggle : null;
 }
 
-function isVisible(element: HTMLElement): boolean {
+export function isVisible(element: HTMLElement): boolean {
   return !element.hidden && getComputedStyle(element).display !== "none";
 }

@@ -1,7 +1,10 @@
 export {
   createPriorityPlusSession,
   createPriorityPlusState,
+  defaultToggleLabel,
   partitionItems,
+  presentToggle,
+  widestToggleState,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusOptions,
   type PriorityPlusState,

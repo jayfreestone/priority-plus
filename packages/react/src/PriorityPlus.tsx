@@ -5,7 +5,12 @@ import {
   type Key,
   type ReactNode,
 } from "react";
-import type { PriorityPlusState } from "@priority-plus/core";
+import {
+  defaultToggleLabel,
+  presentToggle,
+  widestToggleState,
+  type PriorityPlusState,
+} from "@priority-plus/core";
 
 import {
   usePriorityPlus,
@@ -54,7 +59,7 @@ export interface PriorityPlusProps<T>
 }
 
 const defaultToggle = (state: PriorityPlusToggleState): ReactNode =>
-  `More (${Math.max(1, state.overflowCount)})`;
+  defaultToggleLabel(state);
 
 const defaultItemKey = (_item: unknown, index: number): Key => index;
 
@@ -75,7 +80,7 @@ export function PriorityPlus<T>({
 }: PriorityPlusProps<T>): ReactNode {
   const priority = usePriorityPlus(items, { collapseAtCount });
   const [open, setOpen] = useState(false);
-  const overflowOpen = open && !priority.allVisible;
+  const view = presentToggle(open, priority);
 
   useEffect(() => {
     if (priority.allVisible) setOpen(false);
@@ -92,10 +97,7 @@ export function PriorityPlus<T>({
   // The hidden measurer renders the toggle as if every item overflowed, so the
   // fit calculation always reserves room for the toggle at its widest.
   const measureToggleState: PriorityPlusToggleState = {
-    allVisible: false,
-    itemCount: priority.itemCount,
-    overflowCount: Math.max(1, priority.itemCount),
-    visibleCount: 0,
+    ...widestToggleState(priority.itemCount),
     open: false,
   };
 
@@ -121,14 +123,14 @@ export function PriorityPlus<T>({
       <button
         type="button"
         className={toggleClassName}
-        aria-expanded={overflowOpen}
-        hidden={priority.allVisible}
+        aria-expanded={view.expanded}
+        hidden={view.toggleHidden}
         onClick={() => setOpen((value) => !value)}
       >
         {renderToggle(toggleState)}
       </button>
 
-      {overflowOpen && (
+      {!view.overflowHidden && (
         <ul className={overflowClassName}>
           {priority.overflowItems.map((item, index) =>
             renderItem(item, priority.visibleCount + index, true),

@@ -11,8 +11,8 @@ npm install @priority-plus/core
 
 It has two entry points:
 
-- **`@priority-plus/core`** — pure calculation, state, the layout controller,
-  and the scheduling engine.
+- **`@priority-plus/core`** — state, item partitioning, the layout session, and
+  the toggle presenter.
 - **`@priority-plus/core/dom`** — browser measurement helpers.
 
 Read [How It Works](/guide/how-it-works) first for the conceptual model; this
@@ -22,7 +22,7 @@ page is the API reference.
 
 ### Measurements
 
-`PriorityPlusMeasurements` is the raw input to the pure calculation:
+`PriorityPlusMeasurements` is the raw input to the pure fit calculation:
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -31,6 +31,13 @@ page is the API reference.
 | `containerGap` | `number` | Gap between the primary list and the toggle. |
 | `toggleWidth` | `number` | Width of the toggle when visible. |
 | `available` | `number` | Inline space available for the primary list + toggle. |
+
+`PriorityPlusCachedMeasurements` is the shape the session caches between
+layouts: the same fields **without** `available`, plus a
+`primaryNonContentInlineSize` (the primary list's own padding/border/margin).
+`available` is re-derived from the live container width on every resize, so
+plain resizes never re-measure. `readCachedMeasurements` (below) produces this
+shape for you.
 
 ### State
 
@@ -51,29 +58,6 @@ page is the API reference.
 | --- | --- | --- |
 | `collapseAtCount` | `number` | Collapse everything into overflow at or below this fitted count. |
 
-## Pure calculation
-
-### `calculateVisibleCount(measurements)`
-
-Returns how many leading items fit. Pure, no DOM:
-
-```ts
-import { calculateVisibleCount } from "@priority-plus/core";
-
-const visible = calculateVisibleCount({
-  itemWidths: [80, 120, 95, 110],
-  itemGap: 8,
-  containerGap: 8,
-  toggleWidth: 64,
-  available: 300,
-});
-```
-
-### `resolveVisibleCount(measurements, options?)`
-
-Like `calculateVisibleCount` but applies `collapseAtCount`. Use this rather than
-`calculateVisibleCount` if you support that option.
-
 ## State helpers
 
 ### `createPriorityPlusState(itemCount?)`
@@ -81,13 +65,10 @@ Like `calculateVisibleCount` but applies `collapseAtCount`. Use this rather than
 Build an initial all-visible state — useful as a render default before the first
 measurement.
 
-### `getPriorityPlusState(measurements, options?)`
-
-Resolve measurements straight into a `PriorityPlusState`.
-
 ### `partitionItems(items, visibleCount)`
 
-Split your item array into `{ visibleItems, overflowItems }`:
+Split your item array into `{ visibleItems, overflowItems }` — for adapters that
+re-render:
 
 ```ts
 import { partitionItems } from "@priority-plus/core";
@@ -95,59 +76,32 @@ import { partitionItems } from "@priority-plus/core";
 const { visibleItems, overflowItems } = partitionItems(items, state.visibleCount);
 ```
 
-## `PriorityPlusLayoutController`
+### `planPartition(previousVisibleCount, nextVisibleCount, itemCount, options?)`
 
-Stateful wrapper that caches measurements and the container width and tracks what
-changed between layouts. This is what adapters hold onto.
+For adapters that move live DOM nodes instead of re-rendering. Returns a
+`PriorityPlusPartitionPlan` describing which item indices move between lists:
 
-```ts
-import { PriorityPlusLayoutController } from "@priority-plus/core";
-
-const controller = new PriorityPlusLayoutController(options, itemCount);
-```
-
-| Member | Description |
-| --- | --- |
-| `getState()` | The current `PriorityPlusState`. |
-| `hasMeasurements` | Whether measurements have been cached yet. |
-| `setMeasurements(measurements, containerInlineSize)` | Cache fresh widths + width, recalculate. Use when content changed. |
-| `setContainerInlineSize(size)` | Update only the available width and recalculate, reusing cached widths. Use for plain resizes. |
-| `setOptions(options)` | Swap options (e.g. `collapseAtCount`) and recalculate. |
-| `reset(itemCount?)` | Drop cached measurements and reset to an all-visible state. |
-
-Each mutating call returns a `PriorityPlusLayoutResult`:
-
-| Field | Type | Description |
+| Kind | Payload | Meaning |
 | --- | --- | --- |
-| `state` | `PriorityPlusState` | The new state. |
-| `previousState` | `PriorityPlusState` | The state before this call. |
-| `visibleCountChanged` | `boolean` | — |
-| `overflowCountChanged` | `boolean` | — |
-| `itemCountChanged` | `boolean` | — |
-| `measurementsChanged` | `boolean` | Whether widths were re-read. |
+| `none` | — | Nothing moves. |
+| `promote` | `indices` | These move from overflow to the end of primary. |
+| `demote` | `indices` | These move from the end of primary to the *front* of overflow. |
+| `rebuild` | `primary`, `overflow` | Repartition from scratch (pass `{ force: true }` after re-measuring). |
 
-Note the controller works with `PriorityPlusCachedMeasurements` — the same shape
-as `PriorityPlusMeasurements` but **without** `available`, plus a
-`primaryNonContentInlineSize` (the primary list's own padding/border/margin).
-The controller computes `available` from the container width minus that value.
-`readCachedMeasurements` (below) produces this shape for you.
+## The layout session
 
-## `createPriorityPlusEngine`
+### `createPriorityPlusSession(options)`
 
-Owns the "re-measure vs. reuse" decision and coalesces layouts into animation
-frames. You provide three DOM-facing hooks; it calls them at the right time.
+The single interface adapters build on. The session owns the measurement cache,
+the "re-measure vs. reuse" decision, frame coalescing, the `ResizeObserver`,
+and the font-load reflow; you supply three DOM-facing hooks.
 
 ```ts
-import {
-  createPriorityPlusEngine,
-  PriorityPlusLayoutController,
-} from "@priority-plus/core";
+import { createPriorityPlusSession } from "@priority-plus/core";
 import { contentInlineSize, readCachedMeasurements } from "@priority-plus/core/dom";
 
-const controller = new PriorityPlusLayoutController();
-
-const engine = createPriorityPlusEngine({
-  controller,
+const session = createPriorityPlusSession({
+  itemCount: items.length,
   readMeasurements: () =>
     readCachedMeasurements({
       items: measureList.children,
@@ -159,23 +113,73 @@ const engine = createPriorityPlusEngine({
   getContainerInlineSize: () => contentInlineSize(container),
   onResult: (result) => render(result.state),
 });
+
+session.observe(container);
+session.observe(measureList, { refreshOnResize: true });
+session.refreshOnFontLoad();
+session.layout({ refreshMeasurements: true });
 ```
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `controller` | `PriorityPlusLayoutController` | The controller to drive. Must outlive the engine. |
 | `readMeasurements` | `() => PriorityPlusCachedMeasurements \| null \| undefined` | Read fresh widths. Return nullish to abort (e.g. elements not mounted). |
 | `getContainerInlineSize` | `() => number \| null \| undefined` | The width available to the primary list. Read after `readMeasurements`. Nullish aborts. |
-| `onResult` | `(result: PriorityPlusLayoutResult) => void` | Apply a computed layout. |
+| `onResult` | `(result: PriorityPlusLayoutResult) => void` | Apply a computed layout. Every state change arrives here. |
+| `options` | `PriorityPlusOptions` | Initial layout options. |
+| `itemCount` | `number` | Seeds the optimistic all-visible state. |
 | `requestFrame` / `cancelFrame` | functions | Override frame primitives (mainly for tests). Default to `requestAnimationFrame`. |
 
-The returned engine has:
+The returned session:
 
 | Method | Description |
 | --- | --- |
+| `getState()` | The current `PriorityPlusState` (the same snapshot `onResult` last delivered). |
 | `layout({ refreshMeasurements? })` | Run a layout synchronously. |
 | `schedule({ refreshMeasurements? })` | Coalesce a layout into the next frame. Bursts collapse to one run; if **any** caller asked to refresh, widths are re-read. |
-| `cancel()` | Drop a pending scheduled layout. |
+| `observe(element, { refreshOnResize? })` | Watch an element's size. Pass `refreshOnResize: true` for elements whose intrinsic size feeds the fit calculation (the hidden measurer); leave it off for the container, whose resize reuses cached widths. |
+| `unobserve(element)` | Stop watching an element. |
+| `reset(itemCount?)` | Drop cached measurements, commit an optimistic all-visible state. Call when the item set changes, then `layout({ refreshMeasurements: true })`. |
+| `setOptions(options)` | Swap options (e.g. `collapseAtCount`) and recalculate against cached measurements. |
+| `refreshOnFontLoad()` | Schedule a re-measuring layout once `document.fonts.ready` resolves. `destroy()` cancels it if still pending. |
+| `destroy()` | Cancel pending work (including font reflows) and disconnect observers. Reversible — a later `observe` revives the session, so it survives unmount/remount cycles. |
+
+`reset`, `setOptions`, and every layout deliver a `PriorityPlusLayoutResult`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `state` | `PriorityPlusState` | The new state. |
+| `previousState` | `PriorityPlusState` | The state before this call. |
+| `visibleCountChanged` | `boolean` | — |
+| `overflowCountChanged` | `boolean` | — |
+| `itemCountChanged` | `boolean` | — |
+| `measurementsChanged` | `boolean` | Whether widths were re-read. |
+
+## The toggle presenter
+
+The rendered truth about the toggle and overflow list, derived in one place so
+adapters can't drift apart. Store the *intent* (did the user ask to open?) in
+your own reactivity, and derive everything else:
+
+### `presentToggle(openIntent, state)`
+
+| Field | Description |
+| --- | --- |
+| `expanded` | Whether the overflow is open — the value `aria-expanded` reflects. Never `true` while `allVisible`. |
+| `toggleHidden` | Whether the toggle should be hidden (nothing overflows). |
+| `overflowHidden` | Whether the overflow list should be hidden. |
+
+One rule the presenter can't own: when `allVisible` becomes `true`, reset your
+stored intent to closed, so the overflow doesn't spring back open when items
+overflow again later.
+
+### `defaultToggleLabel(state)`
+
+The default `More (n)` label, clamped so a measurer never renders `More (0)`.
+
+### `widestToggleState(itemCount)`
+
+The state a hidden measurer should render the toggle with: as if every item had
+overflowed, so the fit calculation reserves room for the toggle at its widest.
 
 ## DOM helpers (`@priority-plus/core/dom`)
 
@@ -201,29 +205,22 @@ import { readCachedMeasurements } from "@priority-plus/core/dom";
 The element's content-box inline size (width minus horizontal padding) — the
 "available" width you pass via `getContainerInlineSize`.
 
-### `inlineGap(element)`
-
-The element's resolved `column-gap` (falling back to `gap`), in pixels.
-
-### `nonContentInlineSize(element)`
-
-The element's horizontal margin + border + padding — i.e. everything that isn't
-content box, used to translate a container width into space available for items.
-
 ## Building an adapter
 
 The recipe every official adapter follows:
 
 1. Render the navigation **and** a hidden measurer containing the full item list
-   plus a toggle.
-2. Create a `PriorityPlusLayoutController` and a `createPriorityPlusEngine` wired
-   to your elements via `readCachedMeasurements` and `contentInlineSize`.
-3. `engine.layout({ refreshMeasurements: true })` on mount and whenever items
-   change; `engine.schedule()` from a `ResizeObserver`; re-measure on
-   `document.fonts.ready`.
-4. In `onResult`, use `partitionItems` (or the controller's state) to render the
-   visible/overflow split.
-5. `engine.cancel()` and disconnect observers on teardown.
+   plus a toggle rendered with `widestToggleState`.
+2. Create a session with `createPriorityPlusSession`, wired to your elements via
+   `readCachedMeasurements` and `contentInlineSize`.
+3. `observe` the container (plain) and the measurer elements
+   (`{ refreshOnResize: true }`); call `refreshOnFontLoad()`; run
+   `layout({ refreshMeasurements: true })` on mount. When the item set changes,
+   `reset(items.length)` then re-run a refreshing layout.
+4. In `onResult`, split items with `partitionItems` (re-rendering) or execute a
+   `planPartition` plan (moving live nodes), and derive the toggle's
+   `aria-expanded`/hidden flags with `presentToggle`.
+5. `destroy()` on teardown.
 
 The [React hook](/adapters/react#usepriorityplus) and the
 [Svelte component](/adapters/svelte) are the clearest worked examples — both are

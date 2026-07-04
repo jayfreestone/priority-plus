@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  createPriorityPlusEngine,
-  PriorityPlusLayoutController,
-  type PriorityPlusCachedMeasurements,
-} from ".";
+import type { PriorityPlusCachedMeasurements } from "./calculate";
+import { createPriorityPlusEngine } from "./engine";
+import { PriorityPlusLayoutController } from "./layout";
 
 const measurements: PriorityPlusCachedMeasurements = {
   itemWidths: [96, 96, 96],

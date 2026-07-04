@@ -8,6 +8,9 @@ import {
   PriorityPlusLayoutController,
   type PriorityPlusLayoutResult,
 } from "./layout";
+import type { PriorityPlusState } from "./state";
+
+export type { PriorityPlusScheduleOptions } from "./engine";
 
 export interface PriorityPlusObserveOptions {
   /**
@@ -39,15 +42,17 @@ export interface PriorityPlusSessionOptions {
 }
 
 /**
- * The whole adapter lifecycle behind one interface: controller, engine, the
- * `ResizeObserver`, and the font-load reflow. Each adapter supplies the
- * DOM-facing hooks and decides which elements to `observe` and when to `reset`
- * or `setOptions`; everything an adapter would otherwise re-wire by hand —
- * and get subtly wrong — lives here, tested once.
+ * The whole adapter lifecycle behind one interface: the layout controller and
+ * engine (both private to the session), the `ResizeObserver`, and the
+ * font-load reflow. Each adapter supplies the DOM-facing hooks and decides
+ * which elements to `observe` and when to `reset` or `setOptions`; everything
+ * an adapter would otherwise re-wire by hand — and get subtly wrong — lives
+ * here, tested once. Every state change is delivered through `onResult`;
+ * `getState` reads the same snapshot on demand.
  */
 export interface PriorityPlusSession {
-  /** The controller this session drives. */
-  readonly controller: PriorityPlusLayoutController;
+  /** The current state snapshot (the same one `onResult` last delivered). */
+  getState: () => PriorityPlusState;
   /** Run a layout synchronously. */
   layout: (options?: PriorityPlusScheduleOptions) => void;
   /** Coalesce a layout into the next animation frame. */
@@ -61,15 +66,14 @@ export interface PriorityPlusSession {
   /** Apply new layout options against cached measurements and commit. */
   setOptions: (options: PriorityPlusOptions) => PriorityPlusLayoutResult;
   /**
-   * Schedule a refreshing layout once web fonts have loaded. Returns a disposer
-   * that cancels the pending font callback — call it on teardown so a late
-   * `fonts.ready` does not reflow a component that has gone away.
+   * Schedule a refreshing layout once web fonts have loaded. `destroy` cancels
+   * any still-pending font callback, so adapters need no disposer bookkeeping.
    */
-  refreshOnFontLoad: () => () => void;
+  refreshOnFontLoad: () => void;
   /**
-   * Cancel pending work and disconnect the observer. Reversible: a later
-   * `observe` re-creates the observer, so the session survives a
-   * mount/unmount/remount cycle (e.g. React StrictMode).
+   * Cancel pending work (including font-load reflows) and disconnect the
+   * observer. Reversible: a later `observe` re-creates the observer, so the
+   * session survives a mount/unmount/remount cycle (e.g. React StrictMode).
    */
   destroy: () => void;
 }
@@ -96,6 +100,7 @@ export function createPriorityPlusSession({
 
   let observer: ResizeObserver | undefined;
   const refreshTargets = new Set<Element>();
+  const fontReflowCancels = new Set<() => void>();
 
   const ensureObserver = (): ResizeObserver | undefined => {
     if (observer !== undefined || typeof ResizeObserver === "undefined") {
@@ -144,14 +149,17 @@ export function createPriorityPlusSession({
     return result;
   };
 
-  const refreshOnFontLoad = (): (() => void) => {
+  const refreshOnFontLoad = (): void => {
     let cancelled = false;
-    document.fonts?.ready.then(() => {
-      if (!cancelled) engine.schedule({ refreshMeasurements: true });
-    });
-    return () => {
+    const cancel = () => {
       cancelled = true;
     };
+    fontReflowCancels.add(cancel);
+
+    document.fonts?.ready.then(() => {
+      fontReflowCancels.delete(cancel);
+      if (!cancelled) engine.schedule({ refreshMeasurements: true });
+    });
   };
 
   const destroy = (): void => {
@@ -159,10 +167,12 @@ export function createPriorityPlusSession({
     observer?.disconnect();
     observer = undefined;
     refreshTargets.clear();
+    for (const cancel of fontReflowCancels) cancel();
+    fontReflowCancels.clear();
   };
 
   return {
-    controller,
+    getState: () => controller.getState(),
     layout: engine.layout,
     schedule: engine.schedule,
     observe,

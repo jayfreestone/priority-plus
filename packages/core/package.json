@@ -21,8 +21,10 @@
     "src/engine.ts",
     "src/index.ts",
     "src/layout.ts",
+    "src/partition.ts",
     "src/session.ts",
-    "src/state.ts"
+    "src/state.ts",
+    "src/toggle.ts"
   ],
   "scripts": {
     "build": "tsdown",

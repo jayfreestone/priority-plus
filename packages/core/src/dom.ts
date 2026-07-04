@@ -5,7 +5,7 @@ const toPx = (value: string): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export const inlineGap = (element: Element): number => {
+const inlineGap = (element: Element): number => {
   const styles = getComputedStyle(element);
   return toPx(styles.columnGap || styles.gap);
 };
@@ -19,7 +19,7 @@ export const contentInlineSize = (element: HTMLElement): number => {
   );
 };
 
-export const nonContentInlineSize = (element: HTMLElement): number => {
+const nonContentInlineSize = (element: HTMLElement): number => {
   const styles = getComputedStyle(element);
   return (
     toPx(styles.marginLeft) +

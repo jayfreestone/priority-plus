@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  createPriorityPlusSession,
-  type PriorityPlusCachedMeasurements,
-} from ".";
+import type { PriorityPlusCachedMeasurements } from "./calculate";
+import { createPriorityPlusSession } from "./session";
 
 const measurements: PriorityPlusCachedMeasurements = {
   itemWidths: [96, 96, 96],
@@ -75,18 +73,19 @@ describe("createPriorityPlusSession", () => {
     const observer = getObserver();
     expect(observer?.observed).toEqual([container, measurer]);
 
-    // Prime cached measurements so the engine has something to reuse.
-    session.controller.setMeasurements(measurements, 320);
+    // Prime cached measurements so the session has something to reuse.
+    session.layout({ refreshMeasurements: true });
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
 
     // Container-only resize: reuse cached measurements (no re-measure).
     observer?.emit([container]);
     frameCallback?.(0);
-    expect(readMeasurements).not.toHaveBeenCalled();
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
 
     // Measurer resize: re-measure.
     observer?.emit([measurer]);
     frameCallback?.(0);
-    expect(readMeasurements).toHaveBeenCalledTimes(1);
+    expect(readMeasurements).toHaveBeenCalledTimes(2);
   });
 
   it("stops refreshing on resize once a target is unobserved", () => {
@@ -114,11 +113,12 @@ describe("createPriorityPlusSession", () => {
     expect(observer?.observed).toEqual([]);
 
     // Prime cached measurements; an unobserved target must not force a re-measure.
-    session.controller.setMeasurements(measurements, 320);
+    session.layout({ refreshMeasurements: true });
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
 
     observer?.emit([measurer]);
     frameCallback?.(0);
-    expect(readMeasurements).not.toHaveBeenCalled();
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
   });
 
   it("commits an optimistic all-visible state on reset", () => {
@@ -141,7 +141,7 @@ describe("createPriorityPlusSession", () => {
       allVisible: true,
     });
     expect(onResult).toHaveBeenCalledWith(result);
-    expect(session.controller.getState().itemCount).toBe(4);
+    expect(session.getState().itemCount).toBe(4);
   });
 
   it("disconnects the observer and stops scheduling after destroy", () => {
@@ -163,5 +163,59 @@ describe("createPriorityPlusSession", () => {
 
     expect(cancelFrame).toHaveBeenCalledWith(1);
     expect(getObserver()?.observed).toEqual([]);
+  });
+
+  it("cancels a pending font-load reflow on destroy", async () => {
+    installFakeResizeObserver();
+    let fontsLoaded!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      fontsLoaded = resolve;
+    });
+    vi.stubGlobal("document", { fonts: { ready } });
+
+    const requestFrame = vi.fn(() => 1);
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements: () => measurements,
+      getContainerInlineSize: () => 260,
+      onResult: vi.fn(),
+      requestFrame,
+      cancelFrame: vi.fn(),
+    });
+
+    session.refreshOnFontLoad();
+    session.destroy();
+
+    fontsLoaded();
+    await ready;
+    await Promise.resolve();
+
+    expect(requestFrame).not.toHaveBeenCalled();
+  });
+
+  it("schedules a refreshing layout when fonts load before destroy", async () => {
+    installFakeResizeObserver();
+    let fontsLoaded!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      fontsLoaded = resolve;
+    });
+    vi.stubGlobal("document", { fonts: { ready } });
+
+    const requestFrame = vi.fn(() => 1);
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements: () => measurements,
+      getContainerInlineSize: () => 260,
+      onResult: vi.fn(),
+      requestFrame,
+      cancelFrame: vi.fn(),
+    });
+
+    session.refreshOnFontLoad();
+    fontsLoaded();
+    await ready;
+    await Promise.resolve();
+
+    expect(requestFrame).toHaveBeenCalledTimes(1);
   });
 });

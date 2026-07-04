@@ -22,6 +22,21 @@ export interface PriorityPlusCachedMeasurements
   primaryNonContentInlineSize: number;
 }
 
+/**
+ * The inverse of the cached split above: re-derives `available` from the live
+ * container width so cached measurements can be reused across resizes without
+ * re-measuring.
+ */
+export function inflateMeasurements(
+  { primaryNonContentInlineSize, ...measurements }: PriorityPlusCachedMeasurements,
+  containerInlineSize: number,
+): PriorityPlusMeasurements {
+  return {
+    ...measurements,
+    available: containerInlineSize - primaryNonContentInlineSize,
+  };
+}
+
 export interface PriorityPlusOptions {
   /**
    * Collapse every item into overflow when the fitted primary count is less

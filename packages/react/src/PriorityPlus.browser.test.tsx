@@ -4,6 +4,8 @@ import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
 
 import {
+  getLinkLabels,
+  isVisible,
   priorityPlusBrowserItems,
   priorityPlusBrowserTest,
   testPriorityPlusBrowserBehavior,
@@ -160,16 +162,4 @@ function getDynamicToggleName(): string | null {
   if (!(toggle instanceof HTMLElement) || !isVisible(toggle)) return null;
 
   return toggle.textContent?.trim() ?? "";
-}
-
-function getLinkLabels(container: Element | null): string[] {
-  if (container === null) return [];
-
-  return Array.from(container.querySelectorAll("a"), (anchor) =>
-    anchor.textContent?.trim(),
-  ).filter((label): label is string => label !== undefined && label.length > 0);
-}
-
-function isVisible(element: HTMLElement): boolean {
-  return !element.hidden && getComputedStyle(element).display !== "none";
 }
