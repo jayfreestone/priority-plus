@@ -35,22 +35,27 @@ this threshold, collapse every item into overflow to avoid orphans.
 overflow count, all-visible flag.
 
 **Layout controller** — the stateful owner of cached measurements and change
-detection. Given measurements and a container size, it recomputes **state** and
-reports which fields changed.
-
-**Engine** — owns the "re-measure vs. reuse cached measurements" decision and
-coalesces bursts of layout requests into one per animation frame.
+detection: given measurements and a container size, it recomputes **state** and
+reports which fields changed. A private class inside `session.ts`; only the
+layout session drives it.
 
 **Layout session** — the whole adapter lifecycle behind one interface
-(`createPriorityPlusSession`), and the *only* door: the layout controller and
-engine are private to it. Adapters supply the DOM-facing hooks (read
-measurements, read container size, apply result), decide which elements to
-`observe` (and whether each one's resize should re-measure), and call `reset` /
-`setOptions` from their own reactivity; `getState` reads the current snapshot on
-demand. The session also owns the `ResizeObserver` and the font-load reflow —
-`destroy` cancels a still-pending font callback, so adapters keep no disposers.
+(`createPriorityPlusSession` in `session.ts`), and the *only* door. It owns the
+layout controller, the "re-measure vs. reuse cached measurements" decision, the
+coalescing of layout-request bursts into one per animation frame, and the
+`ResizeObserver`. Adapters supply the DOM-facing hooks (read measurements, read
+container size, apply result), decide which elements to `observe` (and whether
+each one's resize should re-measure), and call `reset` / `setOptions` from
+their own reactivity. Every recalculation is delivered through `onResult` — the
+single notification path; `getState` reads the same snapshot on demand.
 Everything an adapter would otherwise re-wire by hand — and get subtly wrong —
 is shared here.
+
+Web-font loads need no session-level handling: adapters with a hidden measurer
+observe it with `refreshOnResize`, so new font metrics resize the measurer and
+trigger a re-measure by themselves. The custom element — no persistent
+measurer, only the container observed — re-measures once on
+`document.fonts.ready` instead.
 
 **Partition plan** — the change in item placement between two visible counts,
 expressed as item indices (`planPartition` → promote / demote / rebuild / none).

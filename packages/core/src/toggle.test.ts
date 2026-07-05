@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createPriorityPlusState } from "./state";
+import { createPriorityPlusState } from "./calculate";
 import {
   defaultToggleLabel,
   presentToggle,

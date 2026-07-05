@@ -96,18 +96,17 @@
 
   $effect(() => {
     items.length;
-    layout = session.reset(items.length).state;
+    session.reset(items.length);
     update();
   });
 
   $effect(() => {
     collapseAtCount;
-    layout = session.setOptions(coreOptions).state;
+    session.setOptions(coreOptions);
   });
 
   onMount(() => {
     session.observe(container);
-    session.refreshOnFontLoad();
 
     return () => session.destroy();
   });

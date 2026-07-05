@@ -1,9 +1,10 @@
 export {
+  createPriorityPlusState,
   type PriorityPlusCachedMeasurements,
   type PriorityPlusMeasurements,
   type PriorityPlusOptions,
+  type PriorityPlusState,
 } from "./calculate";
-export { type PriorityPlusLayoutResult } from "./layout";
 export {
   partitionItems,
   planPartition,
@@ -11,12 +12,12 @@ export {
 } from "./partition";
 export {
   createPriorityPlusSession,
+  type PriorityPlusLayoutResult,
   type PriorityPlusObserveOptions,
   type PriorityPlusScheduleOptions,
   type PriorityPlusSession,
   type PriorityPlusSessionOptions,
 } from "./session";
-export { createPriorityPlusState, type PriorityPlusState } from "./state";
 export {
   defaultToggleLabel,
   presentToggle,

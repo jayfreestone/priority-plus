@@ -18,12 +18,9 @@
     "dist",
     "src/calculate.ts",
     "src/dom.ts",
-    "src/engine.ts",
     "src/index.ts",
-    "src/layout.ts",
     "src/partition.ts",
     "src/session.ts",
-    "src/state.ts",
     "src/toggle.ts"
   ],
   "scripts": {

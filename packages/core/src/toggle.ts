@@ -1,4 +1,4 @@
-import type { PriorityPlusState } from "./state";
+import type { PriorityPlusState } from "./calculate";
 
 /**
  * How the toggle and overflow list should present, derived from the user's

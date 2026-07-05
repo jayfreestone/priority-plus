@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PriorityPlusCachedMeasurements } from "./calculate";
 import { createPriorityPlusSession } from "./session";
 
+// Three 96px items with 8px gaps: 304px total, 384px with the 72px toggle +
+// 8px container gap. All visible at 320px; one visible at 260px.
 const measurements: PriorityPlusCachedMeasurements = {
   itemWidths: [96, 96, 96],
   itemGap: 8,
@@ -47,6 +49,78 @@ afterEach(() => {
 });
 
 describe("createPriorityPlusSession", () => {
+  it("recalculates from cached measurements when only the container resizes", () => {
+    installFakeResizeObserver();
+    let containerInlineSize = 320;
+    const readMeasurements = vi.fn(() => measurements);
+    const onResult = vi.fn();
+
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements,
+      getContainerInlineSize: () => containerInlineSize,
+      onResult,
+      requestFrame: () => 1,
+      cancelFrame: vi.fn(),
+    });
+
+    session.layout({ refreshMeasurements: true });
+    expect(session.getState()).toMatchObject({
+      visibleCount: 3,
+      allVisible: true,
+    });
+
+    containerInlineSize = 260;
+    session.layout();
+
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
+    expect(onResult).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        measurementsChanged: false,
+        visibleCountChanged: true,
+        state: expect.objectContaining({ visibleCount: 1, overflowCount: 2 }),
+      }),
+    );
+  });
+
+  it("coalesces schedule bursts into one frame, keeping the strongest refresh", () => {
+    installFakeResizeObserver();
+    let frameCallback: ((time: number) => void) | undefined;
+    const requestFrame = vi.fn((callback: (time: number) => void) => {
+      frameCallback = callback;
+      return 1;
+    });
+    const readMeasurements = vi.fn(() => measurements);
+    const onResult = vi.fn();
+
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements,
+      getContainerInlineSize: () => 260,
+      onResult,
+      requestFrame,
+      cancelFrame: vi.fn(),
+    });
+
+    session.schedule();
+    session.schedule({ refreshMeasurements: true });
+    session.schedule();
+
+    expect(requestFrame).toHaveBeenCalledTimes(1);
+    expect(readMeasurements).not.toHaveBeenCalled();
+
+    frameCallback?.(0);
+
+    // One layout, and because a refresh was requested in the batch the
+    // measurements are read exactly once.
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
+    expect(onResult).toHaveBeenCalledTimes(1);
+    expect(onResult.mock.calls[0]?.[0].state).toMatchObject({
+      visibleCount: 1,
+      overflowCount: 2,
+    });
+  });
+
   it("refreshes measurements only when a refresh-on-resize target resizes", () => {
     const getObserver = installFakeResizeObserver();
     let frameCallback: ((time: number) => void) | undefined;
@@ -133,15 +207,66 @@ describe("createPriorityPlusSession", () => {
       cancelFrame: vi.fn(),
     });
 
-    const result = session.reset(4);
+    session.reset(4);
 
-    expect(result.state).toMatchObject({
-      itemCount: 4,
-      visibleCount: 4,
-      allVisible: true,
-    });
-    expect(onResult).toHaveBeenCalledWith(result);
+    expect(onResult).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        state: expect.objectContaining({
+          itemCount: 4,
+          visibleCount: 4,
+          allVisible: true,
+        }),
+      }),
+    );
     expect(session.getState().itemCount).toBe(4);
+  });
+
+  it("drops cached measurements on reset so the next layout re-measures", () => {
+    installFakeResizeObserver();
+    const readMeasurements = vi.fn(() => measurements);
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements,
+      getContainerInlineSize: () => 260,
+      onResult: vi.fn(),
+      requestFrame: () => 1,
+      cancelFrame: vi.fn(),
+    });
+
+    session.layout({ refreshMeasurements: true });
+    expect(readMeasurements).toHaveBeenCalledTimes(1);
+
+    session.reset(3);
+    session.layout();
+
+    expect(readMeasurements).toHaveBeenCalledTimes(2);
+  });
+
+  it("applies option changes against cached measurements", () => {
+    installFakeResizeObserver();
+    const onResult = vi.fn();
+    const session = createPriorityPlusSession({
+      itemCount: 3,
+      readMeasurements: () => measurements,
+      getContainerInlineSize: () => 260,
+      onResult,
+      requestFrame: () => 1,
+      cancelFrame: vi.fn(),
+    });
+
+    session.layout({ refreshMeasurements: true });
+    session.setOptions({ collapseAtCount: 1 });
+
+    expect(onResult).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        visibleCountChanged: true,
+        state: expect.objectContaining({
+          visibleCount: 0,
+          overflowCount: 3,
+          allVisible: false,
+        }),
+      }),
+    );
   });
 
   it("disconnects the observer and stops scheduling after destroy", () => {
@@ -163,59 +288,5 @@ describe("createPriorityPlusSession", () => {
 
     expect(cancelFrame).toHaveBeenCalledWith(1);
     expect(getObserver()?.observed).toEqual([]);
-  });
-
-  it("cancels a pending font-load reflow on destroy", async () => {
-    installFakeResizeObserver();
-    let fontsLoaded!: () => void;
-    const ready = new Promise<void>((resolve) => {
-      fontsLoaded = resolve;
-    });
-    vi.stubGlobal("document", { fonts: { ready } });
-
-    const requestFrame = vi.fn(() => 1);
-    const session = createPriorityPlusSession({
-      itemCount: 3,
-      readMeasurements: () => measurements,
-      getContainerInlineSize: () => 260,
-      onResult: vi.fn(),
-      requestFrame,
-      cancelFrame: vi.fn(),
-    });
-
-    session.refreshOnFontLoad();
-    session.destroy();
-
-    fontsLoaded();
-    await ready;
-    await Promise.resolve();
-
-    expect(requestFrame).not.toHaveBeenCalled();
-  });
-
-  it("schedules a refreshing layout when fonts load before destroy", async () => {
-    installFakeResizeObserver();
-    let fontsLoaded!: () => void;
-    const ready = new Promise<void>((resolve) => {
-      fontsLoaded = resolve;
-    });
-    vi.stubGlobal("document", { fonts: { ready } });
-
-    const requestFrame = vi.fn(() => 1);
-    const session = createPriorityPlusSession({
-      itemCount: 3,
-      readMeasurements: () => measurements,
-      getContainerInlineSize: () => 260,
-      onResult: vi.fn(),
-      requestFrame,
-      cancelFrame: vi.fn(),
-    });
-
-    session.refreshOnFontLoad();
-    fontsLoaded();
-    await ready;
-    await Promise.resolve();
-
-    expect(requestFrame).toHaveBeenCalledTimes(1);
   });
 });

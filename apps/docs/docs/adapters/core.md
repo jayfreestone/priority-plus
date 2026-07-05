@@ -93,8 +93,8 @@ For adapters that move live DOM nodes instead of re-rendering. Returns a
 ### `createPriorityPlusSession(options)`
 
 The single interface adapters build on. The session owns the measurement cache,
-the "re-measure vs. reuse" decision, frame coalescing, the `ResizeObserver`,
-and the font-load reflow; you supply three DOM-facing hooks.
+the "re-measure vs. reuse" decision, frame coalescing, and the
+`ResizeObserver`; you supply three DOM-facing hooks.
 
 ```ts
 import { createPriorityPlusSession } from "@priority-plus/core";
@@ -116,7 +116,6 @@ const session = createPriorityPlusSession({
 
 session.observe(container);
 session.observe(measureList, { refreshOnResize: true });
-session.refreshOnFontLoad();
 session.layout({ refreshMeasurements: true });
 ```
 
@@ -136,14 +135,14 @@ The returned session:
 | `getState()` | The current `PriorityPlusState` (the same snapshot `onResult` last delivered). |
 | `layout({ refreshMeasurements? })` | Run a layout synchronously. |
 | `schedule({ refreshMeasurements? })` | Coalesce a layout into the next frame. Bursts collapse to one run; if **any** caller asked to refresh, widths are re-read. |
-| `observe(element, { refreshOnResize? })` | Watch an element's size. Pass `refreshOnResize: true` for elements whose intrinsic size feeds the fit calculation (the hidden measurer); leave it off for the container, whose resize reuses cached widths. |
+| `observe(element, { refreshOnResize? })` | Watch an element's size. Pass `refreshOnResize: true` for elements whose intrinsic size feeds the fit calculation (the hidden measurer); leave it off for the container, whose resize reuses cached widths. Observing the measurer this way also covers web-font loads: new metrics resize the measurer, which triggers the re-measure. |
 | `unobserve(element)` | Stop watching an element. |
 | `reset(itemCount?)` | Drop cached measurements, commit an optimistic all-visible state. Call when the item set changes, then `layout({ refreshMeasurements: true })`. |
 | `setOptions(options)` | Swap options (e.g. `collapseAtCount`) and recalculate against cached measurements. |
-| `refreshOnFontLoad()` | Schedule a re-measuring layout once `document.fonts.ready` resolves. `destroy()` cancels it if still pending. |
-| `destroy()` | Cancel pending work (including font reflows) and disconnect observers. Reversible — a later `observe` revives the session, so it survives unmount/remount cycles. |
+| `destroy()` | Cancel pending work and disconnect observers. Reversible — a later `observe` revives the session, so it survives unmount/remount cycles. |
 
-`reset`, `setOptions`, and every layout deliver a `PriorityPlusLayoutResult`:
+Every recalculation — including `reset` and `setOptions` — is delivered to
+`onResult` as a `PriorityPlusLayoutResult`:
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -214,9 +213,9 @@ The recipe every official adapter follows:
 2. Create a session with `createPriorityPlusSession`, wired to your elements via
    `readCachedMeasurements` and `contentInlineSize`.
 3. `observe` the container (plain) and the measurer elements
-   (`{ refreshOnResize: true }`); call `refreshOnFontLoad()`; run
-   `layout({ refreshMeasurements: true })` on mount. When the item set changes,
-   `reset(items.length)` then re-run a refreshing layout.
+   (`{ refreshOnResize: true }`); run `layout({ refreshMeasurements: true })`
+   on mount. When the item set changes, `reset(items.length)` then re-run a
+   refreshing layout.
 4. In `onResult`, split items with `partitionItems` (re-rendering) or execute a
    `planPartition` plan (moving live nodes), and derive the toggle's
    `aria-expanded`/hidden flags with `presentToggle`.

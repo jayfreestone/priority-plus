@@ -1,16 +1,24 @@
-import type { PriorityPlusCachedMeasurements, PriorityPlusOptions } from "./calculate";
 import {
-  createPriorityPlusEngine,
-  type PriorityPlusEngine,
-  type PriorityPlusScheduleOptions,
-} from "./engine";
-import {
-  PriorityPlusLayoutController,
-  type PriorityPlusLayoutResult,
-} from "./layout";
-import type { PriorityPlusState } from "./state";
+  createPriorityPlusState,
+  getPriorityPlusState,
+  inflateMeasurements,
+  type PriorityPlusCachedMeasurements,
+  type PriorityPlusOptions,
+  type PriorityPlusState,
+} from "./calculate";
 
-export type { PriorityPlusScheduleOptions } from "./engine";
+export interface PriorityPlusLayoutResult {
+  previousState: PriorityPlusState;
+  state: PriorityPlusState;
+  visibleCountChanged: boolean;
+  overflowCountChanged: boolean;
+  itemCountChanged: boolean;
+  measurementsChanged: boolean;
+}
+
+export interface PriorityPlusScheduleOptions {
+  refreshMeasurements?: boolean;
+}
 
 export interface PriorityPlusObserveOptions {
   /**
@@ -18,6 +26,10 @@ export interface PriorityPlusObserveOptions {
    * elements whose intrinsic size feeds the fit calculation (the hidden
    * measurer), `false` for the container, whose resize only changes the space
    * available to a layout that can reuse cached measurements.
+   *
+   * Note web fonts need no dedicated handling when the measurer is observed
+   * this way: new font metrics resize the measurer, which triggers the
+   * re-measure.
    */
   refreshOnResize?: boolean;
 }
@@ -42,13 +54,13 @@ export interface PriorityPlusSessionOptions {
 }
 
 /**
- * The whole adapter lifecycle behind one interface: the layout controller and
- * engine (both private to the session), the `ResizeObserver`, and the
- * font-load reflow. Each adapter supplies the DOM-facing hooks and decides
- * which elements to `observe` and when to `reset` or `setOptions`; everything
- * an adapter would otherwise re-wire by hand — and get subtly wrong — lives
- * here, tested once. Every state change is delivered through `onResult`;
- * `getState` reads the same snapshot on demand.
+ * The whole adapter lifecycle behind one interface: the measurement cache, the
+ * "re-measure vs. reuse" decision, frame coalescing, and the `ResizeObserver`.
+ * Each adapter supplies the DOM-facing hooks and decides which elements to
+ * `observe` and when to `reset` or `setOptions`; everything an adapter would
+ * otherwise re-wire by hand — and get subtly wrong — lives here, tested once.
+ * Every recalculation is delivered through `onResult` — the single
+ * notification path; `getState` reads the same snapshot on demand.
  */
 export interface PriorityPlusSession {
   /** The current state snapshot (the same one `onResult` last delivered). */
@@ -61,21 +73,98 @@ export interface PriorityPlusSession {
   observe: (target: Element, options?: PriorityPlusObserveOptions) => void;
   /** Stop observing an element. */
   unobserve: (target: Element) => void;
-  /** Reset to a new item count, commit the optimistic state, and re-measure. */
-  reset: (itemCount?: number) => PriorityPlusLayoutResult;
+  /** Drop cached measurements and commit an optimistic all-visible state. */
+  reset: (itemCount?: number) => void;
   /** Apply new layout options against cached measurements and commit. */
-  setOptions: (options: PriorityPlusOptions) => PriorityPlusLayoutResult;
+  setOptions: (options: PriorityPlusOptions) => void;
   /**
-   * Schedule a refreshing layout once web fonts have loaded. `destroy` cancels
-   * any still-pending font callback, so adapters need no disposer bookkeeping.
-   */
-  refreshOnFontLoad: () => void;
-  /**
-   * Cancel pending work (including font-load reflows) and disconnect the
-   * observer. Reversible: a later `observe` re-creates the observer, so the
-   * session survives a mount/unmount/remount cycle (e.g. React StrictMode).
+   * Cancel pending work and disconnect the observer. Reversible: a later
+   * `observe` re-creates the observer, so the session survives a
+   * mount/unmount/remount cycle (e.g. React StrictMode).
    */
   destroy: () => void;
+}
+
+/**
+ * The layout controller: cached measurements, layout options, and change
+ * detection. Every mutation recomputes the state and reports which fields
+ * changed, so adapters can do the minimum DOM work.
+ */
+class LayoutController {
+  #containerInlineSize = 0;
+  #measurements?: PriorityPlusCachedMeasurements;
+  #options: PriorityPlusOptions;
+  #state: PriorityPlusState;
+
+  constructor(options: PriorityPlusOptions = {}, itemCount = 0) {
+    this.#options = options;
+    this.#state = createPriorityPlusState(itemCount);
+  }
+
+  get hasMeasurements(): boolean {
+    return this.#measurements !== undefined;
+  }
+
+  getState(): PriorityPlusState {
+    return this.#state;
+  }
+
+  reset(itemCount = this.#state.itemCount): PriorityPlusLayoutResult {
+    this.#measurements = undefined;
+    return this.#setState(createPriorityPlusState(itemCount), true);
+  }
+
+  setOptions(options: PriorityPlusOptions): PriorityPlusLayoutResult {
+    this.#options = options;
+    return this.#recalculate();
+  }
+
+  setMeasurements(
+    measurements: PriorityPlusCachedMeasurements,
+    containerInlineSize: number,
+  ): PriorityPlusLayoutResult {
+    this.#measurements = measurements;
+    this.#containerInlineSize = containerInlineSize;
+    return this.#recalculate(true);
+  }
+
+  setContainerInlineSize(
+    containerInlineSize: number,
+  ): PriorityPlusLayoutResult {
+    this.#containerInlineSize = containerInlineSize;
+    return this.#recalculate();
+  }
+
+  #recalculate(measurementsChanged = false): PriorityPlusLayoutResult {
+    if (this.#measurements === undefined) {
+      return this.#setState(this.#state, measurementsChanged);
+    }
+
+    return this.#setState(
+      getPriorityPlusState(
+        inflateMeasurements(this.#measurements, this.#containerInlineSize),
+        this.#options,
+      ),
+      measurementsChanged,
+    );
+  }
+
+  #setState(
+    state: PriorityPlusState,
+    measurementsChanged = false,
+  ): PriorityPlusLayoutResult {
+    const previousState = this.#state;
+    this.#state = state;
+
+    return {
+      previousState,
+      state,
+      visibleCountChanged: previousState.visibleCount !== state.visibleCount,
+      overflowCountChanged: previousState.overflowCount !== state.overflowCount,
+      itemCountChanged: previousState.itemCount !== state.itemCount,
+      measurementsChanged,
+    };
+  }
 }
 
 export function createPriorityPlusSession({
@@ -84,48 +173,71 @@ export function createPriorityPlusSession({
   readMeasurements,
   getContainerInlineSize,
   onResult,
-  requestFrame,
-  cancelFrame,
+  requestFrame = (callback) => requestAnimationFrame(callback),
+  cancelFrame = (handle) => cancelAnimationFrame(handle),
 }: PriorityPlusSessionOptions): PriorityPlusSession {
-  const controller = new PriorityPlusLayoutController(options, itemCount);
+  const controller = new LayoutController(options, itemCount);
 
-  const engine: PriorityPlusEngine = createPriorityPlusEngine({
-    controller,
-    readMeasurements,
-    getContainerInlineSize,
-    onResult,
-    requestFrame,
-    cancelFrame,
-  });
+  // The "re-measure vs. reuse cached measurements" decision. The container
+  // size is read after the measurements so adapters may update it as a side
+  // effect of measuring.
+  const run = (refreshMeasurements?: boolean): void => {
+    if (refreshMeasurements || !controller.hasMeasurements) {
+      const measurements = readMeasurements();
+      if (measurements == null) return;
+
+      const containerInlineSize = getContainerInlineSize();
+      if (containerInlineSize == null) return;
+
+      onResult(controller.setMeasurements(measurements, containerInlineSize));
+      return;
+    }
+
+    const containerInlineSize = getContainerInlineSize();
+    if (containerInlineSize == null) return;
+
+    onResult(controller.setContainerInlineSize(containerInlineSize));
+  };
+
+  const layout = (layoutOptions: PriorityPlusScheduleOptions = {}): void => {
+    run(layoutOptions.refreshMeasurements);
+  };
+
+  // Coalesce bursts of schedule() calls (e.g. ResizeObserver firing for several
+  // observed elements) into one layout per frame, remembering whether any
+  // caller asked to re-measure.
+  let frame: number | undefined;
+  let refreshPending: boolean | undefined = false;
+
+  const schedule = (scheduleOptions: PriorityPlusScheduleOptions = {}): void => {
+    refreshPending ||= scheduleOptions.refreshMeasurements;
+    if (frame !== undefined) return;
+
+    frame = requestFrame(() => {
+      frame = undefined;
+      const refresh = refreshPending;
+      refreshPending = false;
+      run(refresh);
+    });
+  };
 
   let observer: ResizeObserver | undefined;
   const refreshTargets = new Set<Element>();
-  const fontReflowCancels = new Set<() => void>();
-
-  const ensureObserver = (): ResizeObserver | undefined => {
-    if (observer !== undefined || typeof ResizeObserver === "undefined") {
-      return observer;
-    }
-
-    observer = new ResizeObserver((entries) => {
-      engine.schedule({
-        refreshMeasurements: entries.some((entry) =>
-          refreshTargets.has(entry.target),
-        ),
-      });
-    });
-    return observer;
-  };
 
   const observe = (
     target: Element,
     { refreshOnResize = false }: PriorityPlusObserveOptions = {},
   ): void => {
-    const resizeObserver = ensureObserver();
-    if (resizeObserver === undefined) return;
+    observer ??= new ResizeObserver((entries) => {
+      schedule({
+        refreshMeasurements: entries.some((entry) =>
+          refreshTargets.has(entry.target),
+        ),
+      });
+    });
 
     if (refreshOnResize) refreshTargets.add(target);
-    resizeObserver.observe(target);
+    observer.observe(target);
   };
 
   const unobserve = (target: Element): void => {
@@ -133,53 +245,23 @@ export function createPriorityPlusSession({
     observer?.unobserve(target);
   };
 
-  const reset = (
-    nextItemCount?: number,
-  ): PriorityPlusLayoutResult => {
-    const result = controller.reset(nextItemCount);
-    onResult(result);
-    return result;
-  };
-
-  const setOptions = (
-    nextOptions: PriorityPlusOptions,
-  ): PriorityPlusLayoutResult => {
-    const result = controller.setOptions(nextOptions);
-    onResult(result);
-    return result;
-  };
-
-  const refreshOnFontLoad = (): void => {
-    let cancelled = false;
-    const cancel = () => {
-      cancelled = true;
-    };
-    fontReflowCancels.add(cancel);
-
-    document.fonts?.ready.then(() => {
-      fontReflowCancels.delete(cancel);
-      if (!cancelled) engine.schedule({ refreshMeasurements: true });
-    });
-  };
-
   const destroy = (): void => {
-    engine.cancel();
+    if (frame !== undefined) cancelFrame(frame);
+    frame = undefined;
+    refreshPending = false;
     observer?.disconnect();
     observer = undefined;
     refreshTargets.clear();
-    for (const cancel of fontReflowCancels) cancel();
-    fontReflowCancels.clear();
   };
 
   return {
     getState: () => controller.getState(),
-    layout: engine.layout,
-    schedule: engine.schedule,
+    layout,
+    schedule,
     observe,
     unobserve,
-    reset,
-    setOptions,
-    refreshOnFontLoad,
+    reset: (nextItemCount) => onResult(controller.reset(nextItemCount)),
+    setOptions: (nextOptions) => onResult(controller.setOptions(nextOptions)),
     destroy,
   };
 }

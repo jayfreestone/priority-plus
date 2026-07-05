@@ -31,45 +31,36 @@ many leading items fit:
 This is a pure function — no DOM, no state — which makes the core trivially
 testable.
 
-### 2. The layout controller — measurement + state
+### 2. The layout session — the adapter interface
 
-The controller caches the last set of measurements and the container width, and
-turns them into a [`PriorityPlusState`](/adapters/core#state)
-(`visibleCount`, `overflowCount`, `allVisible`, …). It draws the important
-distinction between two kinds of change: *the content changed* (widths must be
-re-read) versus *only the available width changed* (a plain resize, so the
-cached widths can be reused).
+[`createPriorityPlusSession`](/adapters/core#the-layout-session) is the one
+interface adapters build on. Internally it caches the last set of measurements
+and the container width, drawing the important distinction between two kinds of
+change:
 
-Each recalculation produces a result describing exactly what changed
-(`visibleCountChanged`, `overflowCountChanged`, `measurementsChanged`, …) so
-adapters can do the minimum work to update the DOM.
+- **The content changed** — widths must be re-read from the DOM.
+- **Only the available width changed** (a plain resize) — the cached widths are
+  reused, and no element is touched.
 
-The controller — like the scheduling engine below — is internal to the layout
-session; adapters never touch it directly.
+It also owns the scheduling: bursts of layout requests (e.g. a
+`ResizeObserver` firing for several observed elements) coalesce into **one**
+layout on the next animation frame, remembering whether any caller asked to
+re-measure.
 
-### 3. The engine — the "re-measure vs. reuse" decision
+Adapters supply three DOM-facing hooks — `readMeasurements`,
+`getContainerInlineSize`, and `onResult` — plus their wiring decisions:
 
-The engine owns the scheduling bookkeeping: it coalesces a burst of layout
-requests (e.g. a `ResizeObserver` firing for several observed elements) into
-**one** layout on the next animation frame, remembering whether any caller
-asked to re-measure, and decides whether to read fresh widths or reuse the
-cache.
+- **`observe(element, { refreshOnResize? })`** — container resizes reuse cached
+  widths; measurer resizes re-measure.
+- **`reset` / `setOptions`** — the item set or options changed.
+- **`getState()`** — read the current state on demand; every recalculation is
+  delivered through `onResult`, the single notification path.
 
-### 4. The layout session — the adapter interface
+Each result describes exactly what changed (`visibleCountChanged`,
+`overflowCountChanged`, `measurementsChanged`, …) so adapters can do the
+minimum work to update the DOM.
 
-[`createPriorityPlusSession`](/adapters/core#the-layout-session) wraps the
-controller and engine behind the one interface adapters use. Adapters supply
-three DOM-facing hooks — `readMeasurements`, `getContainerInlineSize`, and
-`onResult` — and the session handles the rest:
-
-- **`observe(element, { refreshOnResize? })`** — watches sizes; container
-  resizes reuse cached widths, measurer resizes re-measure.
-- **`reset` / `setOptions` / `getState`** — the item set or options changed;
-  read the current state on demand.
-- **`refreshOnFontLoad()`** — re-measures once web fonts load; `destroy()`
-  cancels it if still pending, along with all other pending work.
-
-### 5. DOM helpers and the toggle presenter
+### 3. DOM helpers and the toggle presenter
 
 `readCachedMeasurements` reads the cached-measurement shape from a set of
 elements in exactly one place, so every adapter builds it identically and only
@@ -84,7 +75,7 @@ identical across adapters.
 ## Putting it together
 
 ```
-ResizeObserver / font load / items change
+ResizeObserver / items change
         │
         ▼
    session.schedule()       ← coalesced into one frame
@@ -93,7 +84,7 @@ ResizeObserver / font load / items change
    readMeasurements()       ← only if re-measuring
         │
         ▼
-   layout controller        ← cached widths + available width → state
+   recalculate              ← cached widths + available width → state
         │
         ▼
    onResult(result)         ← adapter renders visible / overflow split
@@ -106,12 +97,13 @@ when something changes an item's *intrinsic* width:
 
 - The set of items changes (adapters handle this for you).
 - An item's label or content changes.
-- A web font finishes loading — every adapter already re-measures on
-  `document.fonts.ready`.
+- A web font finishes loading.
 - Styling that affects intrinsic width changes at runtime.
 
-The React hook exposes `update()`, the Svelte component re-measures when `items`
-changes, and the custom element exposes `refresh()` plus a `MutationObserver`
-for exactly these cases. Adapters also observe their hidden measurer with
-`refreshOnResize`, so an item whose content grows re-fits automatically. See
-each adapter for specifics.
+The React and Svelte adapters observe their hidden measurer with
+`refreshOnResize`, so all of these — including font loads, which resize the
+measurer when the new metrics land — re-fit automatically. The custom element
+has no persistent measurer, so it watches its light DOM with a
+`MutationObserver`, re-measures once on `document.fonts.ready`, and exposes
+`refresh()` for anything else. The React hook also exposes `update()` for
+imperative cases.

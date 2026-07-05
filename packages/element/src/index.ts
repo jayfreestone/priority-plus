@@ -82,7 +82,12 @@ export class PriorityPlusElement extends HTMLElement {
     this.#observeMutations();
     this.#syncStructure({ layoutNow: true });
 
-    this.#session.refreshOnFontLoad();
+    // Web fonts changing metrics resize the live items, but only the container
+    // is observed — re-measure once fonts settle. (#scheduleLayout is a no-op
+    // if we have disconnected by then.)
+    document.fonts?.ready.then(() =>
+      this.#scheduleLayout({ refreshMeasurements: true }),
+    );
   }
 
   disconnectedCallback() {
@@ -211,14 +216,7 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #observeMutations() {
-    if (
-      this.#mutationObserver !== undefined ||
-      typeof MutationObserver === "undefined"
-    ) {
-      return;
-    }
-
-    this.#mutationObserver = new MutationObserver(() => {
+    this.#mutationObserver ??= new MutationObserver(() => {
       if (this.#connected) {
         this.#syncStructure({ layoutNow: true });
       }
@@ -452,6 +450,4 @@ export function definePriorityPlusElement(
   return PriorityPlusElement;
 }
 
-if (typeof customElements !== "undefined") {
-  definePriorityPlusElement();
-}
+definePriorityPlusElement();

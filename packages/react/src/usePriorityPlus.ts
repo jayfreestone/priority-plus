@@ -145,11 +145,6 @@ export function usePriorityPlus<T>(
     };
   }, []);
 
-  // The session cancels a still-pending font callback in destroy().
-  useEffect(() => {
-    sessionRef.current?.refreshOnFontLoad();
-  }, []);
-
   const { visibleItems, overflowItems } = useMemo(
     () => partitionItems(items, state.visibleCount),
     [items, state.visibleCount],
