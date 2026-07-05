@@ -12,6 +12,7 @@ const overflowing = {
   visibleCount: 1,
   overflowCount: 3,
   allVisible: false,
+  measured: true,
 };
 
 describe("presentToggle", () => {
@@ -57,6 +58,7 @@ describe("widestToggleState", () => {
       visibleCount: 0,
       overflowCount: 4,
       allVisible: false,
+      measured: true,
     });
   });
 

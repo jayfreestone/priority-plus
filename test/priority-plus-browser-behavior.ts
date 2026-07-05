@@ -258,6 +258,19 @@ export function testPriorityPlusBrowserBehavior(
   );
 
   test(
+    "marks the container enhanced once a measured layout applies",
+    async ({ mountAtWidth }) => {
+      await mountAtWidth(260);
+
+      // The attribute a render-blocking prelayout pass keys its interim
+      // styles off: it must appear with the first measured layout.
+      await expect
+        .poll(() => document.querySelector("[data-priority-plus-enhanced]"))
+        .not.toBeNull();
+    },
+  );
+
+  test(
     "closes an open overflow when resizing makes every item fit",
     async ({ expectPriorityPlusLayout, mountAtWidth }) => {
       await mountAtWidth(260);

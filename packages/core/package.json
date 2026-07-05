@@ -11,7 +11,12 @@
     "./dom": {
       "types": "./dist/dom.d.ts",
       "import": "./dist/dom.js"
-    }
+    },
+    "./prelayout": {
+      "types": "./dist/prelayout.d.ts",
+      "import": "./dist/prelayout.js"
+    },
+    "./prelayout.iife.js": "./dist/prelayout.iife.js"
   },
   "types": "./dist/index.d.ts",
   "files": [
@@ -20,16 +25,21 @@
     "src/dom.ts",
     "src/index.ts",
     "src/partition.ts",
+    "src/prelayout.iife.ts",
+    "src/prelayout.ts",
     "src/session.ts",
     "src/toggle.ts"
   ],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "license": "ISC",
   "devDependencies": {
+    "@vitest/browser-playwright": "^4.0.14",
+    "playwright": "^1.57.0",
     "tsdown": "^0.16.8",
     "typescript": "^5.9.3",
     "vitest": "^4.0.14"

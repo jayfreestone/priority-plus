@@ -1,0 +1,26 @@
+{
+  "name": "@priority-plus/ssr-demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SSR + render-blocking prelayout demo: correct nav layout before the framework bundle loads.",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && vite build --ssr src/prerender.tsx --outDir dist-server && node scripts/postbuild.mjs",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released",
+    "@priority-plus/react": "0.0.0-semantically-released",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7"
+  }
+}

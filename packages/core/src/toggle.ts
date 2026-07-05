@@ -45,5 +45,6 @@ export function widestToggleState(itemCount: number): PriorityPlusState {
     visibleCount: 0,
     overflowCount: Math.max(1, itemCount),
     allVisible: false,
+    measured: true,
   };
 }

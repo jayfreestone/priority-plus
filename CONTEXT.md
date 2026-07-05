@@ -32,7 +32,8 @@ after it overflows. The pure fit math lives in `calculate.ts`.
 this threshold, collapse every item into overflow to avoid orphans.
 
 **State** — the derived snapshot the UI renders from: item count, visible count,
-overflow count, all-visible flag.
+overflow count, all-visible flag, and the measured flag (whether the state came
+from real measurements rather than the optimistic all-visible seed).
 
 **Layout controller** — the stateful owner of cached measurements and change
 detection: given measurements and a container size, it recomputes **state** and
@@ -76,3 +77,26 @@ it.
 **Adapter** — a framework-specific wrapper around the core: the custom element,
 the React hook/component, the Svelte component. Each owns element acquisition
 and rendering; the **layout session** owns the lifecycle they share.
+
+**Prelayout** — the render-blocking pass (`prelayout` in `prelayout.ts`,
+published as `@priority-plus/core/prelayout` and as the `dist/prelayout.iife.js`
+classic script) that lays out server-rendered markup before first paint, called
+from an inline script placed directly after it. Server output renders the
+optimistic all-visible seed plus the measurer, so prelayout measures the exact
+elements the adapter will measure after hydration and runs the same fit
+calculation. It mutates nothing the framework owns — not even an attribute,
+which hydration would report as a mismatch. Instead it injects a stylesheet
+into `<head>` that hides the overflowed items and reveals the toggle, scoped to
+the container by its document position. Web fonts remain the floor: the pass
+measures fallback metrics, and the usual measurer-resize re-layout corrects
+once fonts settle.
+
+**Enhanced** — the `data-priority-plus-enhanced` attribute every adapter
+reflects from the state's measured flag. Its appearance (pre-paint, with the
+first measured layout) neutralises prelayout's interim styles as the real
+structural layout takes over: every injected rule is guarded by
+`:not([data-priority-plus-enhanced])`. The `data-priority-plus-primary` /
+`-toggle` / `-measurer` attributes are the markup contract prelayout locates
+elements by — the same vocabulary the custom element uses for its light-DOM
+lookup — and `data-priority-plus-collapse-at` reflects the collapse-at-count
+option so prelayout reads it from the DOM instead of duplicating it.

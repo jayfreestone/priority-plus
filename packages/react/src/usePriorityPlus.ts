@@ -170,6 +170,7 @@ function priorityPlusStatesEqual(
   return (
     a.allVisible === b.allVisible &&
     a.itemCount === b.itemCount &&
+    a.measured === b.measured &&
     a.overflowCount === b.overflowCount &&
     a.visibleCount === b.visibleCount
   );

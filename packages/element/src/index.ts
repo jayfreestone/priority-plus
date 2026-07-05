@@ -269,6 +269,10 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #applyLayoutResult(result: PriorityPlusLayoutResult) {
+    // The cross-adapter "a measured layout has been applied" signal; a
+    // render-blocking prelayout pass keys its interim styles off its absence.
+    this.toggleAttribute("data-priority-plus-enhanced", result.state.measured);
+
     if (this.#elements === undefined) return;
 
     if (result.state.allVisible) {

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>priority-plus — SSR + prelayout demo</title>
+    <!--
+      The nav styles live in a blocking stylesheet (here, an inline one) so
+      they are guaranteed to be applied before the prelayout script measures.
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+        line-height: 1.5;
+      }
+
+      body {
+        margin: 2rem auto;
+        max-width: 44rem;
+        padding: 0 1rem;
+      }
+
+      .nav {
+        display: flex;
+        gap: 0.5rem;
+        position: relative;
+      }
+
+      .list {
+        display: flex;
+        flex: 0 1 auto;
+        gap: 0.5rem;
+        list-style: none;
+        margin: 0;
+        min-width: 0;
+        padding: 0;
+      }
+
+      .item {
+        flex: 0 0 auto;
+      }
+
+      .link {
+        background: rgba(127, 127, 127, 0.15);
+        border-radius: 0.5rem;
+        color: inherit;
+        display: block;
+        padding: 0.5rem 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      /* No display on the toggle: it must stay governed by [hidden]. */
+      .toggle {
+        background: transparent;
+        border: 1px solid rgba(127, 127, 127, 0.5);
+        border-radius: 0.5rem;
+        color: inherit;
+        cursor: pointer;
+        flex: 0 0 auto;
+        font: inherit;
+        padding: 0.5rem 0.75rem;
+        white-space: nowrap;
+      }
+
+      .overflow {
+        background: Canvas;
+        border: 1px solid rgba(127, 127, 127, 0.5);
+        border-radius: 0.5rem;
+        display: grid;
+        gap: 0.25rem;
+        list-style: none;
+        margin: 0.25rem 0 0;
+        padding: 0.5rem;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        z-index: 1;
+      }
+
+      .panel {
+        border-top: 1px solid rgba(127, 127, 127, 0.3);
+        font-size: 0.875rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+      }
+
+      .panel a {
+        color: inherit;
+      }
+
+      #status {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SSR + render-blocking prelayout</h1>
+    <p>
+      This page is pre-rendered at build time. The inline script directly
+      after the nav measures the server markup and lays it out
+      <em>before first paint</em> — the framework bundle hydrates much later.
+    </p>
+
+    <div id="root"><!--app-html--></div>
+    <script>
+      /*__PRELAYOUT_IIFE__*/
+      if (
+        typeof priorityPlusPrelayout === "function" &&
+        !new URLSearchParams(location.search).has("no-prelayout")
+      ) {
+        priorityPlusPrelayout(document.querySelector("#root nav"));
+      }
+    </script>
+
+    <section class="panel">
+      <p id="status">JavaScript disabled — showing the server-rendered nav.</p>
+      <p>
+        Compare (the toggle is inert until hydration):
+        <a href="?delay=8000">prelayout, slow bundle (8s)</a> ·
+        <a href="?no-prelayout&delay=8000">no prelayout, slow bundle (8s)</a> ·
+        <a href="?delay=0">hydrate immediately</a>
+      </p>
+      <p>
+        View source to see the server markup, the inlined prelayout script,
+        and (in devtools) the injected stylesheet it scopes to the nav's
+        document position.
+      </p>
+    </section>
+
+    <script type="module" src="/src/hydrate.tsx"></script>
+  </body>
+</html>

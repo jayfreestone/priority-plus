@@ -140,8 +140,21 @@
 
 <svelte:options runes={true} />
 
-<nav {...rest} aria-label={ariaLabel} class={className} bind:this={container}>
-  <ul class={primaryClass} bind:this={primary}>
+<!--
+  The data-priority-plus-* attributes are the prelayout contract: `collapse-at`
+  lets a render-blocking prelayout pass read the option from the DOM, and
+  `enhanced` appears with the first measured layout, neutralising any styles
+  that pass injected.
+-->
+<nav
+  {...rest}
+  aria-label={ariaLabel}
+  class={className}
+  data-priority-plus-collapse-at={collapseAtCount}
+  data-priority-plus-enhanced={layout.measured ? "" : undefined}
+  bind:this={container}
+>
+  <ul class={primaryClass} data-priority-plus-primary="" bind:this={primary}>
     {#each partitioned.visibleItems as item, index}
       <li class={itemClass}>
         {@render children(item, index)}
@@ -152,6 +165,7 @@
   <button
     aria-expanded={view.expanded}
     class={toggleClass}
+    data-priority-plus-toggle=""
     hidden={view.toggleHidden}
     type="button"
     onclick={() => (open = !open)}
@@ -176,16 +190,28 @@
   <div
     aria-hidden="true"
     class={measurerClass}
+    data-priority-plus-measurer=""
     style="contain: layout; height: 0; left: 0; overflow: hidden; pointer-events: none; position: absolute; top: 0; visibility: hidden; width: max-content;"
   >
-    <ul class={primaryClass} bind:this={measureList} use:measures>
+    <ul
+      class={primaryClass}
+      data-priority-plus-primary=""
+      bind:this={measureList}
+      use:measures
+    >
       {#each items as item, index}
         <li class={itemClass} use:measures>
           {@render children(item, index)}
         </li>
       {/each}
     </ul>
-    <button type="button" class={toggleClass} bind:this={measureToggle} use:measures>
+    <button
+      type="button"
+      class={toggleClass}
+      data-priority-plus-toggle=""
+      bind:this={measureToggle}
+      use:measures
+    >
       {#if toggle}
         {@render toggle(measureState)}
       {:else}

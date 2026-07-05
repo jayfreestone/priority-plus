@@ -68,6 +68,7 @@ describe("createPriorityPlusSession", () => {
     expect(session.getState()).toMatchObject({
       visibleCount: 3,
       allVisible: true,
+      measured: true,
     });
 
     containerInlineSize = 260;
@@ -215,6 +216,7 @@ describe("createPriorityPlusSession", () => {
           itemCount: 4,
           visibleCount: 4,
           allVisible: true,
+          measured: false,
         }),
       }),
     );

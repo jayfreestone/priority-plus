@@ -89,6 +89,13 @@ export interface PriorityPlusState {
   visibleCount: number;
   overflowCount: number;
   allVisible: boolean;
+  /**
+   * Whether this state was computed from real measurements, as opposed to the
+   * optimistic all-visible seed. Adapters reflect it as the
+   * `data-priority-plus-enhanced` attribute, which neutralises any styles a
+   * pre-hydration `prelayout` pass injected.
+   */
+  measured: boolean;
 }
 
 /** An optimistic all-visible state — the render default before measurement. */
@@ -98,6 +105,7 @@ export function createPriorityPlusState(itemCount = 0): PriorityPlusState {
     visibleCount: itemCount,
     overflowCount: 0,
     allVisible: true,
+    measured: false,
   };
 }
 
@@ -119,5 +127,6 @@ export function getPriorityPlusState(
     visibleCount,
     overflowCount,
     allVisible: overflowCount === 0,
+    measured: true,
   };
 }

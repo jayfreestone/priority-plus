@@ -97,6 +97,7 @@ export function PriorityPlus<T>({
   const toggleState: PriorityPlusToggleState = {
     allVisible: priority.allVisible,
     itemCount: priority.itemCount,
+    measured: priority.measured,
     overflowCount: priority.overflowCount,
     visibleCount: priority.visibleCount,
     open,
@@ -120,9 +121,18 @@ export function PriorityPlus<T>({
       {...navProps}
       aria-label={ariaLabel}
       className={className}
+      // Reflected for the prelayout pass: `collapse-at` lets it read the
+      // option from the DOM; `enhanced` appears with the first measured
+      // layout and neutralises any styles prelayout injected.
+      data-priority-plus-collapse-at={collapseAtCount}
+      data-priority-plus-enhanced={priority.measured ? "" : undefined}
       ref={navRef}
     >
-      <ul className={primaryClassName} ref={priority.primaryRef}>
+      <ul
+        className={primaryClassName}
+        data-priority-plus-primary=""
+        ref={priority.primaryRef}
+      >
         {priority.visibleItems.map((item, index) =>
           renderItem(item, index, false),
         )}
@@ -131,6 +141,7 @@ export function PriorityPlus<T>({
       <button
         type="button"
         className={toggleClassName}
+        data-priority-plus-toggle=""
         aria-expanded={view.expanded}
         hidden={view.toggleHidden}
         onClick={() => setOpen((value) => !value)}
@@ -146,8 +157,17 @@ export function PriorityPlus<T>({
         </ul>
       )}
 
-      <div aria-hidden="true" className={measurerClassName} style={measurerStyle}>
-        <ul className={primaryClassName} ref={priority.measureListRef}>
+      <div
+        aria-hidden="true"
+        className={measurerClassName}
+        data-priority-plus-measurer=""
+        style={measurerStyle}
+      >
+        <ul
+          className={primaryClassName}
+          data-priority-plus-primary=""
+          ref={priority.measureListRef}
+        >
           {items.map((item, index) => (
             <li
               key={getItemKey(item, index)}
@@ -161,6 +181,7 @@ export function PriorityPlus<T>({
         <button
           type="button"
           className={toggleClassName}
+          data-priority-plus-toggle=""
           ref={priority.measureToggleRef}
         >
           {renderToggle(measureToggleState)}

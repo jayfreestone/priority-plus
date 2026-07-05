@@ -83,6 +83,7 @@ describe("createPriorityPlusState", () => {
       visibleCount: 4,
       overflowCount: 0,
       allVisible: true,
+      measured: false,
     });
   });
 });
@@ -104,6 +105,7 @@ describe("getPriorityPlusState", () => {
       visibleCount: 0,
       overflowCount: 3,
       allVisible: false,
+      measured: true,
     });
   });
 
