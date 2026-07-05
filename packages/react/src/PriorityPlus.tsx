@@ -1,9 +1,12 @@
 import {
-  useEffect,
+  useCallback,
   useState,
-  type HTMLAttributes,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
   type Key,
   type ReactNode,
+  type Ref,
+  type RefCallback,
 } from "react";
 import {
   defaultToggleLabel,
@@ -17,7 +20,7 @@ import {
   type UsePriorityPlusOptions,
 } from "./usePriorityPlus";
 
-const measurerStyle: HTMLAttributes<HTMLDivElement>["style"] = {
+const measurerStyle: CSSProperties = {
   contain: "layout",
   height: 0,
   left: 0,
@@ -43,9 +46,11 @@ export interface PriorityPlusToggleState extends PriorityPlusState {
 
 export interface PriorityPlusProps<T>
   extends UsePriorityPlusOptions,
-    Omit<HTMLAttributes<HTMLElement>, "children"> {
+    Omit<ComponentPropsWithoutRef<"nav">, "children"> {
   items: readonly T[];
   children: (item: T, state: PriorityPlusItemState) => ReactNode;
+  /** The rendered `<nav>`; merged with the internal container ref. */
+  ref?: Ref<HTMLElement>;
   /** Render the overflow toggle's contents. Defaults to `More (n)`. */
   renderToggle?: (state: PriorityPlusToggleState) => ReactNode;
   /** Derive a stable React key for an item. Defaults to its index. */
@@ -68,6 +73,7 @@ export function PriorityPlus<T>({
   children,
   collapseAtCount,
   "aria-label": ariaLabel = "Priority navigation",
+  ref,
   renderToggle = defaultToggle,
   getItemKey = defaultItemKey,
   className,
@@ -79,12 +85,14 @@ export function PriorityPlus<T>({
   ...navProps
 }: PriorityPlusProps<T>): ReactNode {
   const priority = usePriorityPlus(items, { collapseAtCount });
+  const navRef = useMergedRef(priority.containerRef, ref);
   const [open, setOpen] = useState(false);
-  const view = presentToggle(open, priority);
 
-  useEffect(() => {
-    if (priority.allVisible) setOpen(false);
-  }, [priority.allVisible]);
+  // Clear stale open intent as soon as every item fits. Adjusting during
+  // render re-renders before commit, so no closed-then-open frame is shown.
+  if (priority.allVisible && open) setOpen(false);
+
+  const view = presentToggle(open, priority);
 
   const toggleState: PriorityPlusToggleState = {
     allVisible: priority.allVisible,
@@ -112,7 +120,7 @@ export function PriorityPlus<T>({
       {...navProps}
       aria-label={ariaLabel}
       className={className}
-      ref={priority.containerRef}
+      ref={navRef}
     >
       <ul className={primaryClassName} ref={priority.primaryRef}>
         {priority.visibleItems.map((item, index) =>
@@ -160,4 +168,38 @@ export function PriorityPlus<T>({
       </div>
     </nav>
   );
+}
+
+/** Attach one element to both the internal container ref and the user's ref. */
+function useMergedRef<T>(
+  a: RefCallback<T>,
+  b: Ref<T> | undefined,
+): RefCallback<T> {
+  return useCallback<RefCallback<T>>(
+    (element) => {
+      // React ≥19 calls the returned cleanup on detach instead of re-invoking
+      // with null, so a null element never reaches this far.
+      if (element === null) return;
+
+      const cleanups = [a, b].map((ref) => attachRef(ref, element));
+      return () => {
+        for (const cleanup of cleanups) cleanup();
+      };
+    },
+    [a, b],
+  );
+}
+
+function attachRef<T>(ref: Ref<T> | undefined, element: T): () => void {
+  if (ref == null) return () => {};
+
+  if (typeof ref === "function") {
+    const cleanup = ref(element);
+    return typeof cleanup === "function" ? cleanup : () => ref(null);
+  }
+
+  ref.current = element;
+  return () => {
+    ref.current = null;
+  };
 }

@@ -59,6 +59,7 @@ measurer for you, and manages the open/closed state of the overflow menu.
 | `toggleClassName` | `string` | — | Class for the toggle `<button>`. |
 | `measurerClassName` | `string` | — | Class for the hidden measurer `<div>`. |
 | `aria-label` | `string` | `"Priority navigation"` | Accessible name for the `<nav>`. |
+| `ref` | `Ref<HTMLElement>` | — | The rendered `<nav>`; merged with the internal container ref. |
 
 Any other valid `<nav>` attributes (`id`, `data-*`, event handlers, …) are
 spread onto the container element.

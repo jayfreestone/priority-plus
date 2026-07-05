@@ -11,16 +11,18 @@
     type PriorityPlusCachedMeasurements,
     type PriorityPlusOptions,
     type PriorityPlusState,
+    type PriorityPlusToggleState,
   } from "./internal/runtime.js";
   import type { Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
   import { onMount, tick } from "svelte";
 
-  interface PriorityPlusProps<Item> extends PriorityPlusOptions {
+  interface PriorityPlusProps<Item>
+    extends PriorityPlusOptions,
+      Omit<HTMLAttributes<HTMLElement>, "children"> {
     items: readonly Item[];
     children: Snippet<[Item, number]>;
-    toggle?: Snippet<[PriorityPlusState]>;
-    ariaLabel?: string;
-    class?: string;
+    toggle?: Snippet<[PriorityPlusToggleState]>;
     primaryClass?: string;
     overflowClass?: string;
     itemClass?: string;
@@ -32,14 +34,15 @@
     items,
     children,
     toggle,
-    ariaLabel = "Priority navigation",
-    class: className = "",
-    primaryClass = "",
-    overflowClass = "",
-    itemClass = "",
-    toggleClass = "",
-    measurerClass = "",
+    "aria-label": ariaLabel = "Priority navigation",
+    class: className,
+    primaryClass,
+    overflowClass,
+    itemClass,
+    toggleClass,
+    measurerClass,
     collapseAtCount,
+    ...rest
   }: PriorityPlusProps<Item> = $props();
 
   let container: HTMLElement;
@@ -47,15 +50,24 @@
   let measureList: HTMLElement;
   let measureToggle: HTMLElement;
   let open: boolean = $state(false);
-  let layout: PriorityPlusState = $state(createPriorityPlusState(0));
+  // Optimistic all-visible seed: SSR and the pre-measurement render show every
+  // item in the primary list.
+  let layout: PriorityPlusState = $state(createPriorityPlusState(items.length));
   let partitioned = $derived(partitionItems(items, layout.visibleCount));
   let view = $derived(presentToggle(open, layout));
+  let toggleState: PriorityPlusToggleState = $derived({ ...layout, open });
   // The hidden measurer renders the toggle as if every item overflowed, so the
   // fit calculation always reserves room for the toggle at its widest.
-  let measureState = $derived(widestToggleState(items.length));
+  let measureState: PriorityPlusToggleState = $derived({
+    ...widestToggleState(items.length),
+    open: false,
+  });
 
+  const itemCount = $derived(items.length);
   const coreOptions = $derived({ collapseAtCount });
   const session = createPriorityPlusSession({
+    itemCount: items.length,
+    options: { collapseAtCount },
     readMeasurements,
     getContainerInlineSize: () =>
       container ? contentInlineSize(container) : null,
@@ -77,9 +89,13 @@
     });
   }
 
-  // Wait for Svelte to flush pending DOM updates before measuring, then defer
-  // the measure/resize decision to the shared session.
-  async function update() {
+  /**
+   * Force a re-measure and relayout — reachable on the component instance via
+   * `bind:this` for content changes Svelte cannot see. Waits for Svelte to
+   * flush pending DOM updates before measuring, then defers the
+   * measure/resize decision to the shared session.
+   */
+  export async function update() {
     await tick();
     session.layout({ refreshMeasurements: true });
   }
@@ -94,14 +110,20 @@
     };
   }
 
+  // Only a change in item count invalidates the committed layout; same-length
+  // item swaps re-measure below without an interim all-visible reset.
   $effect(() => {
-    items.length;
-    session.reset(items.length);
+    session.reset(itemCount);
+  });
+
+  $effect(() => {
+    // update() only reads the DOM after an await, so the dependency on the
+    // items must be declared here.
+    void items;
     update();
   });
 
   $effect(() => {
-    collapseAtCount;
     session.setOptions(coreOptions);
   });
 
@@ -114,7 +136,7 @@
 
 <svelte:options runes={true} />
 
-<nav aria-label={ariaLabel} class={className} bind:this={container}>
+<nav {...rest} aria-label={ariaLabel} class={className} bind:this={container}>
   <ul class={primaryClass} bind:this={primary}>
     {#each partitioned.visibleItems as item, index}
       <li class={itemClass}>
@@ -131,9 +153,9 @@
     onclick={() => (open = !open)}
   >
     {#if toggle}
-      {@render toggle(layout)}
+      {@render toggle(toggleState)}
     {:else}
-      {defaultToggleLabel(layout)}
+      {defaultToggleLabel(toggleState)}
     {/if}
   </button>
 
@@ -159,7 +181,7 @@
         </li>
       {/each}
     </ul>
-    <button class={toggleClass} bind:this={measureToggle} use:measures>
+    <button type="button" class={toggleClass} bind:this={measureToggle} use:measures>
       {#if toggle}
         {@render toggle(measureState)}
       {:else}

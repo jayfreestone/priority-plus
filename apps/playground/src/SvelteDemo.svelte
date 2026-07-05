@@ -9,7 +9,7 @@
 </script>
 
 <PriorityPlus
-  ariaLabel="Svelte"
+  aria-label="Svelte"
   class="priority-nav"
   primaryClass="priority-nav__list"
   overflowClass="priority-nav__overflow"

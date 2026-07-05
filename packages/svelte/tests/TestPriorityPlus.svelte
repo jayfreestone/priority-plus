@@ -4,7 +4,7 @@
 </script>
 
 <PriorityPlus
-  ariaLabel="Main"
+  aria-label="Main"
   class="test-nav"
   primaryClass="test-list"
   overflowClass="test-overflow"

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { expect } from "vitest";
+import { StrictMode, useState } from "react";
+import { describe, expect } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
 
@@ -53,32 +53,49 @@ const dynamicPriorityPlusStyles = `
   }
 `;
 
+const fixture = (
+  <PriorityPlus
+    aria-label="Main"
+    className="test-nav"
+    primaryClassName="test-list"
+    overflowClassName="test-overflow"
+    itemClassName="test-item"
+    toggleClassName="test-toggle"
+    items={priorityPlusBrowserItems}
+    getItemKey={(item) => item.href}
+    renderToggle={(state) => `More (${state.overflowCount})`}
+  >
+    {(item) => (
+      <a className="test-link" href={item.href}>
+        {item.label}
+      </a>
+    )}
+  </PriorityPlus>
+);
+
 const reactPriorityPlusTest = priorityPlusBrowserTest.override(
   "mountPriorityPlus",
   async () => async () => {
-    render(
-      <PriorityPlus
-        aria-label="Main"
-        className="test-nav"
-        primaryClassName="test-list"
-        overflowClassName="test-overflow"
-        itemClassName="test-item"
-        toggleClassName="test-toggle"
-        items={priorityPlusBrowserItems}
-        getItemKey={(item) => item.href}
-        renderToggle={(state) => `More (${state.overflowCount})`}
-      >
-        {(item) => (
-          <a className="test-link" href={item.href}>
-            {item.label}
-          </a>
-        )}
-      </PriorityPlus>,
-    );
+    render(fixture);
   },
 );
 
-testPriorityPlusBrowserBehavior(reactPriorityPlusTest);
+// StrictMode remounts effects and detaches/re-attaches refs in development;
+// the session must survive its destroy → re-observe cycle.
+const strictModePriorityPlusTest = priorityPlusBrowserTest.override(
+  "mountPriorityPlus",
+  async () => async () => {
+    render(<StrictMode>{fixture}</StrictMode>);
+  },
+);
+
+describe("PriorityPlus", () => {
+  testPriorityPlusBrowserBehavior(reactPriorityPlusTest);
+});
+
+describe("PriorityPlus in StrictMode", () => {
+  testPriorityPlusBrowserBehavior(strictModePriorityPlusTest);
+});
 
 reactPriorityPlusTest("recalculates when same-count item widths change", async () => {
   installDynamicPriorityPlusStyles();

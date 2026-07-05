@@ -157,8 +157,10 @@ definePriorityPlusElement("site-nav"); // <site-nav> … </site-nav>
 ```
 
 `definePriorityPlusElement` is idempotent — if the name is already defined it
-returns the existing constructor rather than throwing. `PriorityPlusElement` is
-exported too if you want to subclass or define it yourself.
+returns the existing constructor rather than throwing. Each name is registered
+with its own subclass (a constructor can only be registered once per registry),
+and every instance is still an `instanceof PriorityPlusElement`.
+`PriorityPlusElement` is exported too if you want to subclass it yourself.
 
 ## Lifecycle and automatic behaviour
 

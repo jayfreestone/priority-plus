@@ -25,7 +25,7 @@ Svelte 5 project.
 
 <PriorityPlus
   {items}
-  ariaLabel="Main"
+  aria-label="Main"
   class="nav"
   primaryClass="nav-list"
   overflowClass="nav-overflow"
@@ -45,15 +45,17 @@ overflow list, and the hidden measurer.
 | --- | --- | --- | --- |
 | `items` | `readonly Item[]` | — | The full list of items, in source order. |
 | `children` | `Snippet<[Item, number]>` | — | Snippet rendered per item, receiving the item and its index. |
-| `toggle` | `Snippet<[PriorityPlusState]>` | `` `More (n)` `` | Snippet for the toggle contents, receiving the layout [state](/adapters/core#state). |
+| `toggle` | `Snippet<[PriorityPlusToggleState]>` | `` `More (n)` `` | Snippet for the toggle contents, receiving the layout [state](/adapters/core#state) plus `open`. |
 | `collapseAtCount` | `number` | `undefined` | See [Options](/guide/options). |
-| `ariaLabel` | `string` | `"Priority navigation"` | Accessible name for the `<nav>`. |
-| `class` | `string` | `""` | Class for the container `<nav>`. |
-| `primaryClass` | `string` | `""` | Class for the primary `<ul>`. |
-| `overflowClass` | `string` | `""` | Class for the overflow `<ul>`. |
-| `itemClass` | `string` | `""` | Class for each `<li>`. |
-| `toggleClass` | `string` | `""` | Class for the toggle `<button>`. |
-| `measurerClass` | `string` | `""` | Class for the hidden measurer `<div>`. |
+| `class` | `string` | `undefined` | Class for the container `<nav>`. |
+| `primaryClass` | `string` | `undefined` | Class for the primary `<ul>`. |
+| `overflowClass` | `string` | `undefined` | Class for the overflow `<ul>`. |
+| `itemClass` | `string` | `undefined` | Class for each `<li>`. |
+| `toggleClass` | `string` | `undefined` | Class for the toggle `<button>`. |
+| `measurerClass` | `string` | `undefined` | Class for the hidden measurer `<div>`. |
+
+Any other attributes (`aria-label`, `id`, `data-*`, …) are spread onto the
+`<nav>`. Its accessible name defaults to `"Priority navigation"`.
 
 The component is generic over the item type via
 `generics="Item"`, so `item` in your snippet is fully typed.
@@ -61,7 +63,8 @@ The component is generic over the item type via
 ## Custom toggle content
 
 Provide a `toggle` snippet to control what the button renders. It receives the
-current layout [state](/adapters/core#state):
+current layout [state](/adapters/core#state) plus `open`, whether the overflow
+list is currently open:
 
 ```svelte
 <PriorityPlus {items}>
@@ -70,7 +73,7 @@ current layout [state](/adapters/core#state):
   {/snippet}
 
   {#snippet toggle(state)}
-    More ({state.overflowCount})
+    {state.open ? "Close" : `More (${state.overflowCount})`}
   {/snippet}
 </PriorityPlus>
 ```
@@ -84,10 +87,19 @@ The component re-measures automatically:
 - when `items` changes (it waits for Svelte to flush DOM updates with `tick()`
   before measuring),
 - on container resize via a `ResizeObserver`,
-- once `document.fonts.ready` resolves.
+- when the hidden measurer resizes — which is how late-loading web fonts are
+  picked up.
 
 For plain resizes it reuses cached widths; when `items` changes it re-reads them.
 See [How It Works](/guide/how-it-works) for the underlying mechanics.
+
+For content changes Svelte cannot see, the component instance exposes
+`update()`:
+
+```svelte
+<PriorityPlus bind:this={nav} {items}>…</PriorityPlus>
+<button onclick={() => nav.update()}>Re-measure</button>
+```
 
 ## Exported types
 
@@ -95,7 +107,11 @@ For convenience the package re-exports the core types so you can annotate your
 own code without depending on `@priority-plus/core` directly:
 
 ```ts
-import type { PriorityPlusState, PriorityPlusOptions } from "@priority-plus/svelte";
+import type {
+  PriorityPlusOptions,
+  PriorityPlusState,
+  PriorityPlusToggleState,
+} from "@priority-plus/svelte";
 ```
 
 ## Styling

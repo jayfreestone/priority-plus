@@ -12,8 +12,14 @@ const inlineGap = (element: Element): number => {
 
 export const contentInlineSize = (element: HTMLElement): number => {
   const styles = getComputedStyle(element);
+  // getBoundingClientRect keeps subpixel precision, unlike clientWidth, whose
+  // rounding can overreport the available space by up to half a pixel and let
+  // an item that does not quite fit slip through. It also keeps the container
+  // in the same (post-transform) coordinate space as the item measurements.
   return (
-    element.clientWidth -
+    element.getBoundingClientRect().width -
+    toPx(styles.borderLeftWidth) -
+    toPx(styles.borderRightWidth) -
     toPx(styles.paddingLeft) -
     toPx(styles.paddingRight)
   );

@@ -64,6 +64,7 @@ export class PriorityPlusElement extends HTMLElement {
   #observedContainer?: HTMLElement;
   #toggle?: HTMLElement;
   #connected = false;
+  #fontsWatched = false;
   #open = false;
   #session: PriorityPlusSession = createPriorityPlusSession({
     readMeasurements: () => this.#readMeasurements(),
@@ -85,9 +86,12 @@ export class PriorityPlusElement extends HTMLElement {
     // Web fonts changing metrics resize the live items, but only the container
     // is observed — re-measure once fonts settle. (#scheduleLayout is a no-op
     // if we have disconnected by then.)
-    document.fonts?.ready.then(() =>
-      this.#scheduleLayout({ refreshMeasurements: true }),
-    );
+    if (!this.#fontsWatched) {
+      this.#fontsWatched = true;
+      document.fonts?.ready.then(() =>
+        this.#scheduleLayout({ refreshMeasurements: true }),
+      );
+    }
   }
 
   disconnectedCallback() {
@@ -389,11 +393,8 @@ export class PriorityPlusElement extends HTMLElement {
   }
 
   #readOptions(): PriorityPlusOptions {
-    const collapseAtCount = this.getAttribute("collapse-at-count");
-
     return {
-      collapseAtCount:
-        collapseAtCount === null ? undefined : Number(collapseAtCount),
+      collapseAtCount: parseCount(this.getAttribute("collapse-at-count")),
     };
   }
 }
@@ -440,14 +441,35 @@ function setHidden(element: HTMLElement, hidden: boolean): void {
   }
 }
 
+/** Parse a numeric attribute; absent, empty, or malformed values mean unset. */
+function parseCount(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function definePriorityPlusElement(
   name = "priority-plus",
 ): CustomElementConstructor {
   const existing = customElements.get(name);
   if (existing !== undefined) return existing;
 
-  customElements.define(name, PriorityPlusElement);
-  return PriorityPlusElement;
+  // A constructor can only be registered once per registry, so each name gets
+  // its own subclass; `instanceof PriorityPlusElement` holds for all of them.
+  const element = class extends PriorityPlusElement {};
+  customElements.define(name, element);
+  return element;
 }
 
 definePriorityPlusElement();
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "priority-plus": PriorityPlusElement;
+  }
+
+  interface HTMLElementEventMap {
+    "priority-plus:overflow-count-change": PriorityPlusOverflowCountChangeEvent;
+  }
+}

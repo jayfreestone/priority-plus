@@ -193,10 +193,9 @@ function useElementRef<E extends HTMLElement>(
 ): RefCallback<E> {
   return useCallback<RefCallback<E>>(
     (element) => {
-      if (element === null) {
-        if (store) store.current = null;
-        return;
-      }
+      // React ≥19 calls the returned cleanup on detach instead of re-invoking
+      // with null, so a null element never reaches this far.
+      if (element === null) return;
 
       if (store) store.current = element;
       const session = observe ? getSession() : null;

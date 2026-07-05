@@ -9,6 +9,7 @@ import { expect } from "vitest";
 import { page } from "vitest/browser";
 
 import {
+  definePriorityPlusElement,
   PriorityPlusElement,
   PriorityPlusOverflowCountChangeEvent,
 } from "./index";
@@ -27,13 +28,15 @@ elementPriorityPlusTest("uses cached measurements during viewport-only resizes",
 
   const originalGetBoundingClientRect =
     HTMLElement.prototype.getBoundingClientRect;
-  let componentRectReads = 0;
+  let measurementRectReads = 0;
 
+  // The container's own inline size is legitimately re-read on every resize;
+  // the cached-measurement invariant covers everything inside it.
   HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(
     this: HTMLElement,
   ) {
-    if (this.closest("priority-plus") !== null) {
-      componentRectReads += 1;
+    if (this.closest("priority-plus") !== null && !this.matches(".test-nav")) {
+      measurementRectReads += 1;
     }
 
     return originalGetBoundingClientRect.call(this);
@@ -51,9 +54,9 @@ elementPriorityPlusTest("uses cached measurements during viewport-only resizes",
     HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
   }
 
-  // Viewport-only resizes must reuse cached item widths: no element inside the
-  // component should be re-measured.
-  expect(componentRectReads).toBe(0);
+  // Viewport-only resizes must reuse cached item widths: no item or toggle
+  // inside the component should be re-measured.
+  expect(measurementRectReads).toBe(0);
 });
 
 async function mountPriorityPlus(): Promise<void> {
@@ -265,6 +268,18 @@ elementPriorityPlusTest("preserves source order in overflow across promote/demot
   expect(
     getLinkLabels(document.querySelector(".test-nav > .test-overflow")),
   ).toEqual(["Projects", "Roadmap", "Integrations"]);
+});
+
+elementPriorityPlusTest("registers custom names alongside the default", async () => {
+  // The module registers <priority-plus> on import; a second name must get its
+  // own subclass rather than re-registering the same constructor (which throws).
+  const first = definePriorityPlusElement("test-priority-plus-alias");
+  const second = definePriorityPlusElement("test-priority-plus-alias");
+
+  expect(second).toBe(first);
+  expect(document.createElement("test-priority-plus-alias")).toBeInstanceOf(
+    PriorityPlusElement,
+  );
 });
 
 async function settleLayout(): Promise<void> {
