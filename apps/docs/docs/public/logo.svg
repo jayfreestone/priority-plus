@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="priority-plus logo">
+  <rect width="512" height="512" rx="104" fill="#0a1322"/>
+  <rect x="104" y="124" width="304" height="48" rx="24" fill="#7fb0ff"/>
+  <rect x="104" y="220" width="216" height="48" rx="24" fill="#7fb0ff" opacity="0.55"/>
+  <rect x="104" y="316" width="128" height="48" rx="24" fill="#7fb0ff" opacity="0.3"/>
+  <g fill="#ff5c29">
+    <rect x="272" y="316" width="136" height="48" rx="24"/>
+    <rect x="316" y="272" width="48" height="136" rx="24"/>
+  </g>
+</svg>
