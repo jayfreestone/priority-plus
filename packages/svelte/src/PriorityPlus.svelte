@@ -52,6 +52,7 @@
   let open: boolean = $state(false);
   // Optimistic all-visible seed: SSR and the pre-measurement render show every
   // item in the primary list.
+  // svelte-ignore state_referenced_locally
   let layout: PriorityPlusState = $state(createPriorityPlusState(items.length));
   let partitioned = $derived(partitionItems(items, layout.visibleCount));
   let view = $derived(presentToggle(open, layout));
@@ -65,6 +66,9 @@
 
   const itemCount = $derived(items.length);
   const coreOptions = $derived({ collapseAtCount });
+  // Initial construction values only — later changes flow through the
+  // session.reset/setOptions effects below.
+  // svelte-ignore state_referenced_locally
   const session = createPriorityPlusSession({
     itemCount: items.length,
     options: { collapseAtCount },
