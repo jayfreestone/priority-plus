@@ -162,6 +162,21 @@ with its own subclass (a constructor can only be registered once per registry),
 and every instance is still an `instanceof PriorityPlusElement`.
 `PriorityPlusElement` is exported too if you want to subclass it yourself.
 
+## Server rendering
+
+The required markup **is** the server-rendered / no-JS state: all items in the
+primary list, toggle and overflow hidden. The element doesn't use the
+[prelayout pass](/guide/ssr) — it has no hidden measurer — but it reflects the
+same `data-priority-plus-enhanced` attribute on itself once it has measured, so
+you can style the un-enhanced paint:
+
+```css
+priority-plus:not([data-priority-plus-enhanced]) [data-priority-plus-primary] {
+  flex-wrap: nowrap;
+  overflow: clip; /* pre-enhancement, items that don't fit are cut off, not wrapped */
+}
+```
+
 ## Lifecycle and automatic behaviour
 
 - **Connect** — finds elements, measures, and applies the initial layout.

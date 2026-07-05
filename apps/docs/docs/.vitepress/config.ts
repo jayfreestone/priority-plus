@@ -43,6 +43,10 @@ export default defineConfig({
           replacement: packageSource("core/src/dom.ts"),
         },
         {
+          find: /^@priority-plus\/core\/prelayout$/,
+          replacement: packageSource("core/src/prelayout.ts"),
+        },
+        {
           find: /^@priority-plus\/core$/,
           replacement: packageSource("core/src/index.ts"),
         },
@@ -90,6 +94,7 @@ export default defineConfig({
             { text: "How It Works", link: "/guide/how-it-works" },
             { text: "Options", link: "/guide/options" },
             { text: "Styling", link: "/guide/styling" },
+            { text: "Server Rendering", link: "/guide/ssr" },
           ],
         },
         {
@@ -118,6 +123,7 @@ export default defineConfig({
             { text: "How It Works", link: "/guide/how-it-works" },
             { text: "Options", link: "/guide/options" },
             { text: "Styling", link: "/guide/styling" },
+            { text: "Server Rendering", link: "/guide/ssr" },
           ],
         },
       ],

@@ -101,6 +101,14 @@ For content changes Svelte cannot see, the component instance exposes
 <button onclick={() => nav.update()}>Re-measure</button>
 ```
 
+## Server rendering
+
+The component SSRs as the optimistic all-visible state and hydrates cleanly —
+the first measured layout commits before paint. To avoid the pre-hydration
+flash on slow connections, pair the server output with the render-blocking
+[prelayout pass](/guide/ssr); the component stamps the markup contract and the
+`data-priority-plus-enhanced` attribute it needs automatically.
+
 ## Exported types
 
 For convenience the package re-exports the core types so you can annotate your

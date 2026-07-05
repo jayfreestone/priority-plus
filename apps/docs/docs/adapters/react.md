@@ -92,6 +92,7 @@ The argument to `renderToggle` — the full layout
 | `visibleCount` | `number` | Items currently in the primary list. |
 | `overflowCount` | `number` | Items currently in the overflow list. |
 | `allVisible` | `boolean` | Whether nothing is overflowing. |
+| `measured` | `boolean` | Whether the state comes from a real measurement yet. |
 | `open` | `boolean` | Whether the overflow menu is open. |
 
 ```tsx
@@ -161,7 +162,8 @@ function usePriorityPlus<T>(
 ### Result
 
 The result spreads the current layout [state](/adapters/core#state)
-(`itemCount`, `visibleCount`, `overflowCount`, `allVisible`) and adds:
+(`itemCount`, `visibleCount`, `overflowCount`, `allVisible`, `measured`) and
+adds:
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -188,6 +190,16 @@ The hook re-measures automatically when `items` changes, on container resize
 manually if something else changes an item's intrinsic width — for example a
 label that updates without the `items` reference changing. See
 [How It Works](/guide/how-it-works#when-measurements-must-be-re-read).
+
+## Server rendering
+
+The component SSRs as the optimistic all-visible state and hydrates cleanly —
+the first measured layout commits before paint. To avoid the pre-hydration
+flash on slow connections, pair the server output with the render-blocking
+[prelayout pass](/guide/ssr); the component stamps the markup contract and the
+`data-priority-plus-enhanced` attribute it needs automatically. If you build
+custom markup with `usePriorityPlus`, stamp `data-priority-plus-primary`,
+`-toggle`, and `-measurer` yourself for prelayout to find.
 
 ## Styling
 

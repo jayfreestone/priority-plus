@@ -107,3 +107,12 @@ has no persistent measurer, so it watches its light DOM with a
 `MutationObserver`, re-measures once on `document.fonts.ready`, and exposes
 `refresh()` for anything else. The React hook also exposes `update()` for
 imperative cases.
+
+## What about SSR?
+
+Everything above needs a browser, so server output renders the optimistic
+all-visible state, and on the client the first measured layout lands before
+paint. The one gap is server-rendered pages on slow connections — the markup
+paints long before the bundle hydrates. The
+[Server Rendering guide](/guide/ssr) covers the render-blocking prelayout pass
+that closes it.

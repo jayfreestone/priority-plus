@@ -128,6 +128,15 @@ Wire the classes up (React shown):
 </PriorityPlus>
 ```
 
+## Don't set `display` on the toggle
+
+The toggle is hidden with the `hidden` attribute, whose user-agent
+`display: none` loses to **any** author `display` — a
+`.nav-toggle { display: flex }` rule would keep the toggle visible even when
+nothing overflows. Let the container's flex layout place the button and style
+its insides instead. (This also keeps the [prelayout pass](/guide/ssr) able to
+reveal it correctly.)
+
 ## Keep the toggle width stable
 
 The fit calculation reserves space for the toggle at its widest. If your toggle

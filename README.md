@@ -9,6 +9,7 @@ A modern Priority+ navigation library with a framework-agnostic core and small f
 - `@priority-plus/react`: React hook and component adapter.
 - `@priority-plus/svelte`: Svelte 5 component adapter.
 - `@priority-plus/playground`: local Vite playground consuming the workspace packages.
+- `@priority-plus/ssr-demo`: pre-rendered demo of the SSR prelayout pass (see below).
 - `@priority-plus/docs`: VitePress documentation site.
 
 The package split follows the same broad model used by TanStack projects: shared logic lives in a small core package, while framework packages handle measurement, lifecycle, and rendering idiomatically for their runtime.
@@ -47,6 +48,21 @@ Start the playground:
 
 ```sh
 npm run dev
+```
+
+## Server rendering
+
+Server-rendered markup paints before the bundle hydrates, so
+`@priority-plus/core/prelayout` provides a ~1 kB render-blocking pass that lays
+the nav out **before first paint** — it measures the SSR'd markup, injects a
+scoped stylesheet (mutating nothing the framework owns, so hydration stays
+clean), and hands over to the adapter's first measured layout via the
+`data-priority-plus-enhanced` attribute. See the Server Rendering guide in the
+docs, and try it live:
+
+```sh
+npx turbo run build --filter @priority-plus/ssr-demo
+npm run preview -w @priority-plus/ssr-demo
 ```
 
 ## React

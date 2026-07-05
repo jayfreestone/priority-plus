@@ -9,11 +9,14 @@ without any rendering.
 npm install @priority-plus/core
 ```
 
-It has two entry points:
+It has three entry points:
 
 - **`@priority-plus/core`** — state, item partitioning, the layout session, and
   the toggle presenter.
 - **`@priority-plus/core/dom`** — browser measurement helpers.
+- **`@priority-plus/core/prelayout`** — the render-blocking
+  [server-rendering pass](/guide/ssr) (also shipped as a classic script at
+  `dist/prelayout.iife.js`).
 
 Read [How It Works](/guide/how-it-works) first for the conceptual model; this
 page is the API reference.
@@ -49,6 +52,7 @@ shape for you.
 | `visibleCount` | `number` | Items that fit in the primary list. |
 | `overflowCount` | `number` | Items pushed into overflow. |
 | `allVisible` | `boolean` | `true` when `overflowCount === 0`. |
+| `measured` | `boolean` | `true` once the state comes from real measurements rather than the optimistic all-visible seed. Adapters reflect it as the `data-priority-plus-enhanced` attribute, which [prelayout](/guide/ssr) keys its interim styles off. |
 
 ### Options
 
@@ -203,6 +207,27 @@ import { readCachedMeasurements } from "@priority-plus/core/dom";
 
 The element's content-box inline size (width minus horizontal padding) — the
 "available" width you pass via `getContainerInlineSize`.
+
+## Prelayout (`@priority-plus/core/prelayout`)
+
+### `prelayout(container, options?)`
+
+Lays out server-rendered adapter markup **before first paint**, from a
+render-blocking script placed directly after it. It measures the SSR'd
+measurer, runs the same fit calculation as the session, and injects a scoped
+stylesheet into `<head>` — mutating nothing the framework owns, so hydration
+sees byte-identical markup. Returns the computed `PriorityPlusState`, or `null`
+when it bailed (missing markup, container not laid out); when everything fits
+it computes state but injects nothing.
+
+The injected rules are guarded by `:not([data-priority-plus-enhanced])` and
+dissolve when the adapter's first measured layout renders that attribute.
+
+The `dist/prelayout.iife.js` build exposes the same function as
+`window.priorityPlusPrelayout` for inlining as a classic script.
+
+See the [Server Rendering guide](/guide/ssr) for usage, requirements, and
+trade-offs.
 
 ## Building an adapter
 
