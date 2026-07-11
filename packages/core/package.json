@@ -3,6 +3,7 @@
   "version": "0.0.0-semantically-released",
   "description": "Framework-agnostic priority plus layout core.",
   "type": "module",
+  "sideEffects": ["./dist/prelayout.iife.js"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

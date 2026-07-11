@@ -1,6 +1,0 @@
-# blacklist all
-**
-# include whitelist
-!dist/*.js
-!dist/types/**/*.d.ts
-!dist/*.css

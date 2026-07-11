@@ -3,6 +3,7 @@
   "version": "0.0.0-semantically-released",
   "description": "Svelte adapter for priority plus navigation.",
   "type": "module",
+  "sideEffects": false,
   "svelte": "./dist/index.js",
   "exports": {
     ".": {
@@ -17,7 +18,12 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src/index.ts",
+    "src/internal/runtime.ts",
+    "src/PriorityPlus.svelte"
+  ],
   "scripts": {
     "build": "svelte-package -i src -o dist && tsdown --config tsdown.config.ts",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",

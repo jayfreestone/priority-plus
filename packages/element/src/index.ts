@@ -55,7 +55,15 @@ export class PriorityPlusOverflowCountChangeEvent extends Event {
   }
 }
 
-export class PriorityPlusElement extends HTMLElement {
+// Server-rendered module graphs evaluate this file too (the element is the
+// progressive-enhancement adapter, so its import sits next to SSR'd markup).
+// Off-DOM there is no HTMLElement to extend, so extend a stub: the class is
+// constructible only in a browser, where connectedCallback does all the work.
+const BaseElement = (
+  typeof HTMLElement === "undefined" ? class {} : HTMLElement
+) as typeof HTMLElement;
+
+export class PriorityPlusElement extends BaseElement {
   static observedAttributes = ["collapse-at-count"];
 
   #elements?: ElementLookup;
@@ -456,6 +464,10 @@ function parseCount(value: string | null): number | undefined {
 export function definePriorityPlusElement(
   name = "priority-plus",
 ): CustomElementConstructor {
+  // Off-DOM (SSR) there is no registry; return the class unregistered so the
+  // import-time call below is a harmless no-op on the server.
+  if (typeof customElements === "undefined") return PriorityPlusElement;
+
   const existing = customElements.get(name);
   if (existing !== undefined) return existing;
 

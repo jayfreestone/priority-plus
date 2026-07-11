@@ -3,6 +3,7 @@
   "version": "0.0.0-semantically-released",
   "description": "React adapter for priority plus navigation.",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,7 +11,12 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src/index.ts",
+    "src/PriorityPlus.tsx",
+    "src/usePriorityPlus.ts"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",

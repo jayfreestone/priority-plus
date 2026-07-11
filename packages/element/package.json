@@ -3,6 +3,7 @@
   "version": "0.0.0-semantically-released",
   "description": "A custom-element priority plus navigation adapter.",
   "type": "module",
+  "sideEffects": true,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,7 +11,7 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "src/index.ts"],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run --config vitest.config.ts --passWithNoTests",
