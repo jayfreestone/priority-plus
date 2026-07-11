@@ -96,6 +96,157 @@ degrades to exactly what you'd have without it.
   markup with [`usePriorityPlus`](/adapters/react#usepriorityplus), stamp those
   attributes yourself for prelayout to find.
 
+## Framework recipes
+
+The pattern is the same everywhere — get the classic script's source into the
+document, inline, after the nav — but each framework has its own way to render
+a raw script tag. The Next.js and TanStack Start recipes below are working
+apps in the repository
+([`apps/next-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/next-demo),
+[`apps/start-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/start-demo)).
+Three shared conventions first:
+
+- **Look the nav up by `id`** rather than `previousElementSibling`. Frameworks
+  stream and wrap output, so sibling relationships are less dependable than in
+  hand-written HTML. Both adapters spread extra attributes onto the `<nav>`,
+  so pass `id` straight through.
+- **Join the source and the call with a newline**, not just a semicolon. If
+  the script's source ever ends in a line comment (a
+  `//# sourceMappingURL` is the classic), a same-line call is silently
+  commented out — the global gets defined and nothing ever runs.
+- **In Vite-based frameworks**, import the script's source as a string with
+  `?raw`:
+
+  ```ts
+  import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
+  ```
+
+### Next.js (App Router)
+
+Render the script from a **Server Component** wrapping your client nav. Client
+components still server-render their HTML, and a server component's script tag
+never enters the client bundle or the hydrated tree.
+
+Next has no `?raw` imports, so wire up a raw-loader rule (add `raw-loader` as
+a dev dependency):
+
+```ts
+// next.config.ts
+const nextConfig: NextConfig = {
+  turbopack: {
+    rules: {
+      "*.iife.js": {
+        loaders: ["raw-loader"],
+        as: "*.js",
+      },
+    },
+  },
+};
+```
+
+```tsx
+// app/nav-with-prelayout.tsx — Server Component (no "use client")
+
+// @ts-expect-error — resolved as source text by the raw-loader rule, which
+// TypeScript can't see past the real (non-module) .js file.
+import prelayoutSource from "@priority-plus/core/prelayout.iife.js";
+
+import { Nav } from "./nav"; // your "use client" component rendering <PriorityPlus id="main-nav" …>
+
+export function NavWithPrelayout() {
+  return (
+    <>
+      <Nav />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
+        }}
+      />
+    </>
+  );
+}
+```
+
+Two approaches that look right but aren't: `next/script` with
+`beforeInteractive` hoists into `<head>`, which runs before the nav exists;
+and reading the file with `fs` + `createRequire(...).resolve(...)` fails under
+Turbopack, which rewrites `require.resolve` into an internal module id that
+`readFileSync` then treats as a file descriptor.
+
+### TanStack Start
+
+Start routes are ordinary React components that server-render and hydrate, so
+render the script inline in the route. Because the script element is part of
+the hydrated tree here, it must render identically on server and client — the
+`?raw` import guarantees that (at the cost of the ~1&nbsp;kB source also
+shipping in the route's JS):
+
+```tsx
+import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
+
+function Header() {
+  return (
+    <>
+      <Nav id="main-nav" />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
+        }}
+      />
+    </>
+  );
+}
+```
+
+### SvelteKit
+
+Emit the script with `{@html}`. During SSR the string lands in the document
+and executes as parsed; on the client, Svelte claims the markup without
+re-executing it (scripts inserted via `innerHTML` don't run). Escape the
+closing tag so the Svelte compiler doesn't end your script block early:
+
+```svelte
+<script lang="ts">
+  import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
+  import { PriorityPlus } from "@priority-plus/svelte";
+
+  const { items } = $props();
+</script>
+
+<PriorityPlus id="main-nav" {items}>
+  {#snippet children(item)}
+    <a href={item.href}>{item.label}</a>
+  {/snippet}
+</PriorityPlus>
+
+{@html `<script>${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))<\/script>`}
+```
+
+### Astro
+
+For framework islands (`client:load`), Astro server-renders the HTML and
+hydrates later — the same gap. Inline the pass with `is:inline`:
+
+```astro
+---
+import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
+---
+<Nav client:load id="main-nav" />
+<script
+  is:inline
+  set:html={`${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`}
+/>
+```
+
+### Dev servers
+
+In development, Vite-style servers inject CSS through JavaScript, so the nav's
+styles may not be applied when the blocking script runs — prelayout will
+measure unstyled markup or bail. That's expected and harmless (hydration
+corrects it); judge the behaviour in a production build, like the
+[demo](#try-it) does. Static pre-rendering (SSG) behaves identically to SSR
+here: what matters is that real markup is in the document before the bundle.
+
 ### Trade-offs
 
 ::: warning Overflowed items are hidden until hydration
@@ -134,15 +285,21 @@ priority-plus:not([data-priority-plus-enhanced]) [data-priority-plus-primary] {
 
 ## Try it
 
-The repository contains a runnable demo —
-[`apps/ssr-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/ssr-demo) —
-that pre-renders a React nav at build time, inlines the prelayout script, and
-hydrates on an artificial delay:
+The repository contains three runnable demos:
 
-```sh
-npx turbo run build --filter @priority-plus/ssr-demo
-npm run preview -w @priority-plus/ssr-demo
-```
+- [`apps/ssr-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/ssr-demo) —
+  the mechanism, minimally: a page pre-rendered at build time with the script
+  inlined and hydration on an artificial delay. Use `?delay=8000` to slow the
+  bundle down and `?no-prelayout` to see the flash it prevents.
 
-Use `?delay=8000` to slow the bundle down and `?no-prelayout` to see the flash
-it prevents.
+  ```sh
+  npx turbo run build --filter @priority-plus/ssr-demo
+  npm run preview -w @priority-plus/ssr-demo
+  ```
+
+- [`apps/next-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/next-demo)
+  and
+  [`apps/start-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/start-demo) —
+  the Next.js and TanStack Start recipes above as working apps. Build the
+  workspace packages first (`npm run build`), then `npm run demo:build` and
+  `npm run demo:start` in either app and throttle the network in devtools.

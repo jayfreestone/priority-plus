@@ -9,9 +9,10 @@ const htmlUrl = new URL("../dist/index.html", import.meta.url);
 
 const { render } = await import(new URL("../dist-server/prerender.js", import.meta.url).href);
 
-const prelayoutIife = (
-  await readFile(require.resolve("@priority-plus/core/prelayout.iife.js"), "utf8")
-).replace(/\/\/# sourceMappingURL=.*\n?/, "");
+const prelayoutIife = await readFile(
+  require.resolve("@priority-plus/core/prelayout.iife.js"),
+  "utf8",
+);
 
 let html = await readFile(htmlUrl, "utf8");
 

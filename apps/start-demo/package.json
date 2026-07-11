@@ -1,0 +1,28 @@
+{
+  "name": "@priority-plus/start-demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TanStack Start demo of the SSR prelayout pass, matching the docs recipe.",
+  "type": "module",
+  "scripts": {
+    "demo:dev": "vite dev --port 4201",
+    "demo:build": "vite build",
+    "demo:start": "PORT=4201 node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@priority-plus/core": "0.0.0-semantically-released",
+    "@priority-plus/react": "0.0.0-semantically-released",
+    "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-start": "^1.168.27",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tanstack/nitro-v2-vite-plugin": "^1.155.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7"
+  }
+}

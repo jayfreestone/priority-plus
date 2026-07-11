@@ -9,3 +9,12 @@ packages/*/dist/
 packages/*/.svelte-kit/
 apps/docs/docs/.vitepress/cache/
 apps/docs/docs/.vitepress/dist/
+
+# Demo app build output
+apps/ssr-demo/dist-server/
+apps/next-demo/.next/
+apps/next-demo/next-env.d.ts
+apps/start-demo/.nitro/
+apps/start-demo/.output/
+apps/start-demo/.tanstack/
+apps/start-demo/src/routeTree.gen.ts

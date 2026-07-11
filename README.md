@@ -10,6 +10,7 @@ A modern Priority+ navigation library with a framework-agnostic core and small f
 - `@priority-plus/svelte`: Svelte 5 component adapter.
 - `@priority-plus/playground`: local Vite playground consuming the workspace packages.
 - `@priority-plus/ssr-demo`: pre-rendered demo of the SSR prelayout pass (see below).
+- `@priority-plus/next-demo` / `@priority-plus/start-demo`: the Next.js and TanStack Start prelayout recipes as working apps (`npm run demo:build` / `demo:start` in each).
 - `@priority-plus/docs`: VitePress documentation site.
 
 The package split follows the same broad model used by TanStack projects: shared logic lives in a small core package, while framework packages handle measurement, lifecycle, and rendering idiomatically for their runtime.
