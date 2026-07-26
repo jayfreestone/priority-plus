@@ -47,7 +47,20 @@ Two ways to get the function there:
   above, or load it render-blocking (no `defer`/`module`) in `<head>`.
 - **The module** — `import { prelayout } from "@priority-plus/core/prelayout"`
   for toolchains that can inline module code ahead of paint (e.g. Astro's
-  `is:inline`).
+  `is:inline`). Module scripts are **always deferred**, inline ones included, so
+  this form runs after first paint unless you make it render-blocking
+  explicitly:
+
+  ```html
+  <script type="module" blocking="render">
+    …
+  </script>
+  ```
+
+  `blocking="render"` earns its place here and only here. On the classic inline
+  script it does nothing: a classic script with no `async`/`defer` already
+  blocks parsing, and the render-blocking window it opens closes in the same
+  task it opened in.
 
 ### How it works
 
@@ -66,6 +79,59 @@ Every injected rule is guarded by `:not([data-priority-plus-enhanced])`. The
 adapters render that attribute with their first measured layout — before
 paint — so the interim styles dissolve exactly as the real structural layout
 takes over. When the measurements agree, the handover is pixel-identical.
+
+### Streamed HTML: the last gap {#streaming}
+
+A parser-blocking script only runs once the parser *reaches* it — and streamed
+HTML arrives in chunks. If a chunk boundary falls between the nav's markup and
+the end of the prelayout script, the browser is free to paint what it has: the
+un-laid-out nav. That's the flash again, now intermittent and dependent on how
+the response happens to be split.
+
+No attribute on the script can fix this, because the paint happens before the
+parser has seen the script at all. What does fix it is blocking the document's
+first render on an element that comes *after* the script:
+
+```html
+<head>
+  <link rel="expect" href="#prelayout-done" blocking="render" />
+</head>
+<body>
+  <nav id="main-nav">…</nav>
+  <script>
+    …prelayout source…
+    priorityPlusPrelayout(document.getElementById("main-nav"));
+  </script>
+  <div id="prelayout-done" hidden></div>
+</body>
+```
+
+[`rel="expect"`](https://html.spec.whatwg.org/multipage/links.html#link-type-expect)
+unblocks rendering the moment the referenced element is **fully parsed**, so the
+sentinel has to sit after the script's closing tag — pointing it at the `<nav>`
+would unblock at `</nav>` and leave exactly the gap you're closing. The element
+is never rendered; only its presence in the DOM matters.
+
+This is a safe addition:
+
+- Rendering is unblocked at end of parse regardless, so a page that never
+  renders the sentinel can't hang.
+- `rel="expect"` is Chromium-only today (`blocking="render"` itself is also in
+  Safari 18.2+, no Firefox). Where it isn't supported the link is inert and you
+  get the behaviour you have without it.
+
+For browsers without it, keep the pre-prelayout paint tidy the same way the
+[custom element](#the-custom-element) does — the child combinator keeps this off
+the measurer's list twin, which must overflow to be measured:
+
+```css
+.nav:not([data-priority-plus-enhanced]) > .list {
+  overflow: clip; /* items that don't fit are cut off, not spilled */
+}
+```
+
+That accepts the same trade-off prelayout already makes (an unreachable overflow
+until hydration), so only add it on a page running prelayout.
 
 ### API
 
@@ -104,12 +170,16 @@ a raw script tag. The Next.js and TanStack Start recipes below are working
 apps in the repository
 ([`apps/next-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/next-demo),
 [`apps/start-demo`](https://github.com/jayfreestone/priority-plus/tree/master/apps/start-demo)).
-Three shared conventions first:
+Four shared conventions first:
 
 - **Look the nav up by `id`** rather than `previousElementSibling`. Frameworks
   stream and wrap output, so sibling relationships are less dependable than in
   hand-written HTML. Both adapters spread extra attributes onto the `<nav>`,
   so pass `id` straight through.
+- **Render a sentinel and render-block on it.** Every framework here streams, so
+  the [chunk-boundary paint](#streaming) is live for all of them: put a
+  `<link rel="expect" blocking="render">` in the document head and an empty
+  element with that id directly after the script.
 - **Join the source and the call with a newline**, not just a semicolon. If
   the script's source ever ends in a line comment (a
   `//# sourceMappingURL` is the classic), a same-line call is silently
@@ -153,6 +223,8 @@ import prelayoutSource from "@priority-plus/core/prelayout.iife.js";
 
 import { Nav } from "./nav"; // your "use client" component rendering <PriorityPlus id="main-nav" …>
 
+export const PRELAYOUT_SENTINEL_ID = "main-nav-prelayout";
+
 export function NavWithPrelayout() {
   return (
     <>
@@ -162,7 +234,32 @@ export function NavWithPrelayout() {
           __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
         }}
       />
+      <div id={PRELAYOUT_SENTINEL_ID} hidden />
     </>
+  );
+}
+```
+
+The `<link>` goes in the root layout's `<head>`, where it's guaranteed to be
+flushed before the body. Don't render it next to the nav and rely on React
+hoisting it — by then the head may already be on the wire.
+
+```tsx
+// app/layout.tsx
+import { PRELAYOUT_SENTINEL_ID } from "./nav-with-prelayout";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <link
+          rel="expect"
+          href={`#${PRELAYOUT_SENTINEL_ID}`}
+          blocking="render"
+        />
+      </head>
+      <body>{children}</body>
+    </html>
   );
 }
 ```
@@ -193,9 +290,26 @@ function Header() {
           __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
         }}
       />
+      <div id="main-nav-prelayout" hidden />
     </>
   );
 }
+```
+
+The sentinel's `<link>` belongs in the root route's `head`, alongside the
+stylesheet:
+
+```tsx
+// src/routes/__root.tsx
+export const Route = createRootRoute({
+  head: () => ({
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "expect", href: "#main-nav-prelayout", blocking: "render" },
+    ],
+  }),
+  component: RootComponent,
+});
 ```
 
 ### SvelteKit
@@ -220,7 +334,11 @@ closing tag so the Svelte compiler doesn't end your script block early:
 </PriorityPlus>
 
 {@html `<script>${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))<\/script>`}
+<div id="main-nav-prelayout" hidden></div>
 ```
+
+Put the matching `<link rel="expect" href="#main-nav-prelayout" blocking="render" />`
+in `src/app.html`'s `<head>`, or in a `<svelte:head>` in the root layout.
 
 ### Astro
 
@@ -236,7 +354,12 @@ import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
   is:inline
   set:html={`${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`}
 />
+<div id="main-nav-prelayout" hidden></div>
 ```
+
+`is:inline` leaves the tag exactly as written, so it stays a parser-blocking
+classic script — don't add `type="module"`, which would defer it past first
+paint. The matching `<link rel="expect">` goes in your layout's `<head>`.
 
 ### Dev servers
 
@@ -266,6 +389,10 @@ run prelayout; the default degradation is the safer one.
   measure-before-fonts approach, including fully client-side ones.
 - **The interim layout is static.** Resizing the viewport before hydration
   won't re-fit; the first hydrated layout catches up.
+- **Streamed responses can still flash where `rel="expect"` isn't supported.**
+  Chunk boundaries are outside your control, so [the sentinel](#streaming) is
+  the only complete answer; in Firefox, `overflow: clip` on the un-enhanced list
+  is the fallback.
 
 ## The custom element
 

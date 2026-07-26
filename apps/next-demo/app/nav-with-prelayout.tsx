@@ -10,6 +10,15 @@ import prelayoutSource from "@priority-plus/core/prelayout.iife.js";
 
 import { Nav } from "./nav";
 
+/**
+ * The id the root layout's `<link rel="expect">` render-blocks on. It marks the
+ * end of the prelayout script, not the nav: `rel=expect` unblocks rendering the
+ * moment the referenced element is fully parsed, so pointing it at the `<nav>`
+ * would still leave the streaming gap between `</nav>` and the script's closing
+ * tag — the gap we're trying to close.
+ */
+export const PRELAYOUT_SENTINEL_ID = "main-nav-prelayout";
+
 export function NavWithPrelayout() {
   return (
     <>
@@ -21,6 +30,9 @@ export function NavWithPrelayout() {
           __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
         }}
       />
+      {/* Parsed only after the script above has run. Never rendered; only its
+          presence in the DOM matters. */}
+      <div id={PRELAYOUT_SENTINEL_ID} hidden />
     </>
   );
 }

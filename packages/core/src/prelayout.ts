@@ -34,6 +34,11 @@ let prelayoutId = 0;
  * without the adapter. When nothing overflows — or when the expected markup
  * is missing or not laid out — this is a no-op.
  *
+ * A parser-blocking script only runs once the parser reaches it, so when the
+ * response is streamed the browser can paint a chunk boundary that falls before
+ * the script. Render-block the document on an element *after* the script to
+ * close that window — see the server rendering guide.
+ *
  * @returns The computed state, or `null` when nothing could be measured.
  */
 export function prelayout(

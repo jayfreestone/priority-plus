@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>priority-plus — SSR + prelayout demo</title>
     <!--
+      A parser-blocking inline script only runs once the parser reaches it, so a
+      document delivered in chunks can be painted at a boundary that falls
+      between the nav and the script that lays it out — the flash prelayout
+      exists to prevent. This holds the first render until the sentinel *after*
+      the script is parsed; expecting the nav itself would unblock as soon as
+      the nav closed, leaving exactly that gap. Rendering unblocks at end of
+      parse regardless, and unsupported browsers ignore the link entirely.
+    -->
+    <link rel="expect" href="#prelayout-done" blocking="render" />
+    <!--
       The nav styles live in a blocking stylesheet (here, an inline one) so
       they are guaranteed to be applied before the prelayout script measures.
     -->
@@ -113,6 +123,7 @@
         priorityPlusPrelayout(document.querySelector("#root nav"));
       }
     </script>
+    <div id="prelayout-done" hidden></div>
 
     <section class="panel">
       <p id="status">JavaScript disabled — showing the server-rendered nav.</p>

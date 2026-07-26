@@ -27,6 +27,19 @@ body {
   padding: 0;
 }
 
+/*
+ * Firefox supports neither `blocking="render"` nor `rel="expect"`, so a paint
+ * can still land before the prelayout script runs. The child combinator keeps
+ * this off the measurer's list twin, which must overflow to be measured.
+ *
+ * Items that don't fit are cut off rather than spilling out of the nav. That's
+ * the same trade-off prelayout itself makes — an unreachable overflow until
+ * hydration — so it only belongs on a page already running prelayout.
+ */
+.nav:not([data-priority-plus-enhanced]) > .list {
+  overflow: clip;
+}
+
 .item {
   flex: 0 0 auto;
 }

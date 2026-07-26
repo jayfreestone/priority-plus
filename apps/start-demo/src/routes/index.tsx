@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import prelayoutSource from "@priority-plus/core/prelayout.iife.js?raw";
 
 import { Nav } from "../nav";
+import { PRELAYOUT_SENTINEL_ID } from "../prelayout-sentinel";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -27,6 +28,9 @@ function Home() {
           __html: `${prelayoutSource}\npriorityPlusPrelayout(document.getElementById("main-nav"))`,
         }}
       />
+      {/* Parsed only after the script above has run; never rendered. The root
+          route render-blocks the first paint on it. */}
+      <div id={PRELAYOUT_SENTINEL_ID} hidden />
       <p>
         Throttle the network in devtools to widen the gap between paint and
         hydration — the nav is correctly collapsed the whole time.
